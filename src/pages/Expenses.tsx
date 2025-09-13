@@ -1,42 +1,48 @@
 import React, { useState, useEffect } from 'react'
-import { useExpensesStore } from '../store/expensesStore'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
-import { Button } from '../components/ui/button'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../components/ui/select'
-import {
-  DollarSign,
-  Plus,
-  Receipt,
-  TrendingUp,
-  AlertTriangle,
-  Clock,
-  Download,
-  CreditCard,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight
-} from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { useExpensesStore } from '@/store/expensesStore'
 import { useCurrency } from '@/contexts/CurrencyContext'
 import CurrencyDisplay from '@/components/ui/currency-display'
-import { getCardStyles, getIconStyles } from '../lib/cardStyles'
+import { getCardStyles, getIconStyles } from '@/lib/cardStyles'
+import { formatDate } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
-import { notify } from '../services/notificationService'
-import { ExportService } from '../services/exportService'
-import type { ClinicExpense } from '../types'
+import { notify } from '@/services/notificationService'
+import { ExportService } from '@/services/exportService'
+import { ClinicExpense } from '@/types'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import AddExpenseDialog from '@/components/expenses/AddExpenseDialog'
+import DeleteExpenseDialog from '@/components/expenses/DeleteExpenseDialog'
+import ExpensesTable from '@/components/expenses/ExpensesTable'
+import ExpenseDetailsModal from '@/components/expenses/ExpenseDetailsModal'
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  Receipt,
+  DollarSign,
+  CreditCard,
+  Clock,
+  AlertTriangle,
+  Download,
+  Filter,
+  X
+} from 'lucide-react'
 
-import AddExpenseDialog from '../components/expenses/AddExpenseDialog'
-import DeleteExpenseDialog from '../components/expenses/DeleteExpenseDialog'
-// import ExpensesTable from '../components/expenses/ExpensesTable'
-// import ExpensesFilters from '../components/expenses/ExpensesFilters'
-
-const Expenses: React.FC = () => {
+export default function Expenses() {
   const {
     expenses,
     filteredExpenses,
@@ -60,10 +66,18 @@ const Expenses: React.FC = () => {
   const { toast } = useToast()
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [editingExpense, setEditingExpense] = useState<ClinicExpense | null>(null)
   const [deletingExpense, setDeletingExpense] = useState<ClinicExpense | null>(null)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
+  const [selectedExpenseForDetails, setSelectedExpenseForDetails] = useState<ClinicExpense | null>(null)
+  const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null)
+
+  // Filter states
+  const [showFilters, setShowFilters] = useState(false)
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [expenseTypeFilter, setExpenseTypeFilter] = useState('all')
+  const [amountRangeFilter, setAmountRangeFilter] = useState<{min: string, max: string}>({min: '', max: ''})
+  const [dateRangeFilter, setDateRangeFilter] = useState<{start: string, end: string}>({start: '', end: ''})
 
   useEffect(() => {
     loadExpenses()
@@ -73,35 +87,50 @@ const Expenses: React.FC = () => {
     setSearchQuery(e.target.value)
   }
 
-  const handleFilterChange = (newFilters: any) => {
-    setFilters({ ...filters, ...newFilters })
-  }
+  // Apply advanced filters to expenses
+  const filteredExpensesWithAdvancedFilters = React.useMemo(() => {
+    let filtered = [...filteredExpenses]
 
-  // Pagination
-  const totalCount = filteredExpenses.length
-  const totalPages = Math.ceil(totalCount / pageSize)
-  const startIndex = (currentPage - 1) * pageSize
-  const paginatedExpenses = filteredExpenses.slice(startIndex, startIndex + pageSize)
+    // Status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(expense => expense.status === statusFilter)
+    }
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page)
-  }
+    // Expense type filter
+    if (expenseTypeFilter !== 'all') {
+      filtered = filtered.filter(expense => expense.expense_type === expenseTypeFilter)
+    }
 
-  const handlePageSizeChange = (value: string) => {
-    setPageSize(parseInt(value))
-    setCurrentPage(1) // Reset to first page when changing page size
-  }
+    // Amount range filter
+    if (amountRangeFilter.min && amountRangeFilter.max) {
+      const minAmount = parseFloat(amountRangeFilter.min)
+      const maxAmount = parseFloat(amountRangeFilter.max)
+      filtered = filtered.filter(expense => expense.amount >= minAmount && expense.amount <= maxAmount)
+    }
 
-  const handleClearFilters = () => {
-    setFilters({
-      status: '',
-      expenseType: '',
-      category: '',
-      vendor: '',
-      isRecurring: null,
-      dateRange: { start: '', end: '' }
-    })
+    // Date range filter
+    if (dateRangeFilter.start && dateRangeFilter.end) {
+      const startDate = new Date(dateRangeFilter.start)
+      const endDate = new Date(dateRangeFilter.end)
+      endDate.setHours(23, 59, 59, 999) // Include the entire end date
+
+      filtered = filtered.filter(expense => {
+        const expenseDate = new Date(expense.payment_date)
+        return expenseDate >= startDate && expenseDate <= endDate
+      })
+    }
+
+    return filtered
+  }, [filteredExpenses, statusFilter, expenseTypeFilter, amountRangeFilter, dateRangeFilter])
+
+  // Clear all filters
+  const clearAllFilters = () => {
     setSearchQuery('')
+    setStatusFilter('all')
+    setExpenseTypeFilter('all')
+    setAmountRangeFilter({min: '', max: ''})
+    setDateRangeFilter({start: '', end: ''})
+    setShowFilters(false)
   }
 
   const handleEdit = (expense: ClinicExpense) => {
@@ -112,6 +141,26 @@ const Expenses: React.FC = () => {
   const handleDelete = (expense: ClinicExpense) => {
     setDeletingExpense(expense)
     setShowDeleteDialog(true)
+    setDeletingExpenseId(expense.id)
+  }
+
+  const handleViewDetails = (expense: ClinicExpense) => {
+    setSelectedExpenseForDetails(expense)
+    setShowDetailsModal(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!deletingExpenseId) return
+
+    try {
+      await deleteExpense(deletingExpenseId)
+      notify.deleteSuccess('تم حذف المصروف بنجاح')
+      setShowDeleteDialog(false)
+      setDeletingExpense(null)
+      setDeletingExpenseId(null)
+    } catch (error) {
+      notify.deleteError('فشل في حذف المصروف')
+    }
   }
 
   const handleCloseAddDialog = () => {
@@ -229,174 +278,144 @@ const Expenses: React.FC = () => {
         />
       </div>
 
-      {/* Filters - Placeholder for now */}
+      {/* Search and Filters */}
       <Card>
-        <CardHeader>
-          <CardTitle>البحث والفلاتر</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-4">
-            <input
-              type="text"
-              placeholder="البحث في المصروفات..."
-              value={searchQuery}
-              onChange={handleSearchChange}
-              className="flex-1 px-3 py-2 border border-border rounded-md bg-background text-foreground"
-            />
-            <Button variant="outline" onClick={handleClearFilters}>
-              مسح الفلاتر
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Expenses List - Placeholder for now */}
-      <Card>
-        <CardHeader>
-          <CardTitle>قائمة المصروفات</CardTitle>
-          <CardDescription>
-            عرض جميع مصروفات العيادة مع إمكانية التعديل والحذف
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center h-32">
-              <div className="text-muted-foreground">جاري التحميل...</div>
-            </div>
-          ) : filteredExpenses.length === 0 ? (
-            <div className="text-center py-8">
-              <Receipt className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-foreground mb-2">لا توجد مصروفات</h3>
-              <p className="text-muted-foreground mb-4">
-                لم يتم العثور على أي مصروفات. ابدأ بإضافة مصروف جديد.
-              </p>
-              <Button onClick={() => setShowAddDialog(true)}>
-                <Plus className="w-4 h-4 ml-2" />
-                إضافة مصروف جديد
-              </Button>
-            </div>
-          ) : (
-            <>
-              <div className="space-y-4">
-                {paginatedExpenses.map((expense) => (
-                <div
-                  key={expense.id}
-                  className="flex items-center justify-between p-4 border border-border rounded-lg bg-card"
-                >
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-foreground">{expense.expense_name}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {expense.expense_type} • {expense.status} • <CurrencyDisplay amount={expense.amount} />
-                    </p>
-                    {expense.description && (
-                      <p className="text-sm text-muted-foreground mt-1">{expense.description}</p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {expense.status === 'pending' && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleMarkAsPaid(expense)}
-                      >
-                        تحديد كمدفوع
-                      </Button>
-                    )}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleEdit(expense)}
-                    >
-                      تعديل
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => handleDelete(expense)}
-                    >
-                      حذف
-                    </Button>
-                  </div>
-                </div>
-                ))}
+        <CardContent className="pt-6">
+          <div className="space-y-4" dir="rtl">
+            <div className="flex items-center gap-4" dir="rtl">
+              <div className="relative flex-1">
+                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  placeholder="البحث بالاسم أو النوع أو المورد..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pr-10 text-right"
+                  dir="rtl"
+                />
               </div>
+              <Collapsible open={showFilters} onOpenChange={setShowFilters}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Filter className="w-4 h-4 mr-2" />
+                    تصفية
+                    {(statusFilter !== 'all' || expenseTypeFilter !== 'all' || amountRangeFilter.min || amountRangeFilter.max || dateRangeFilter.start || dateRangeFilter.end) && (
+                      <span className="mr-2 w-2 h-2 bg-primary rounded-full"></span>
+                    )}
+                  </Button>
+                </CollapsibleTrigger>
+              </Collapsible>
+              {(searchQuery || statusFilter !== 'all' || expenseTypeFilter !== 'all' || amountRangeFilter.min || amountRangeFilter.max || dateRangeFilter.start || dateRangeFilter.end) && (
+                <Button variant="ghost" size="sm" onClick={clearAllFilters}>
+                  <X className="w-4 h-4 mr-2" />
+                  مسح الكل
+                </Button>
+              )}
+            </div>
 
-              {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between px-2 py-4 mt-6 border-t">
-                <div className="flex items-center space-x-6 space-x-reverse lg:space-x-8">
-                  <div className="flex items-center space-x-2 space-x-reverse">
-                    <p className="text-sm font-medium arabic-enhanced">عدد العناصر لكل صفحة</p>
-                    <Select
-                      value={`${pageSize}`}
-                      onValueChange={handlePageSizeChange}
-                    >
-                      <SelectTrigger className="h-8 w-[70px]">
-                        <SelectValue placeholder={pageSize} />
+            {/* Advanced Filters */}
+            <Collapsible open={showFilters} onOpenChange={setShowFilters}>
+              <CollapsibleContent className="space-y-4" dir="rtl">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg" dir="rtl">
+                  {/* Status Filter */}
+                  <div className="space-y-2 text-right">
+                    <label className="text-sm font-medium">الحالة</label>
+                    <Select value={statusFilter} onValueChange={setStatusFilter} dir="rtl">
+                      <SelectTrigger className="text-right">
+                        <SelectValue placeholder="جميع الحالات" />
                       </SelectTrigger>
-                      <SelectContent side="top">
-                        {[5, 10, 20, 30, 50].map((size) => (
-                          <SelectItem key={size} value={`${size}`}>
-                            {size}
-                          </SelectItem>
-                        ))}
+                      <SelectContent>
+                        <SelectItem value="all">جميع الحالات</SelectItem>
+                        <SelectItem value="paid">مدفوع</SelectItem>
+                        <SelectItem value="pending">معلق</SelectItem>
+                        <SelectItem value="overdue">متأخر</SelectItem>
+                        <SelectItem value="cancelled">ملغي</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
-                  <div className="flex w-[100px] items-center justify-center text-sm font-medium arabic-enhanced">
-                    صفحة {currentPage} من {totalPages}
+                  {/* Expense Type Filter */}
+                  <div className="space-y-2 text-right">
+                    <label className="text-sm font-medium">نوع المصروف</label>
+                    <Select value={expenseTypeFilter} onValueChange={setExpenseTypeFilter} dir="rtl">
+                      <SelectTrigger className="text-right">
+                        <SelectValue placeholder="جميع الأنواع" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">جميع الأنواع</SelectItem>
+                        <SelectItem value="salary">الرواتب</SelectItem>
+                        <SelectItem value="utilities">المرافق</SelectItem>
+                        <SelectItem value="rent">الإيجار</SelectItem>
+                        <SelectItem value="maintenance">الصيانة</SelectItem>
+                        <SelectItem value="supplies">المستلزمات</SelectItem>
+                        <SelectItem value="insurance">التأمين</SelectItem>
+                        <SelectItem value="other">أخرى</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
-                  <div className="flex items-center space-x-2 space-x-reverse">
-                    <Button
-                      variant="outline"
-                      className="hidden h-8 w-8 p-0 lg:flex"
-                      onClick={() => handlePageChange(1)}
-                      disabled={currentPage === 1}
-                    >
-                      <span className="sr-only">الذهاب إلى الصفحة الأولى</span>
-                      <ChevronsRight className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="h-8 w-8 p-0"
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 1}
-                    >
-                      <span className="sr-only">الذهاب إلى الصفحة السابقة</span>
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="h-8 w-8 p-0"
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                    >
-                      <span className="sr-only">الذهاب إلى الصفحة التالية</span>
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="hidden h-8 w-8 p-0 lg:flex"
-                      onClick={() => handlePageChange(totalPages)}
-                      disabled={currentPage === totalPages}
-                    >
-                      <span className="sr-only">الذهاب إلى الصفحة الأخيرة</span>
-                      <ChevronsLeft className="h-4 w-4" />
-                    </Button>
+                  {/* Amount Range Filter */}
+                  <div className="space-y-2 text-right">
+                    <label className="text-sm font-medium">نطاق المبلغ</label>
+                    <div className="space-y-2">
+                      <Input
+                        type="number"
+                        placeholder="من مبلغ"
+                        value={amountRangeFilter.min}
+                        onChange={(e) => setAmountRangeFilter(prev => ({...prev, min: e.target.value}))}
+                        className="text-right"
+                        dir="rtl"
+                      />
+                      <Input
+                        type="number"
+                        placeholder="إلى مبلغ"
+                        value={amountRangeFilter.max}
+                        onChange={(e) => setAmountRangeFilter(prev => ({...prev, max: e.target.value}))}
+                        className="text-right"
+                        dir="rtl"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Date Range Filter */}
+                  <div className="space-y-2 text-right">
+                    <label className="text-sm font-medium">تاريخ الدفع</label>
+                    <div className="space-y-2">
+                      <Input
+                        type="date"
+                        placeholder="من تاريخ"
+                        value={dateRangeFilter.start}
+                        onChange={(e) => setDateRangeFilter(prev => ({...prev, start: e.target.value}))}
+                        className="text-right"
+                        dir="rtl"
+                      />
+                      <Input
+                        type="date"
+                        placeholder="إلى تاريخ"
+                        value={dateRangeFilter.end}
+                        onChange={(e) => setDateRangeFilter(prev => ({...prev, end: e.target.value}))}
+                        className="text-right"
+                        dir="rtl"
+                      />
+                    </div>
                   </div>
                 </div>
-
-                <div className="flex items-center space-x-2 space-x-reverse text-sm text-muted-foreground arabic-enhanced">
-                  عرض {startIndex + 1} إلى {Math.min(startIndex + pageSize, totalCount)} من {totalCount} نتيجة
-                </div>
-              </div>
-            )}
-            </>
-          )}
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
         </CardContent>
       </Card>
+
+      {/* Expenses Table */}
+      <div className="space-y-6">
+        <ExpensesTable
+          expenses={filteredExpensesWithAdvancedFilters}
+          isLoading={isLoading}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onViewDetails={handleViewDetails}
+          onMarkAsPaid={handleMarkAsPaid}
+        />
+      </div>
 
       {/* Dialogs */}
       <AddExpenseDialog
@@ -405,10 +424,40 @@ const Expenses: React.FC = () => {
         editingExpense={editingExpense}
       />
 
-      <DeleteExpenseDialog
-        open={showDeleteDialog}
-        onOpenChange={handleCloseDeleteDialog}
-        expense={deletingExpense}
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent dir="rtl" className="arabic-enhanced">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 arabic-enhanced">
+              <Trash2 className="w-5 h-5 text-destructive" />
+              تأكيد حذف المصروف
+            </AlertDialogTitle>
+            <AlertDialogDescription className="arabic-enhanced">
+              هل أنت متأكد من حذف هذا المصروف؟
+              <br />
+              <strong className="text-destructive">تحذير: لا يمكن التراجع عن هذا الإجراء!</strong>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row-reverse">
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive hover:bg-destructive/90 arabic-enhanced"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              تأكيد الحذف
+            </AlertDialogAction>
+            <AlertDialogCancel className="arabic-enhanced">
+              إلغاء
+            </AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Expense Details Modal */}
+      <ExpenseDetailsModal
+        expense={selectedExpenseForDetails}
+        open={showDetailsModal}
+        onOpenChange={setShowDetailsModal}
       />
     </div>
   )
@@ -423,9 +472,6 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color }) => {
-  const cardStyles = getCardStyles()
-  const iconStyles = getIconStyles()
-
   const colorClasses = {
     blue: 'text-blue-600 dark:text-blue-400',
     green: 'text-green-600 dark:text-green-400',
@@ -434,14 +480,14 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color }) => {
   }
 
   return (
-    <Card className={cardStyles.card}>
+    <Card className="transition-all duration-200 hover:shadow-lg border rounded-lg">
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
             <p className="text-2xl font-bold text-foreground">{value}</p>
           </div>
-          <div className={`${iconStyles.container} ${colorClasses[color]}`}>
+          <div className={`p-3 rounded-full bg-muted ${colorClasses[color]}`}>
             {icon}
           </div>
         </div>
@@ -449,5 +495,3 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color }) => {
     </Card>
   )
 }
-
-export default Expenses
