@@ -23,6 +23,7 @@ import AppointmentReports from '@/components/reports/AppointmentReports'
 import FinancialReports from '@/components/reports/FinancialReports'
 import TreatmentReports from '@/components/reports/TreatmentReports'
 import ClinicNeedsReports from '@/components/reports/ClinicNeedsReports'
+import ExpenseReports from '@/components/reports/ExpenseReports'
 import ComprehensiveProfitLossReport from '@/components/reports/ComprehensiveProfitLossReport'
 import CurrencyDisplay from '@/components/ui/currency-display'
 import { ComprehensiveExportService, TIME_PERIODS, TimePeriod } from '@/services/comprehensiveExportService'
@@ -60,7 +61,8 @@ import {
   CheckCircle,
   Calculator,
   Activity,
-  Building2
+  Building2,
+  Receipt
 
 } from 'lucide-react'
 import { notify } from '@/services/notificationService'
@@ -364,6 +366,9 @@ export default function Reports() {
       } else if (value === 'appointments') {
         const { loadAppointments } = useAppointmentStore.getState()
         await loadAppointments()
+      } else if (value === 'expenses') {
+        const { loadExpenses } = useExpensesStore.getState()
+        await loadExpenses()
       }
 
       // Generate specific report if not already loaded
@@ -639,7 +644,7 @@ export default function Reports() {
 
       {/* Reports Tabs */}
       <Tabs value={selectedTab} onValueChange={handleTabChange} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview" className="flex items-center space-x-2 space-x-reverse">
             <Calculator className="w-4 h-4" />
             <span>التقرير الشامل المفصل</span>
@@ -656,10 +661,10 @@ export default function Reports() {
             <Calendar className="w-4 h-4" />
             <span>المواعيد</span>
           </TabsTrigger>
-          {/* <TabsTrigger value="financial" className="flex items-center space-x-2 space-x-reverse">
-            <DollarSign className="w-4 h-4" />
-            <span>المالية</span>
-          </TabsTrigger> */}
+          <TabsTrigger value="expenses" className="flex items-center space-x-2 space-x-reverse">
+            <Receipt className="w-4 h-4" />
+            <span>المصروفات</span>
+          </TabsTrigger>
           <TabsTrigger value="treatments" className="flex items-center space-x-2 space-x-reverse">
             <Stethoscope className="w-4 h-4" />
             <span>العلاجات</span>
@@ -994,6 +999,10 @@ export default function Reports() {
 
         <TabsContent value="clinicNeeds" dir="rtl">
           <ClinicNeedsReports />
+        </TabsContent>
+
+        <TabsContent value="expenses" dir="rtl">
+          <ExpenseReports />
         </TabsContent>
 
         <TabsContent value="profitLoss" dir="rtl">

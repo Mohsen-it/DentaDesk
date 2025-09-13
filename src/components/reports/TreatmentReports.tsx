@@ -292,7 +292,7 @@ export default function TreatmentReports() {
         <div>
           <div className="flex items-center gap-3 mb-2">
             <h2 className="text-2xl font-bold text-foreground">تقارير العلاجات</h2>
-            <RealTimeIndicator isActive={true} />
+            {/* <RealTimeIndicator isActive={true} /> */}
           </div>
           <p className="text-muted-foreground">
             تحليل شامل لجميع العلاجات والإجراءات الطبية
