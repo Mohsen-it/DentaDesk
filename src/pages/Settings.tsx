@@ -900,11 +900,13 @@ export default function Settings() {
                       setCurrency(e.target.value)
                     }}
                   >
-                    {Object.entries(SUPPORTED_CURRENCIES).map(([code, config]) => (
-                      <option key={code} value={code}>
-                        {config.nameAr} ({config.symbol}) - {config.name}
-                      </option>
-                    ))}
+                    {Object.entries(SUPPORTED_CURRENCIES)
+                      .filter(([code]) => code === 'USD' || code === 'SYP')
+                      .map(([code, config]) => (
+                        <option key={code} value={code}>
+                          {config.nameAr} ({config.symbol}) - {config.name}
+                        </option>
+                      ))}
                   </select>
                   <p className="text-xs text-muted-foreground">
                     العملة المختارة ستظهر في جميع أنحاء التطبيق (المدفوعات، التقارير، الإحصائيات)
