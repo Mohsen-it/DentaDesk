@@ -169,7 +169,7 @@ export default function CurrencyRealtimeTest() {
         <CardContent>
           <div className="space-y-3">
             {mockPayments.map((payment) => (
-              <div key={payment.id} className="flex justify-between items-center p-3 border rounded-lg">
+              <div key={payment.id} className="flex justify-between items-center p-3 border dark:border-slate-700 rounded-lg">
                 <div>
                   <div className="font-medium">{payment.patient}</div>
                   <div className="text-sm text-muted-foreground">رقم الدفع: #{payment.id}</div>
@@ -195,7 +195,7 @@ export default function CurrencyRealtimeTest() {
           {/* LeftSidebarStatistics */}
           <div>
             <h3 className="text-lg font-semibold mb-4">إحصائيات الشريط الجانبي</h3>
-            <div className="border rounded-lg p-4">
+            <div className="border dark:border-slate-700 rounded-lg p-4">
               <LeftSidebarStatistics />
             </div>
           </div>
@@ -203,7 +203,7 @@ export default function CurrencyRealtimeTest() {
           {/* DashboardAnalytics (simplified) */}
           <div>
             <h3 className="text-lg font-semibold mb-4">التحليلات والإحصائيات</h3>
-            <div className="border rounded-lg p-4">
+            <div className="border dark:border-slate-700 rounded-lg p-4">
               <DashboardAnalytics
                 onNavigateToPatients={() => {}}
                 onNavigateToAppointments={() => {}}

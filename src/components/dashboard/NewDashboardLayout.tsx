@@ -87,12 +87,12 @@ const NewDashboardLayout = memo(function NewDashboardLayout({
         </div>
 
         {/* Left Sidebar - responsive behavior */}
-        <div className={`md:row-start-2 md:col-start-1 rtl:md:col-start-2 lg:row-start-2 lg:col-start-1 rtl:lg:col-start-2 bg-slate-100 dark:bg-slate-800 border-r rtl:border-l border-slate-200 dark:border-slate-700 transition-transform duration-300 ease-in-out ${
+        <div className={`md:row-start-2 md:col-start-1 rtl:md:col-start-2 lg:row-start-2 lg:col-start-1 rtl:lg:col-start-2 bg-slate-100 dark:bg-card border-r rtl:border-l border-slate-200 dark:border-slate-700 transition-transform duration-300 ease-in-out ${
           sidebarOpen ? 'block' : 'hidden md:block'
         } ${
           sidebarOpen
-            ? 'fixed md:relative inset-y-0 right-0 md:right-auto w-80 md:w-full z-40 md:z-auto transform translate-x-0 md:translate-x-0'
-            : 'md:relative md:translate-x-0'
+            ? 'fixed md:relative inset-y-0 right-0 md:right-auto w-80 md:w-full z-40 md:z-auto transform translate-x-0 md:translate-x-0 dark:bg-card'
+            : 'md:relative md:translate-x-0 dark:bg-card'
         }`} role="complementary" aria-label="إحصائيات العيادة" data-testid="dashboard-sidebar">
           <LeftSidebarStatistics />
         </div>
@@ -106,7 +106,7 @@ const NewDashboardLayout = memo(function NewDashboardLayout({
         )}
 
         {/* Main Content - dynamic tabs carousel */}
-        <div className={`row-start-2 col-start-1 md:col-start-2 rtl:md:col-start-1 lg:col-start-2 rtl:lg:col-start-1 xl:col-start-2 rtl:xl:col-start-1 p-4 md:p-5 lg:p-6 xl:p-8 overflow-hidden transition-all duration-300 bg-white dark:bg-slate-800 ${
+        <div className={`row-start-2 col-start-1 md:col-start-2 rtl:md:col-start-1 lg:col-start-2 rtl:lg:col-start-1 xl:col-start-2 rtl:xl:col-start-1 p-4 md:p-5 lg:p-6 xl:p-8 overflow-hidden transition-all duration-300 bg-white dark:bg-card ${
           sidebarOpen ? 'md:ml-0 lg:ml-0 xl:ml-0' : ''
         }`} role="main" data-testid="dashboard-main">
           <DynamicTabsCarousel
@@ -122,7 +122,7 @@ const NewDashboardLayout = memo(function NewDashboardLayout({
       </div>
 
       {/* Floating Quick Actions Bar - responsive positioning */}
-      <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 lg:bottom-6" data-testid="floating-actions">
+      <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 lg:bottom-6 dark:bg-slate-700" data-testid="floating-actions">
         <FloatingQuickActions
           onAddPatient={onAddPatient}
           onAddAppointment={onAddAppointment}

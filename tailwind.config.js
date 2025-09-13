@@ -39,9 +39,13 @@ export default {
     'card-green', 'card-blue', 'card-purple', 'card-emerald', 'card-yellow', 'card-orange', 'card-red', 'card-indigo', 'card-gray', 'card-cyan',
 
     // Common utility classes
-    'transition-all', 'duration-200', 'hover:shadow-lg', 'border', 'rounded-lg'
+    'transition-all', 'duration-200', 'hover:shadow-lg', 'border', 'rounded-lg',
+
+    // Additional dark mode classes for cards
+    'bg-white', 'dark:bg-card', 'border-slate-200', 'dark:border-slate-700',
+    'text-slate-700', 'dark:text-slate-300', 'text-slate-800', 'dark:text-slate-200'
   ],
-  darkMode: ['class', "class"], // Enable class-based dark mode
+  darkMode: 'class', // Enable class-based dark mode
   theme: {
   	extend: {
   		colors: {

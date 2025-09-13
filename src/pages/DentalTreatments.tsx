@@ -677,7 +677,7 @@ export default function DentalTreatments() {
                             </Badge>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-300">
+                            <Badge variant="outline" className="bg-gray-50 dark:bg-card text-gray-700 dark:text-gray-300">
                               📋 {stats.planned} مخطط
                             </Badge>
                           </div>

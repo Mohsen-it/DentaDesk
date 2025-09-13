@@ -258,7 +258,7 @@ export default function SecuritySettings({ showNotification }: SecuritySettingsP
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-3 space-x-reverse">
-              <div className={`p-2 rounded-lg ${passwordEnabled ? 'bg-green-100 dark:bg-green-900/20' : 'bg-gray-100 dark:bg-gray-900/20'}`}>
+              <div className={`p-2 rounded-lg ${passwordEnabled ? 'bg-green-100 dark:bg-green-900/20' : 'bg-gray-100 dark:bg-card/20'}`}>
                 {passwordEnabled ? (
                   <Lock className="w-5 h-5 text-green-600 dark:text-green-400" />
                 ) : (
@@ -280,7 +280,7 @@ export default function SecuritySettings({ showNotification }: SecuritySettingsP
             <div className={`px-3 py-1 rounded-full text-xs font-medium ${
               passwordEnabled
                 ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200'
-                : 'bg-gray-100 dark:bg-gray-900/20 text-gray-800 dark:text-gray-200'
+                : 'bg-gray-100 dark:bg-card/20 text-gray-800 dark:text-gray-200'
             }`}>
               {passwordEnabled ? 'مفعل' : 'معطل'}
             </div>
@@ -347,7 +347,7 @@ export default function SecuritySettings({ showNotification }: SecuritySettingsP
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-3 space-x-reverse">
-              <div className={`p-2 rounded-lg ${hasSecurityQuestion ? 'bg-green-100 dark:bg-green-900/20' : 'bg-gray-100 dark:bg-gray-900/20'}`}>
+              <div className={`p-2 rounded-lg ${hasSecurityQuestion ? 'bg-green-100 dark:bg-green-900/20' : 'bg-gray-100 dark:bg-card/20'}`}>
                 {hasSecurityQuestion ? (
                   <HelpCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
                 ) : (

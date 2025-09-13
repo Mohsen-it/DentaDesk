@@ -382,7 +382,7 @@ export default function DashboardAnalytics({
         <TabsContent value="overview" className="space-y-6">
           {/* Overview Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-shadow" onClick={onNavigateToPatients}>
+            <Card className="cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-shadow bg-white dark:bg-card border-slate-200 dark:border-slate-700" onClick={onNavigateToPatients}>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -405,7 +405,7 @@ export default function DashboardAnalytics({
               </CardContent>
             </Card>
 
-            <Card className="cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-shadow" onClick={onNavigateToAppointments}>
+            <Card className="cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-shadow bg-white dark:bg-card border-slate-200 dark:border-slate-700" onClick={onNavigateToAppointments}>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -422,7 +422,7 @@ export default function DashboardAnalytics({
               </CardContent>
             </Card>
 
-            <Card className="cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-shadow" onClick={onNavigateToPayments}>
+            <Card className="cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-shadow bg-white dark:bg-card border-slate-200 dark:border-slate-700" onClick={onNavigateToPayments}>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -439,7 +439,7 @@ export default function DashboardAnalytics({
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-white dark:bg-card border-slate-200 dark:border-slate-700">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -462,7 +462,7 @@ export default function DashboardAnalytics({
         <TabsContent value="trends" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Patient Growth Trend */}
-            <Card>
+            <Card className="bg-white dark:bg-card border-slate-200 dark:border-slate-700">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="w-5 h-5" />
@@ -483,7 +483,7 @@ export default function DashboardAnalytics({
             </Card>
 
             {/* Revenue Growth Trend */}
-            <Card>
+            <Card className="bg-white dark:bg-card border-slate-200 dark:border-slate-700">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <DollarSign className="w-5 h-5" />
@@ -504,7 +504,7 @@ export default function DashboardAnalytics({
             </Card>
 
             {/* Appointment Trend */}
-            <Card className="lg:col-span-2">
+            <Card className="lg:col-span-2 bg-white dark:bg-card border-slate-200 dark:border-slate-700">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Calendar className="w-5 h-5" />
@@ -530,7 +530,7 @@ export default function DashboardAnalytics({
         <TabsContent value="distributions" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Appointment Status Distribution */}
-            <Card>
+            <Card className="bg-white dark:bg-card border-slate-200 dark:border-slate-700">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <PieChart className="w-5 h-5" />
@@ -559,7 +559,7 @@ export default function DashboardAnalytics({
             </Card>
 
             {/* Payment Methods Distribution */}
-            <Card>
+            <Card className="bg-white dark:bg-card border-slate-200 dark:border-slate-700">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <DollarSign className="w-5 h-5" />
@@ -588,7 +588,7 @@ export default function DashboardAnalytics({
             </Card>
 
             {/* Age Groups Distribution */}
-            <Card>
+            <Card className="bg-white dark:bg-card border-slate-200 dark:border-slate-700">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5" />
@@ -621,7 +621,7 @@ export default function DashboardAnalytics({
         {/* KPIs Tab */}
         <TabsContent value="kpis" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card>
+            <Card className="bg-white dark:bg-card border-slate-200 dark:border-slate-700">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -636,7 +636,7 @@ export default function DashboardAnalytics({
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-white dark:bg-card border-slate-200 dark:border-slate-700">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -651,7 +651,7 @@ export default function DashboardAnalytics({
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-white dark:bg-card border-slate-200 dark:border-slate-700">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -666,7 +666,7 @@ export default function DashboardAnalytics({
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-white dark:bg-card border-slate-200 dark:border-slate-700">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -683,9 +683,9 @@ export default function DashboardAnalytics({
           </div>
 
           {/* Quick Actions */}
-          <Card>
+          <Card className="bg-white dark:bg-card border-slate-200 dark:border-slate-700">
             <CardHeader>
-              <CardTitle>إجراءات سريعة</CardTitle>
+              <CardTitle >إجراءات سريعة</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

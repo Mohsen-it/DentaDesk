@@ -41,7 +41,7 @@ const LeftSidebarStatistics = memo(function LeftSidebarStatistics() {
       value: patients.length,
       icon: Users,
       color: 'text-blue-600 dark:text-blue-400',
-      bgColor: 'bg-blue-100 dark:bg-blue-900',
+      bgColor: 'bg-blue-100 dark:bg-slate-900',
       trend: '+2 هذا الأسبوع'
     },
     {
@@ -63,10 +63,10 @@ const LeftSidebarStatistics = memo(function LeftSidebarStatistics() {
   ], [patients.length, pendingAmount, urgentAlerts, formatAmount])
 
   return (
-    <div className="h-full bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-6" role="region" aria-label="إحصائيات العيادة">
-      <div className="space-y-6">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-2">
+    <div className="h-full p-6 dark:bg-gray-900" role="region" aria-label="إحصائيات العيادة">
+      <div className="space-y-6  ">
+        <div className="text-center ">
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-2 ">
             إحصائيات سريعة
           </h2>
           <p className="text-sm text-slate-800 dark:text-slate-200">
@@ -78,7 +78,7 @@ const LeftSidebarStatistics = memo(function LeftSidebarStatistics() {
           {stats.map((stat, index) => {
             const Icon = stat.icon
             return (
-              <Card key={index} className="relative overflow-hidden bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-lg dark:shadow-lg hover:shadow-xl dark:hover:shadow-xl transition-all duration-300 rtl" role="article" aria-label={`إحصائية ${stat.title}`} data-testid="stat-card">
+              <Card key={index} className="relative overflow-hidden bg-white dark:bg-gray-900 border-slate-200 dark:border-slate-700 shadow-lg dark:shadow-lg hover:shadow-xl dark:hover:shadow-xl transition-all duration-300 rtl" role="article" aria-label={`إحصائية ${stat.title}`} data-testid="stat-card">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4 rtl:flex-row-reverse">
                     <div className={`p-3 rounded-xl ${stat.bgColor}`} aria-hidden="true">
@@ -110,7 +110,7 @@ const LeftSidebarStatistics = memo(function LeftSidebarStatistics() {
         </div>
 
         {/* Additional quick stats */}
-        <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-lg dark:shadow-lg backdrop-blur-sm">
+        <Card className="bg-white dark:bg-card border-slate-200 dark:border-slate-700 shadow-lg dark:shadow-lg backdrop-blur-sm">
           <CardContent className="p-4">
             <div className="text-center space-y-2">
               <div className="text-sm text-slate-800 dark:text-slate-200">

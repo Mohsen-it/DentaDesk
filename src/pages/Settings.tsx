@@ -581,7 +581,7 @@ export default function Settings() {
                               </span>
                             )}
                             {backup.isLegacy && (
-                              <span className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-900/20 text-gray-800 dark:text-gray-200 rounded-full">
+                              <span className="px-2 py-1 text-xs bg-gray-100 dark:bg-card/20 text-gray-800 dark:text-gray-200 rounded-full">
                                 قديم
                               </span>
                             )}

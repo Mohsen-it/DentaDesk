@@ -69,7 +69,7 @@ import './App.css'
 import './styles/globals.css'
 
 function AppContent() {
-  const { isDarkMode } = useTheme()
+  const { isDarkMode, setDarkMode } = useTheme()
   const { toast } = useToast()
   const { isAuthenticated, isLoading: authLoading, passwordEnabled, login } = useAuth()
   const {
@@ -720,5 +720,6 @@ function App() {
     </ThemeProvider>
   );
 }
+
 
 export default App;

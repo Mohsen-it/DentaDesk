@@ -47,7 +47,7 @@ const FloatingQuickActions = memo(function FloatingQuickActions({
   ], [onAddPatient, onAddAppointment, onAddPayment])
 
   return (
-    <Card className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 shadow-lg dark:shadow-lg border-0 bg-white dark:bg-slate-800 backdrop-blur-lg rtl md:bottom-8" role="toolbar" aria-label="إجراءات سريعة">
+    <Card className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 shadow-lg dark:shadow-lg border-0 bg-white dark:bg-card backdrop-blur-lg rtl md:bottom-8" role="toolbar" aria-label="إجراءات سريعة">
       <div className="flex flex-col md:flex-row items-center gap-2 p-3 rtl-layout">
         {/* Action buttons */}
         {actions.map((action, index) => {

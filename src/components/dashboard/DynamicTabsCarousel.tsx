@@ -163,13 +163,13 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
 
   return (
     <div
-      className="h-full flex flex-col bg-slate-100 dark:bg-slate-800 rounded-xl shadow-xl dark:shadow-lg overflow-hidden"
+      className="h-full flex flex-col bg-slate-100 dark:bg-card rounded-xl shadow-xl dark:shadow-lg overflow-hidden"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
     >
       {/* Tab Navigation Header */}
-      <div className="bg-slate-100 dark:bg-slate-800 p-6 border-b border-slate-200 dark:border-slate-700">
+      <div className="bg-slate-100 dark:bg-card p-6 border-b border-slate-200 dark:border-slate-700">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             {activeTabData && (
@@ -196,7 +196,7 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
               size="sm"
               onClick={() => navigateTab('prev')}
               disabled={isTransitioning}
-              className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"
+              className="bg-slate-100 dark:bg-card hover:bg-slate-200 dark:hover:bg-slate-700"
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
@@ -205,7 +205,7 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
               size="sm"
               onClick={() => navigateTab('next')}
               disabled={isTransitioning}
-              className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"
+              className="bg-slate-100 dark:bg-card hover:bg-slate-200 dark:hover:bg-slate-700"
             >
               <ChevronRight className="w-4 h-4" />
             </Button>
@@ -247,7 +247,7 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 ${
                   isActive
                     ? `bg-white dark:bg-slate-900 shadow-md dark:shadow-lg ${tab.color} font-semibold`
-                    : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+                    : 'bg-slate-100 dark:bg-card hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
                 }`}
               >
                 <Icon className="w-4 h-4" aria-hidden="true" />

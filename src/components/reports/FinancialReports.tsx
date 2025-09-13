@@ -1791,7 +1791,7 @@ export default function FinancialReports() {
                       const statusColors = {
                         'completed': 'text-green-600 bg-green-50 dark:bg-green-900/20',
                         'partial': 'text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20',
-                        'pending': 'text-gray-600 bg-gray-50 dark:bg-gray-900/20',
+                        'pending': 'text-gray-600 bg-gray-50 dark:bg-card/20',
                         'failed': 'text-red-600 bg-red-50 dark:bg-red-900/20',
                         'refunded': 'text-purple-600 bg-purple-50 dark:bg-purple-900/20'
                       }

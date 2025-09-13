@@ -49,7 +49,7 @@ const EnhancedHeader = memo(function EnhancedHeader({
             variant="ghost"
             size="sm"
             onClick={onToggleMobileSidebar}
-            className="md:hidden p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg"
+            className="md:hidden p-2 bg-slate-100 dark:bg-card hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg"
             aria-label="فتح القائمة الجانبية"
           >
             <Menu className="w-5 h-5 text-slate-700 dark:text-slate-300" aria-hidden="true" />
@@ -60,7 +60,7 @@ const EnhancedHeader = memo(function EnhancedHeader({
             variant="ghost"
             size="sm"
             onClick={onOpenSettings}
-            className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg"
+            className="p-2 bg-slate-100 dark:bg-card hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg"
             aria-label="فتح الإعدادات"
           >
             <Settings className="w-5 h-5 text-slate-700 dark:text-slate-300" aria-hidden="true" />
@@ -72,7 +72,7 @@ const EnhancedHeader = memo(function EnhancedHeader({
             size="sm"
             onClick={handleRefresh}
             disabled={isGlobalLoading}
-            className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg"
+            className="p-2 bg-slate-100 dark:bg-card hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg"
             aria-label={isGlobalLoading ? "جاري التحديث..." : "تحديث البيانات"}
           >
             <RefreshCw className={`w-5 h-5 text-slate-700 dark:text-slate-300 ${isGlobalLoading ? 'animate-spin' : ''}`} aria-hidden="true" />
@@ -82,13 +82,13 @@ const EnhancedHeader = memo(function EnhancedHeader({
           <Button
             variant="ghost"
             size="sm"
-            className="relative p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg"
+            className="relative p-2 bg-slate-100 dark:bg-card hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg"
             onClick={() => setShowGlobalSearch(false)} // Placeholder - could navigate to alerts
             aria-label={`التنبيهات ${unreadAlertsCount > 0 ? `(${unreadAlertsCount} جديد)` : ''}`}
           >
             <Bell className="w-5 h-5 text-slate-700 dark:text-slate-300" aria-hidden="true" />
             {unreadAlertsCount > 0 && (
-              <Badge className="absolute -top-1 -left-1 bg-red-500 dark:bg-slate-800 text-white dark:text-slate-200 text-xs h-5 w-5 flex items-center justify-center rounded-full p-0" aria-label={`${unreadAlertsCount} تنبيه جديد`}>
+              <Badge className="absolute -top-1 -left-1 bg-red-500 dark:bg-card text-white dark:text-slate-200 text-xs h-5 w-5 flex items-center justify-center rounded-full p-0" aria-label={`${unreadAlertsCount} تنبيه جديد`}>
                 {unreadAlertsCount > 9 ? '9+' : unreadAlertsCount}
               </Badge>
             )}
@@ -101,7 +101,7 @@ const EnhancedHeader = memo(function EnhancedHeader({
             <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-700 dark:text-slate-300 w-5 h-5 rtl:left-3 rtl:right-auto" aria-hidden="true" />
             <Input
               placeholder="البحث الشامل... (F)"
-              className="pr-10 pl-4 py-2 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg shadow-sm dark:shadow-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-slate-700 focus:border-transparent rtl:pr-4 rtl:pl-10"
+              className="pr-10 pl-4 py-2 bg-slate-50 dark:bg-card border-slate-200 dark:border-slate-700 rounded-lg shadow-sm dark:shadow-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-slate-700 focus:border-transparent rtl:pr-4 rtl:pl-10"
               readOnly
               onClick={() => setShowGlobalSearch(true)}
               aria-label="البحث الشامل"
@@ -115,7 +115,7 @@ const EnhancedHeader = memo(function EnhancedHeader({
                 }
               }}
             />
-            <span id="search-shortcut" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-xs text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded rtl:right-3 rtl:left-auto" aria-hidden="true">
+            <span id="search-shortcut" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-xs text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-card px-2 py-1 rounded rtl:right-3 rtl:left-auto" aria-hidden="true">
               F
             </span>
           </div>

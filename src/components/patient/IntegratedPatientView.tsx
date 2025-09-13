@@ -286,7 +286,7 @@ export default function IntegratedPatientView({
       </div>
 
       {/* Quick Actions */}
-      <Card>
+      <Card >
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Plus className="w-5 h-5" />

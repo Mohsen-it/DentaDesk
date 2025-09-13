@@ -645,7 +645,7 @@ const Dashboard = React.memo(function Dashboard({ onAddPatient, onAddAppointment
                       appointment.status === 'scheduled' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
                       appointment.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
                       appointment.status === 'cancelled' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
-                      'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                      'bg-gray-100 text-gray-800 dark:bg-card dark:text-gray-200'
                     }`}>
                       {appointment.status === 'scheduled' ? 'مجدول' :
                        appointment.status === 'completed' ? 'مكتمل' :
