@@ -135,11 +135,20 @@ export default function ExpenseReports() {
       }
     })
 
-    // Status breakdown
+    // Status breakdown - use ALL expenses but only count filtered ones for paid status
+    // For pending and overdue, we need to show the overall status but filter based on time
+    const allExpenses = expenses || []
+    const pendingExpenses = allExpenses.filter(e => e.status === 'pending')
+    const overdueExpenses = allExpenses.filter(e => e.status === 'overdue')
+
+    // Apply time filter to pending and overdue expenses
+    const filteredPendingExpenses = expenseStats?.filteredData?.filter(e => e.status === 'pending') || pendingExpenses
+    const filteredOverdueExpenses = expenseStats?.filteredData?.filter(e => e.status === 'overdue') || overdueExpenses
+
     const statusBreakdown = {
       paid: filteredExpenses.filter(e => e.status === 'paid').length,
-      pending: expenses.filter(e => e.status === 'pending').length,
-      overdue: expenses.filter(e => e.status === 'overdue').length
+      pending: filteredPendingExpenses.length,
+      overdue: filteredOverdueExpenses.length
     }
 
     return {
@@ -402,7 +411,14 @@ export default function ExpenseReports() {
                       'المبلغ'
                     ]}
                     labelFormatter={(label) => `نوع المصروف: ${label}`}
-                    contentStyle={chartConfiguration.tooltip}
+                    contentStyle={{
+                      backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
+                      border: `1px solid ${isDarkMode ? '#374151' : '#d1d5db'}`,
+                      borderRadius: '8px',
+                      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                      fontSize: '14px',
+                      fontWeight: '500'
+                    }}
                   />
                 </RechartsPieChart>
               </ResponsiveContainer>
@@ -479,7 +495,14 @@ export default function ExpenseReports() {
                       'المبلغ'
                     ]}
                     labelFormatter={(label) => `المورد: ${label}`}
-                    contentStyle={chartConfiguration.tooltip}
+                    contentStyle={{
+                      backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
+                      border: `1px solid ${isDarkMode ? '#374151' : '#d1d5db'}`,
+                      borderRadius: '8px',
+                      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                      fontSize: '14px',
+                      fontWeight: '500'
+                    }}
                   />
                   <Bar
                     dataKey="amount"
@@ -536,7 +559,14 @@ export default function ExpenseReports() {
                 <Tooltip
                   formatter={(value) => [formatCurrency(Number(value), currentCurrency), 'المصروفات']}
                   labelFormatter={(label) => `الشهر: ${label}`}
-                  contentStyle={chartConfiguration.tooltip}
+                  contentStyle={{
+                    backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
+                    border: `1px solid ${isDarkMode ? '#374151' : '#d1d5db'}`,
+                    borderRadius: '8px',
+                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                    fontSize: '14px',
+                    fontWeight: '500'
+                  }}
                 />
                 <Area
                   type="monotone"
@@ -628,13 +658,15 @@ export default function ExpenseReports() {
                       const statusColors = {
                         'paid': 'text-green-600 bg-green-50 dark:bg-green-900/20',
                         'pending': 'text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20',
-                        'overdue': 'text-red-600 bg-red-50 dark:bg-red-900/20'
+                        'overdue': 'text-red-600 bg-red-50 dark:bg-red-900/20',
+                        'cancelled': 'text-gray-600 bg-gray-50 dark:bg-gray-900/20'
                       }
 
                       const statusLabels = {
                         'paid': 'مدفوع',
                         'pending': 'معلق',
-                        'overdue': 'متأخر'
+                        'overdue': 'متأخر',
+                        'cancelled': 'ملغي'
                       }
 
                       const typeLabels = {
