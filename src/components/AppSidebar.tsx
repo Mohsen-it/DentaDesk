@@ -15,6 +15,15 @@ import {
   ClipboardList,
   Receipt,
   FileText,
+  Activity,
+  Clock,
+  DollarSign,
+  Shield,
+  TrendingUp,
+  UserCheck,
+  CalendarDays,
+  FileBarChart,
+  Building2,
 } from "lucide-react"
 
 import {
@@ -39,22 +48,22 @@ const navigationItems = [
   {
     title: "لوحة التحكم",
     url: "dashboard",
-    icon: LayoutDashboard,
+    icon: Activity,
   },
   {
     title: "المرضى",
     url: "patients",
-    icon: Users,
+    icon: UserCheck,
   },
   {
     title: "المواعيد",
     url: "appointments",
-    icon: Calendar,
+    icon: CalendarDays,
   },
   {
     title: "المدفوعات",
     url: "payments",
-    icon: CreditCard,
+    icon: DollarSign,
   },
   // {
   //   title: "المخزون",
@@ -74,7 +83,7 @@ const navigationItems = [
   {
     title: "العلاجات السنية",
     url: "dental-treatments",
-    icon: Heart,
+    icon: Stethoscope,
   },
   // {
   //   title: "احتياجات العيادة",
@@ -89,7 +98,7 @@ const navigationItems = [
   {
     title: "التقارير",
     url: "reports",
-    icon: BarChart3,
+    icon: FileBarChart,
   },
   // {
   //   title: "فاتورة تقديرية ",
@@ -99,7 +108,7 @@ const navigationItems = [
   {
     title: "الإعدادات",
     url: "settings",
-    icon: Settings,
+    icon: Shield,
   },
 ]
 
@@ -115,13 +124,13 @@ export function AppSidebar({ activeTab, onTabChange, ...props }: AppSidebarProps
   const clinicLogo = useStableClinicLogo()
 
   return (
-    <Sidebar collapsible="offcanvas" side="right" className="border-l border-border/40 shadow-lg rtl-layout" {...props}>
-      <SidebarHeader className="border-b border-border/40 bg-gradient-to-l from-background to-accent/10">
+    <Sidebar collapsible="offcanvas" side="right" className="border-l border-border/50 shadow-xl rtl-layout bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800" {...props}>
+      <SidebarHeader className="border-b border-border/50 bg-gradient-to-l from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 shadow-sm">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent/30 transition-colors duration-200 flex-rtl">
-                <div className="flex aspect-square size-12 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 to-sky-600 text-white shadow-lg overflow-hidden">
+              <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-300 flex-rtl shadow-sm hover:shadow-md">
+                <div className="flex aspect-square size-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-lg overflow-hidden ring-2 ring-blue-500/20">
                   {clinicLogo && clinicLogo.trim() !== '' ? (
                     <img
                       src={clinicLogo}
@@ -144,10 +153,10 @@ export function AppSidebar({ activeTab, onTabChange, ...props }: AppSidebarProps
                   )}
                 </div>
                 <div className="grid flex-1 text-right leading-tight">
-                  <span className="truncate font-bold text-xl text-foreground">
+                  <span className="truncate font-bold text-l text-slate-800 dark:text-slate-100">
                     {clinicName}
                   </span>
-                  <span className="truncate text-sm text-muted-foreground font-medium">
+                  <span className="truncate text-sm text-slate-600 dark:text-slate-400 font-medium">
                     نظام إدارة العيادة
                   </span>
                 </div>
@@ -157,22 +166,30 @@ export function AppSidebar({ activeTab, onTabChange, ...props }: AppSidebarProps
         </SidebarMenu>
       </SidebarHeader>
 
-      <SidebarContent className="px-3 py-3">
-        <SidebarGroup className="space-y-1">
-          <SidebarGroupLabel className="text-sm font-bold text-muted-foreground uppercase tracking-wider px-2 py-2 text-right">
+      <SidebarContent className="px-4 py-6">
+        <SidebarGroup className="space-y-2">
+          <SidebarGroupLabel className="text-sm font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider px-3 py-2 text-right border-r-2 border-blue-500">
             القائمة الرئيسية
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1 nav-rtl">
+            <SidebarMenu className="space-y-2 nav-rtl">
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     isActive={activeTab === item.url}
                     onClick={() => onTabChange(item.url)}
-                    className="flex items-center gap-3 w-full text-right justify-start hover:bg-accent/50 transition-colors duration-200 py-2 px-3 text-base nav-item"
+                    className="flex items-center gap-4 w-full text-right justify-start hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/30 dark:hover:to-indigo-900/30 transition-all duration-300 py-3 px-4 text-base nav-item rounded-xl shadow-sm hover:shadow-md border border-transparent hover:border-blue-200 dark:hover:border-blue-700/50 group"
                   >
-                    <item.icon className="size-5 text-sky-600 dark:text-sky-400 nav-icon" />
-                    <span className="font-semibold text-sm">{item.title}</span>
+                    <item.icon className={`size-5 nav-icon transition-all duration-300 ${
+                      activeTab === item.url
+                        ? 'text-blue-600 dark:text-blue-400 scale-110'
+                        : 'text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400'
+                    }`} />
+                    <span className={`font-medium text-sm transition-all duration-300 ${
+                      activeTab === item.url
+                        ? 'text-slate-900 dark:text-slate-100 font-semibold'
+                        : 'text-slate-700 dark:text-slate-300'
+                    }`}>{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -181,11 +198,11 @@ export function AppSidebar({ activeTab, onTabChange, ...props }: AppSidebarProps
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-border/40 bg-gradient-to-r from-background to-accent/10">
+      <SidebarFooter className="border-t border-border/50 bg-gradient-to-r from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 shadow-inner">
         <SidebarMenu>
           <SidebarMenuItem>
-            <div className="flex items-center gap-3 p-2 rounded-lg">
-              <div className="flex aspect-square size-8 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-sky-600 text-white overflow-hidden">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 shadow-sm">
+              <div className="flex aspect-square size-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-purple-700 text-white overflow-hidden ring-2 ring-indigo-500/20 shadow-md">
                 {clinicLogo && clinicLogo.trim() !== '' ? (
                   <img
                     src={clinicLogo}
@@ -208,8 +225,8 @@ export function AppSidebar({ activeTab, onTabChange, ...props }: AppSidebarProps
                 )}
               </div>
               <div className="grid flex-1 text-right leading-tight">
-                <span className="truncate font-semibold text-sm">د. {doctorName}</span>
-                <span className="truncate text-xs text-muted-foreground">
+                <span className="truncate font-bold text-slate-800 dark:text-slate-200 text-sm">د. {doctorName}</span>
+                <span className="truncate text-xs text-slate-600 dark:text-slate-400 font-medium">
                   {clinicName}
                 </span>
               </div>
