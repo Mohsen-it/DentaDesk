@@ -128,45 +128,38 @@ export const defaultShortcuts = {
     category: 'تنقل'
   },
 
-  inventory: {
+  labs: {
     key: '4',
-    description: 'المخزون',
+    description: 'المختبرات',
     arabicKey: '٤',
     category: 'تنقل'
   },
 
-  labs: {
+  treatments: {
     key: '5',
-    description: 'المختبرات',
+    description: 'العلاجات السنية',
     arabicKey: '٥',
     category: 'تنقل'
   },
 
-  medications: {
+  expenses: {
     key: '6',
-    description: 'الأدوية والوصفات',
+    description: 'مصروفات العيادة',
     arabicKey: '٦',
     category: 'تنقل'
   },
 
-  treatments: {
+  reports: {
     key: '7',
-    description: 'العلاجات السنية',
+    description: 'التقارير',
     arabicKey: '٧',
     category: 'تنقل'
   },
 
-  clinicNeeds: {
+  settings: {
     key: '8',
-    description: 'احتياجات العيادة',
+    description: 'الإعدادات',
     arabicKey: '٨',
-    category: 'تنقل'
-  },
-
-  reports: {
-    key: '9',
-    description: 'التقارير',
-    arabicKey: '٩',
     category: 'تنقل'
   },
 
@@ -207,7 +200,7 @@ export const defaultShortcuts = {
     category: 'عمليات'
   },
 
-  settings: {
+  settingsNavigation: {
     key: 'F1',
     description: 'الإعدادات',
     arabicKey: 'F1',
@@ -230,11 +223,9 @@ export function useSystemShortcuts({
   onNavigateToPatients,
   onNavigateToAppointments,
   onNavigateToPayments,
-  onNavigateToInventory,
   onNavigateToLabs,
-  onNavigateToMedications,
   onNavigateToTreatments,
-  onNavigateToClinicNeeds,
+  onNavigateToExpenses,
   onNavigateToReports,
   onNavigateToSettings,
   onNewPatient,
@@ -247,11 +238,9 @@ export function useSystemShortcuts({
   onNavigateToPatients?: () => void
   onNavigateToAppointments?: () => void
   onNavigateToPayments?: () => void
-  onNavigateToInventory?: () => void
   onNavigateToLabs?: () => void
-  onNavigateToMedications?: () => void
   onNavigateToTreatments?: () => void
-  onNavigateToClinicNeeds?: () => void
+  onNavigateToExpenses?: () => void
   onNavigateToReports?: () => void
   onNavigateToSettings?: () => void
   onNewPatient?: () => void
@@ -261,7 +250,6 @@ export function useSystemShortcuts({
   enabled?: boolean
 }) {
   const shortcuts: KeyboardShortcut[] = [
-
 
     // التنقل
     ...(onNavigateToDashboard ? [{
@@ -284,19 +272,9 @@ export function useSystemShortcuts({
       action: onNavigateToPayments
     }] : []),
 
-    ...(onNavigateToInventory ? [{
-      ...defaultShortcuts.inventory,
-      action: onNavigateToInventory
-    }] : []),
-
     ...(onNavigateToLabs ? [{
       ...defaultShortcuts.labs,
       action: onNavigateToLabs
-    }] : []),
-
-    ...(onNavigateToMedications ? [{
-      ...defaultShortcuts.medications,
-      action: onNavigateToMedications
     }] : []),
 
     ...(onNavigateToTreatments ? [{
@@ -304,9 +282,9 @@ export function useSystemShortcuts({
       action: onNavigateToTreatments
     }] : []),
 
-    ...(onNavigateToClinicNeeds ? [{
-      ...defaultShortcuts.clinicNeeds,
-      action: onNavigateToClinicNeeds
+    ...(onNavigateToExpenses ? [{
+      ...defaultShortcuts.expenses,
+      action: onNavigateToExpenses
     }] : []),
 
     ...(onNavigateToReports ? [{

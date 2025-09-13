@@ -155,7 +155,7 @@ function AppContent() {
       // استخدام الدالة المحسنة لمعالجة أحداث لوحة المفاتيح
       const enhanced = enhanceKeyboardEvent(event)
 
-      // Navigation shortcuts (0-9) with Arabic numeral support
+      // Navigation shortcuts (0-8) with Arabic numeral support - updated for visible tabs
       if (enhanced.mappedKey === '0') {
         enhanced.preventDefault()
         setActiveTab('dashboard')
@@ -170,22 +170,19 @@ function AppContent() {
         handleTabChange('payments')
       } else if (enhanced.mappedKey === '4') {
         enhanced.preventDefault()
-        setActiveTab('inventory')
+        setActiveTab('labs')
       } else if (enhanced.mappedKey === '5') {
         enhanced.preventDefault()
-        setActiveTab('labs')
+        setActiveTab('dental-treatments')
       } else if (enhanced.mappedKey === '6') {
         enhanced.preventDefault()
-        setActiveTab('medications')
+        setActiveTab('expenses')
       } else if (enhanced.mappedKey === '7') {
         enhanced.preventDefault()
-        setActiveTab('dental-treatments')
+        setActiveTab('reports')
       } else if (enhanced.mappedKey === '8') {
         enhanced.preventDefault()
-        setActiveTab('clinic-needs')
-      } else if (enhanced.mappedKey === '9') {
-        enhanced.preventDefault()
-        setActiveTab('reports')
+        setActiveTab('settings')
       }
 
       // Quick actions - اختصارات متجاورة ASD (دعم محسن للعربية والإنجليزية)
