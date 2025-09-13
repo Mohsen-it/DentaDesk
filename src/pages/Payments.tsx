@@ -24,6 +24,7 @@ import DeletePaymentDialog from '@/components/payments/DeletePaymentDialog'
 import PaymentReceiptDialog from '@/components/payments/PaymentReceiptDialog'
 import PaymentDetailsDialog from '@/components/payments/PaymentDetailsDialog'
 import PaymentTable from '@/components/payments/PaymentTable'
+import PasswordSettings from '@/components/payments/PasswordSettings'
 import {
   Plus,
   DollarSign,
@@ -586,6 +587,9 @@ export default function Payments() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Password Settings */}
+      <PasswordSettings />
 
       {/* Search and Filter Controls */}
       <Card>

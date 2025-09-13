@@ -38,6 +38,10 @@ import { AppSidebar } from './components/AppSidebar'
 import { AppSidebarTrigger } from './components/AppSidebarTrigger'
 import LiveDateTime from './components/LiveDateTime'
 import SplashScreen from './components/SplashScreen'
+import PaymentPasswordModal from './components/payments/PaymentPasswordModal'
+import PasswordResetModal from './components/payments/PasswordResetModal'
+import PasswordSetupModal from './components/payments/PasswordSetupModal'
+import { isPasswordSet } from './utils/paymentSecurity'
 
 // shadcn/ui imports
 import { Button } from '@/components/ui/button'
@@ -98,7 +102,7 @@ function AppContent() {
   //   onNavigateToDashboard: () => setActiveTab('dashboard'),
   //   onNavigateToPatients: () => setActiveTab('patients'),
   //   onNavigateToAppointments: () => setActiveTab('appointments'),
-  //   onNavigateToPayments: () => setActiveTab('payments'),
+  //   onNavigateToPayments: () => handleTabChange('payments'),
   //   onNavigateToTreatments: () => setActiveTab('dental-treatments'),
   //   onNewPatient: () => setShowAddPatient(true),
   //   onNewAppointment: () => setShowAddAppointment(true),
@@ -163,7 +167,7 @@ function AppContent() {
         setActiveTab('appointments')
       } else if (enhanced.mappedKey === '3') {
         enhanced.preventDefault()
-        setActiveTab('payments')
+        handleTabChange('payments')
       } else if (enhanced.mappedKey === '4') {
         enhanced.preventDefault()
         setActiveTab('inventory')
@@ -239,6 +243,56 @@ function AppContent() {
   const [showAddPatient, setShowAddPatient] = useState(false)
   const [showAddPayment, setShowAddPayment] = useState(false)
   const [loginLoading, setLoginLoading] = useState(false)
+
+  // Password protection states
+  const [showPaymentPasswordModal, setShowPaymentPasswordModal] = useState(false)
+  const [showPasswordResetModal, setShowPasswordResetModal] = useState(false)
+  const [showPasswordSetupModal, setShowPasswordSetupModal] = useState(false)
+  const [isPaymentsAuthenticated, setIsPaymentsAuthenticated] = useState(false)
+
+  // Custom tab change handler with optional password protection
+  const handleTabChange = (tab: string) => {
+    if (tab === 'payments') {
+      if (isPasswordSet()) {
+        // Password is set, check if already authenticated
+        if (!isPaymentsAuthenticated) {
+          setShowPaymentPasswordModal(true)
+        } else {
+          setActiveTab('payments')
+        }
+      } else {
+        // No password set, allow direct access
+        setActiveTab('payments')
+      }
+    } else {
+      // Reset payments authentication when switching away
+      if (isPaymentsAuthenticated) {
+        setIsPaymentsAuthenticated(false)
+      }
+      setActiveTab(tab)
+    }
+  }
+
+  // Handle successful payment authentication
+  const handlePaymentAuthSuccess = () => {
+    setIsPaymentsAuthenticated(true)
+    setActiveTab('payments')
+  }
+
+  // Handle password setup success
+  const handlePasswordSetupSuccess = () => {
+    setIsPaymentsAuthenticated(true)
+    setActiveTab('payments')
+  }
+
+  // Handle password reset success
+  const handlePasswordResetSuccess = () => {
+    setShowPasswordResetModal(false)
+    // After reset, user needs to authenticate again
+    setTimeout(() => {
+      setShowPaymentPasswordModal(true)
+    }, 500)
+  }
 
 
 
@@ -517,7 +571,7 @@ function AppContent() {
 
   return (
     <SidebarProvider>
-        <AppSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+        <AppSidebar activeTab={activeTab} onTabChange={handleTabChange} />
         <SidebarInset>
           <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/40 rtl-layout">
             <div className="flex items-center gap-2 px-4">
@@ -628,6 +682,29 @@ function AppContent() {
       />
 
 
+
+        {/* Password Protection Modals */}
+        <PaymentPasswordModal
+          isOpen={showPaymentPasswordModal}
+          onClose={() => setShowPaymentPasswordModal(false)}
+          onSuccess={handlePaymentAuthSuccess}
+          onForgotPassword={() => {
+            setShowPaymentPasswordModal(false)
+            setShowPasswordResetModal(true)
+          }}
+        />
+
+        <PasswordResetModal
+          isOpen={showPasswordResetModal}
+          onClose={() => setShowPasswordResetModal(false)}
+          onSuccess={handlePasswordResetSuccess}
+        />
+
+        <PasswordSetupModal
+          isOpen={showPasswordSetupModal}
+          onClose={() => setShowPasswordSetupModal(false)}
+          onSuccess={handlePasswordSetupSuccess}
+        />
 
         <Toaster />
       </SidebarProvider>
