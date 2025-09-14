@@ -8,6 +8,14 @@ import {
 } from '../types'
 import { PdfService } from './pdfService'
 import { getTreatmentNameInArabic, getCategoryNameInArabic } from '../data/teethData'
+import {
+  formatCurrency,
+  formatCurrencyWithConfig,
+  convertCurrency,
+  getCurrencyConfig,
+  getDefaultCurrency,
+  setDefaultCurrency
+} from '../lib/utils'
 
 export class EnhancedPdfReports {
   // Create enhanced HTML report for appointments
@@ -363,7 +371,10 @@ export class EnhancedPdfReports {
             <div class="card-icon">💰</div>
             <div class="card-content">
               <h3>إجمالي الإيرادات</h3>
-              <div class="number">$${data.totalRevenue?.toLocaleString() || '0'}</div>
+              <div class="number">${(() => {
+                const convertedAmount = convertCurrency(data.totalRevenue || 0, 'USD', settings?.currency || 'USD')
+                return formatCurrency(convertedAmount, settings?.currency || 'USD', false)
+              })()}</div>
             </div>
           </div>
           <div class="summary-card success">
@@ -422,7 +433,10 @@ export class EnhancedPdfReports {
                     return `
                       <tr>
                         <td class="category-cell">${methodIcon} ${item.method}</td>
-                        <td class="number-cell">$${item.amount?.toLocaleString() || '0'}</td>
+                        <td class="number-cell">${(() => {
+                          const convertedAmount = convertCurrency(item.amount || 0, 'USD', settings?.currency || 'USD')
+                          return formatCurrency(convertedAmount, settings?.currency || 'USD', false)
+                        })()}</td>
                         <td class="percentage-cell">${percentage.toFixed(1)}%</td>
                         <td class="chart-cell">
                           <div class="progress-bar">
@@ -462,9 +476,15 @@ export class EnhancedPdfReports {
                   ${data.revenueByTreatment.slice(0, 10).map((item: any) => `
                     <tr>
                       <td class="category-cell">${getTreatmentNameInArabic(item.treatment)}</td>
-                      <td class="number-cell">$${item.amount?.toLocaleString() || '0'}</td>
+                      <td class="number-cell">${(() => {
+                        const convertedAmount = convertCurrency(item.amount || 0, 'USD', settings?.currency || 'USD')
+                        return formatCurrency(convertedAmount, settings?.currency || 'USD', false)
+                      })()}</td>
                       <td class="number-cell">${item.count?.toLocaleString() || '0'}</td>
-                      <td class="number-cell">$${item.avgAmount?.toLocaleString() || '0'}</td>
+                      <td class="number-cell">${(() => {
+                        const convertedAvg = convertCurrency(item.avgAmount || 0, 'USD', settings?.currency || 'USD')
+                        return formatCurrency(convertedAvg, settings?.currency || 'USD', false)
+                      })()}</td>
                     </tr>
                   `).join('')}
                 </tbody>
@@ -643,7 +663,10 @@ export class EnhancedPdfReports {
             <div class="card-icon">💰</div>
             <div class="card-content">
               <h3>القيمة الإجمالية</h3>
-              <div class="number">$${data.totalValue?.toLocaleString() || '0'}</div>
+              <div class="number">${(() => {
+                const convertedAmount = convertCurrency(data.totalValue || 0, 'USD', settings?.currency || 'USD')
+                return formatCurrency(convertedAmount, settings?.currency || 'USD', false)
+              })()}</div>
             </div>
           </div>
           <div class="summary-card warning">
@@ -696,11 +719,20 @@ export class EnhancedPdfReports {
                     </div>
                     <div class="detail-item">
                       <span class="detail-label">سعر الوحدة:</span>
-                      <span class="detail-value">$${(item.unit_price || item.cost_per_unit || 0).toLocaleString()}</span>
+                      <span class="detail-value">${(() => {
+                        const unitPrice = item.unit_price || item.cost_per_unit || 0
+                        const convertedPrice = convertCurrency(unitPrice, 'USD', settings?.currency || 'USD')
+                        return formatCurrency(convertedPrice, settings?.currency || 'USD', false)
+                      })()}</span>
                     </div>
                     <div class="detail-item">
                       <span class="detail-label">القيمة الإجمالية:</span>
-                      <span class="detail-value">$${((item.unit_price || item.cost_per_unit || 0) * item.quantity).toLocaleString()}</span>
+                      <span class="detail-value">${(() => {
+                        const unitPrice = item.unit_price || item.cost_per_unit || 0
+                        const totalValue = unitPrice * item.quantity
+                        const convertedValue = convertCurrency(totalValue, 'USD', settings?.currency || 'USD')
+                        return formatCurrency(convertedValue, settings?.currency || 'USD', false)
+                      })()}</span>
                     </div>
                     <div class="detail-item">
                       <span class="detail-label">الحد الأدنى:</span>
@@ -762,7 +794,10 @@ export class EnhancedPdfReports {
                     <tr>
                       <td class="category-name">${item.category}</td>
                       <td class="count-cell">${item.count.toLocaleString()}</td>
-                      <td class="value-cell">$${item.value?.toLocaleString() || '0'}</td>
+                      <td class="value-cell">${(() => {
+                        const convertedValue = convertCurrency(item.value || 0, 'USD', settings?.currency || 'USD')
+                        return formatCurrency(convertedValue, settings?.currency || 'USD', false)
+                      })()}</td>
                       <td class="progress-cell">
                         <div class="progress-bar">
                           <div class="progress-fill" style="width: ${percentage}%"></div>
@@ -914,7 +949,10 @@ export class EnhancedPdfReports {
             <div class="footer-right">
               <div class="footer-stats">
                 <span class="stat-item">📦 ${data.totalItems?.toLocaleString() || '0'} صنف</span>
-                <span class="stat-item">💰 $${data.totalValue?.toLocaleString() || '0'} قيمة</span>
+                <span class="stat-item">💰 ${(() => {
+                  const convertedValue = convertCurrency(data.totalValue || 0, 'USD', settings?.currency || 'USD')
+                  return formatCurrency(convertedValue, settings?.currency || 'USD', false)
+                })()} قيمة</span>
                 <span class="stat-item">⚠️ ${data.lowStockItems?.toLocaleString() || '0'} منخفض</span>
                 <span class="stat-item">📊 ${data.dataCount?.toLocaleString() || '0'} مفلتر</span>
               </div>
@@ -969,11 +1007,17 @@ export class EnhancedPdfReports {
             </div>
             <div class="stats-grid">
               <div class="stat-card">
-                <div class="stat-value">${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(data.totalRevenue || 0)}</div>
+                <div class="stat-value">${(() => {
+                  const convertedAmount = convertCurrency(data.totalRevenue || 0, 'USD', settings?.currency || 'USD')
+                  return formatCurrency(convertedAmount, settings?.currency || 'USD', false)
+                })()}</div>
                 <div class="stat-label">إجمالي الإيرادات</div>
               </div>
               <div class="stat-card">
-                <div class="stat-value">${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(data.averageTreatmentCost || 0)}</div>
+                <div class="stat-value">${(() => {
+                  const convertedAmount = convertCurrency(data.averageTreatmentCost || 0, 'USD', settings?.currency || 'USD')
+                  return formatCurrency(convertedAmount, settings?.currency || 'USD', false)
+                })()}</div>
                 <div class="stat-label">متوسط تكلفة العلاج</div>
               </div>
               <div class="stat-card">
@@ -1099,9 +1143,15 @@ export class EnhancedPdfReports {
                     return `
                       <tr>
                         <td class="category-cell">${item.category}</td>
-                        <td class="number-cell">${item.revenue?.toLocaleString() || '0'} ${settings?.currency || '$'}</td>
+                        <td class="number-cell">${(() => {
+                          const convertedRevenue = convertCurrency(item.revenue || 0, 'USD', settings?.currency || 'USD')
+                          return formatCurrency(convertedRevenue, settings?.currency || 'USD', false)
+                        })()}</td>
                         <td class="number-cell">${item.count?.toLocaleString() || '0'}</td>
-                        <td class="number-cell">${avgCost.toLocaleString()} ${settings?.currency || '$'}</td>
+                        <td class="number-cell">${(() => {
+                          const convertedAvg = convertCurrency(avgCost, 'USD', settings?.currency || 'USD')
+                          return formatCurrency(convertedAvg, settings?.currency || 'USD', false)
+                        })()}</td>
                       </tr>
                     `
                   }).join('')}
@@ -1146,7 +1196,10 @@ export class EnhancedPdfReports {
                         const year = date.getFullYear()
                         return `${day}/${month}/${year}`
                       })() : 'غير محدد'}</td>
-                      <td class="number-cell">${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(treatment.cost || 0)}</td>
+                      <td class="number-cell">${(() => {
+                        const convertedCost = convertCurrency(treatment.cost || 0, 'USD', settings?.currency || 'USD')
+                        return formatCurrency(convertedCost, settings?.currency || 'USD', false)
+                      })()}</td>
                     </tr>
                   `).join('')}
                 </tbody>

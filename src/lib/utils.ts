@@ -167,6 +167,23 @@ export function getCurrencyConfig(currencyCode: string): CurrencyConfig {
   return SUPPORTED_CURRENCIES[code] || SUPPORTED_CURRENCIES.USD
 }
 
+// Currency exchange rate configuration
+export interface ExchangeRateConfig {
+  from: string
+  to: string
+  rate: number
+  lastUpdated: string
+}
+
+// Default exchange rates (can be updated from external API or settings)
+const DEFAULT_EXCHANGE_RATES: { [key: string]: number } = {
+  'USD_TO_SYP': 12500, // 1 USD = 12,500 SYP
+  'SYP_TO_USD': 0.00008, // 1 SYP = 0.00008 USD
+}
+
+// Exchange rate storage
+let exchangeRates = { ...DEFAULT_EXCHANGE_RATES }
+
 // Get default currency from settings store (will be implemented)
 let defaultCurrency = 'USD'
 
@@ -176,6 +193,49 @@ export function setDefaultCurrency(currency: string) {
 
 export function getDefaultCurrency(): string {
   return defaultCurrency
+}
+
+// Currency conversion functions
+export function convertCurrency(amount: number, fromCurrency: string, toCurrency: string): number {
+  // If same currency, return original amount
+  if (fromCurrency === toCurrency) {
+    return amount
+  }
+
+  // Handle USD to SYP conversion
+  if (fromCurrency === 'USD' && toCurrency === 'SYP') {
+    return amount * getExchangeRate('USD_TO_SYP')
+  }
+
+  // Handle SYP to USD conversion
+  if (fromCurrency === 'SYP' && toCurrency === 'USD') {
+    return amount * getExchangeRate('SYP_TO_USD')
+  }
+
+  // For other currencies, return original amount (can be extended)
+  console.warn(`Currency conversion not supported: ${fromCurrency} to ${toCurrency}`)
+  return amount
+}
+
+export function getExchangeRate(pair: string): number {
+  return exchangeRates[pair] || 1
+}
+
+export function setExchangeRate(pair: string, rate: number): void {
+  exchangeRates[pair] = rate
+}
+
+export function updateExchangeRate(from: string, to: string, rate: number): void {
+  const pair = `${from}_TO_${to}`.toUpperCase()
+  exchangeRates[pair] = rate
+}
+
+export function resetExchangeRates(): void {
+  exchangeRates = { ...DEFAULT_EXCHANGE_RATES }
+}
+
+export function getExchangeRates(): { [key: string]: number } {
+  return { ...exchangeRates }
 }
 
 export function formatCurrency(amount: number, currency?: string, useArabicNumerals: boolean = false): string {

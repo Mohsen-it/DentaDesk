@@ -10,6 +10,14 @@ import html2canvas from 'html2canvas'
 import { EnhancedPdfReports } from './enhancedPdfReports'
 import { getTreatmentNameInArabic, getCategoryNameInArabic, getStatusLabelInArabic, getPaymentStatusInArabic, getPriorityLabelInArabic, getClinicNeedStatusInArabic } from '@/utils/arabicTranslations'
 import { getPDFWorker, PDFProcessingWorker } from './pdfWorker'
+import {
+  formatCurrency,
+  formatCurrencyWithConfig,
+  convertCurrency,
+  getCurrencyConfig,
+  getDefaultCurrency,
+  setDefaultCurrency
+} from '../lib/utils'
 
 export class PdfService {
   // Enhanced color scheme optimized for print clarity
@@ -1662,7 +1670,7 @@ export class PdfService {
             'TRY': '₺',
             'SAR': 'ر.س'
           }
-          const symbol = currencySymbols[clinic_info.currency] || clinic_info.currency
+          const symbol = currencySymbols[clinic_info.currency as keyof typeof currencySymbols] || clinic_info.currency
           return `${amount.toLocaleString('ar-SA')} ${symbol}`
         }
         return `${amount.toLocaleString('ar-SA')} ل.س`
@@ -3217,10 +3225,12 @@ export class PdfService {
 
     // تنسيق العملة
     const formatCurrency = (amount: number) => {
-      return new Intl.NumberFormat('ar-SA', {
-        style: 'currency',
-        currency: 'SAR'
-      }).format(amount || 0)
+      try {
+        const config = getCurrencyConfig(settings?.currency || getDefaultCurrency())
+        return formatCurrencyWithConfig(amount || 0, config)
+      } catch (error) {
+        return `$${(amount || 0).toFixed(2)}`
+      }
     }
 
     // دالة لإنشاء جدول محمي من الانقطاع
@@ -3879,23 +3889,23 @@ export class PdfService {
     }
 
     const getStatusColor = (status: string) => {
-      const colors = {
+      const colors: { [key: string]: string } = {
         pending: '#f59e0b',
         ordered: '#3b82f6',
         received: '#10b981',
         cancelled: '#ef4444'
       }
-      return colors[status] || '#6b7280'
+      return colors[status as keyof typeof colors] || '#6b7280'
     }
 
     const getPriorityColor = (priority: string) => {
-      const colors = {
+      const colors: { [key: string]: string } = {
         urgent: '#dc2626',
         high: '#f59e0b',
         medium: '#3b82f6',
         low: '#10b981'
       }
-      return colors[priority] || '#6b7280'
+      return colors[priority as keyof typeof colors] || '#6b7280'
     }
 
 
@@ -4091,7 +4101,7 @@ export class PdfService {
               </tr>
             </thead>
             <tbody>
-              ${data.needsByStatus.map(item => `
+              ${data.needsByStatus.map((item: any) => `
                 <tr>
                   <td><span class="badge badge-${item.status}">${getStatusLabel(item.status)}</span></td>
                   <td>${item.count}</td>
@@ -4117,7 +4127,7 @@ export class PdfService {
               </tr>
             </thead>
             <tbody>
-              ${data.needsByPriority.map(item => `
+              ${data.needsByPriority.map((item: any) => `
                 <tr>
                   <td><span class="badge badge-${item.priority}">${getPriorityLabel(item.priority)}</span></td>
                   <td>${item.count}</td>
@@ -4142,7 +4152,7 @@ export class PdfService {
               </tr>
             </thead>
             <tbody>
-              ${data.topExpensiveNeeds.map(need => `
+              ${data.topExpensiveNeeds.map((need: any) => `
                 <tr>
                   <td>${need.need_name}</td>
                   <td>${need.quantity}</td>
@@ -4166,7 +4176,7 @@ export class PdfService {
               </tr>
             </thead>
             <tbody>
-              ${data.needsByCategory.map(item => `
+              ${data.needsByCategory.map((item: any) => `
                 <tr>
                   <td>${item.category || 'غير محدد'}</td>
                   <td>${item.count}</td>
@@ -4192,7 +4202,7 @@ export class PdfService {
               </tr>
             </thead>
             <tbody>
-              ${data.urgentNeeds.slice(0, 10).map(need => `
+              ${data.urgentNeeds.slice(0, 10).map((need: any) => `
                 <tr>
                   <td>${need.need_name}</td>
                   <td><span class="badge badge-${need.status}">${getStatusLabel(need.status)}</span></td>
@@ -4220,7 +4230,7 @@ export class PdfService {
               </tr>
             </thead>
             <tbody>
-              ${data.pendingNeeds.slice(0, 10).map(need => `
+              ${data.pendingNeeds.slice(0, 10).map((need: any) => `
                 <tr>
                   <td>${need.need_name}</td>
                   <td>${need.category || 'غير محدد'}</td>
@@ -4248,7 +4258,7 @@ export class PdfService {
               </tr>
             </thead>
             <tbody>
-              ${data.recentlyReceived.slice(0, 10).map(need => `
+              ${data.recentlyReceived.slice(0, 10).map((need: any) => `
                 <tr>
                   <td>${need.need_name}</td>
                   <td>${need.category || 'غير محدد'}</td>
@@ -4284,20 +4294,10 @@ export class PdfService {
   private static createComprehensiveFinancialReportHTML(data: any, settings?: ClinicSettings | null): string {
     const formatCurrency = (amount: number) => {
       try {
-        // Import currency utilities
-        const { getCurrencyConfig, formatCurrencyWithConfig, getDefaultCurrency } = require('@/lib/utils')
         const config = getCurrencyConfig(settings?.currency || getDefaultCurrency())
         return formatCurrencyWithConfig(amount || 0, config)
       } catch (error) {
-        // Fallback formatting with dynamic currency
-        try {
-          const { getCurrencyConfig, getDefaultCurrency } = require('@/lib/utils')
-          const config = getCurrencyConfig(settings?.currency || getDefaultCurrency())
-          const formattedAmount = amount.toLocaleString('en-US', { minimumFractionDigits: config.decimals, maximumFractionDigits: config.decimals })
-          return config.position === 'before' ? `${config.symbol}${formattedAmount}` : `${formattedAmount} ${config.symbol}`
-        } catch (fallbackError) {
-          return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-        }
+        return `$${(amount || 0).toFixed(2)}`
       }
     }
     const formatDate = (dateStr: string) => {
@@ -4575,7 +4575,7 @@ export class PdfService {
               </tr>
             </thead>
             <tbody>
-              ${data.revenueByPaymentMethod.map(method => `
+              ${data.revenueByPaymentMethod.map((method: any) => `
                 <tr>
                   <td>${method.method}</td>
                   <td>${formatCurrency(method.amount)}</td>
@@ -4600,7 +4600,7 @@ export class PdfService {
               </tr>
             </thead>
             <tbody>
-              ${data.expensesByType.map(expense => `
+              ${data.expensesByType.map((expense: any) => `
                 <tr>
                   <td>${expense.type}</td>
                   <td>${formatCurrency(expense.amount)}</td>
@@ -4628,11 +4628,11 @@ export class PdfService {
               </tr>
             </thead>
             <tbody>
-              ${data.expenses.slice(0, 10).map(expense => `
+              ${data.expenses.slice(0, 10).map((expense: any) => `
                 <tr>
                   <td>${expense.expense_name || 'غير محدد'}</td>
                   <td>${(() => {
-                    const typeMapping = {
+                    const typeMapping: { [key: string]: string } = {
                       'salary': 'رواتب',
                       'utilities': 'مرافق',
                       'rent': 'إيجار',
@@ -4641,17 +4641,17 @@ export class PdfService {
                       'insurance': 'تأمين',
                       'other': 'أخرى'
                     }
-                    return typeMapping[expense.expense_type] || expense.expense_type || 'غير محدد'
+                    return typeMapping[expense.expense_type as string] || expense.expense_type || 'غير محدد'
                   })()}</td>
                   <td>${formatCurrency(expense.amount || 0)}</td>
                   <td>${(() => {
-                    const methodMapping = {
+                    const methodMapping: { [key: string]: string } = {
                       'cash': 'نقداً',
                       'bank_transfer': 'تحويل بنكي',
                       'check': 'شيك',
                       'credit_card': 'بطاقة ائتمان'
                     }
-                    return methodMapping[expense.payment_method] || expense.payment_method || 'غير محدد'
+                    return methodMapping[expense.payment_method as string] || expense.payment_method || 'غير محدد'
                   })()}</td>
                   <td>${expense.payment_date ? (() => {
                     try {
