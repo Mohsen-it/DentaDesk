@@ -196,6 +196,9 @@ export function AppSidebar({ activeTab, onTabChange, ...props }: AppSidebarProps
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+                 {/* Floating Quick Actions - redesigned as FAB */}
+     
+
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

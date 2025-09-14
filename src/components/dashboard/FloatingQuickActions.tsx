@@ -1,11 +1,12 @@
-import React, { memo, useMemo } from 'react'
+import React, { memo, useMemo, useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import {
   UserPlus,
   Calendar,
   CreditCard,
-  Zap
+  Plus,
+  X
 } from 'lucide-react'
 
 interface FloatingQuickActionsProps {
@@ -19,65 +20,91 @@ const FloatingQuickActions = memo(function FloatingQuickActions({
   onAddAppointment,
   onAddPayment
 }: FloatingQuickActionsProps) {
+  const [isExpanded, setIsExpanded] = useState(false)
+
   const actions = useMemo(() => [
     {
       label: 'إضافة مريض',
       icon: UserPlus,
-      color: 'bg-blue-600 hover:bg-blue-700 focus:bg-blue-500 dark:bg-blue-700 dark:hover:bg-blue-800 dark:focus:bg-blue-900',
-      textColor: 'text-white',
-      shortcut: 'A',
+      color: 'bg-blue-500 hover:bg-blue-600',
       onClick: onAddPatient
     },
     {
       label: 'حجز موعد',
       icon: Calendar,
-      color: 'bg-blue-600 hover:bg-blue-700 focus:bg-blue-500 dark:bg-blue-700 dark:hover:bg-blue-800 dark:focus:bg-blue-900',
-      textColor: 'text-white',
-      shortcut: 'S',
+      color: 'bg-green-500 hover:bg-green-600',
       onClick: onAddAppointment
     },
     {
       label: 'تسجيل دفعة',
       icon: CreditCard,
-      color: 'bg-blue-600 hover:bg-blue-700 focus:bg-blue-500 dark:bg-blue-700 dark:hover:bg-blue-800 dark:focus:bg-blue-900',
-      textColor: 'text-white',
-      shortcut: 'D',
+      color: 'bg-purple-500 hover:bg-purple-600',
       onClick: onAddPayment
     }
   ], [onAddPatient, onAddAppointment, onAddPayment])
 
+  const toggleExpanded = () => setIsExpanded(!isExpanded)
+
+  // Keyboard handling
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isExpanded) {
+        setIsExpanded(false)
+      }
+    }
+
+    if (isExpanded) {
+      document.addEventListener('keydown', handleKeyDown)
+      return () => document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isExpanded])
+
+  // Close when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element
+      if (isExpanded && !target.closest('.floating-actions')) {
+        setIsExpanded(false)
+      }
+    }
+
+    if (isExpanded) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isExpanded])
+
   return (
-    <Card className="fixed bottom-4 md:bottom-6 lg:bottom-8 left-1/2 transform -translate-x-1/2 z-50 shadow-xl dark:shadow-2xl border-0 bg-card backdrop-blur-xl rtl rounded-2xl" role="toolbar" aria-label="إجراءات سريعة">
-      <div className="flex flex-col md:flex-row items-center gap-3 p-4 rtl-layout">
-        {/* Enhanced Action buttons */}
+    <div className="floating-actions fixed bottom-24 right-4 z-50" dir="rtl">
+      {/* FAB Menu */}
+      <div className={`flex flex-col-reverse items-end gap-2 sm:gap-3 mb-3 sm:mb-4 transition-all duration-300 ${isExpanded ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
         {actions.map((action, index) => {
           const Icon = action.icon
           return (
             <Button
               key={index}
-              onClick={action.onClick}
-              className={`flex items-center gap-2 px-4 py-3 md:px-6 md:py-4 rounded-xl font-medium transition-all duration-300 hover:scale-105 hover:shadow-lg shadow-md ${action.color} ${action.textColor} rtl:flex-row-reverse text-sm md:text-base min-h-[44px] md:min-h-[48px] active:scale-95 focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
-              aria-label={`${action.label} (${action.shortcut})`}
+              onClick={() => {
+                action.onClick?.()
+                setIsExpanded(false)
+              }}
+              className={`flex items-center gap-2 px-3 py-3 sm:px-4 rounded-full font-medium transition-all duration-300 hover:scale-110 shadow-lg ${action.color} text-white min-h-[44px] sm:min-h-[48px] w-[44px] sm:w-[48px] justify-center`}
+              aria-label={action.label}
             >
-              <Icon className="w-4 h-4 md:w-5 md:h-5" aria-hidden="true" />
-              <span className="font-semibold">{action.label}</span>
-              <span className="text-xs opacity-90 bg-black/25 dark:bg-white/25 px-2 py-1 rounded-lg font-mono" aria-hidden="true">
-                {action.shortcut}
-              </span>
+              <Icon className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
             </Button>
           )
         })}
-
-        {/* Enhanced Quick access indicator */}
-        <div className="flex items-center gap-2 text-foreground ml-4 rtl:mr-4 rtl:ml-0 rtl:flex-row-reverse bg-muted/50 px-3 py-2 rounded-xl">
-          <Zap className="w-4 h-4 rtl:order-2 text-primary" />
-          <span className="text-sm font-semibold rtl:order-1">إجراءات سريعة</span>
-        </div>
       </div>
 
-      {/* Enhanced floating animation effect */}
-      <div className="absolute -inset-2 bg-gradient-to-r from-primary/15 via-accent/15 to-muted/15 rounded-2xl blur-lg opacity-30 -z-10 animate-pulse" />
-    </Card>
+      {/* Main FAB Button */}
+      <Button
+        onClick={toggleExpanded}
+        className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-primary hover:bg-primary/90 shadow-lg hover:scale-110 transition-all duration-300 flex items-center justify-center"
+        aria-label={isExpanded ? 'إغلاق الإجراءات السريعة' : 'فتح الإجراءات السريعة'}
+      >
+        {isExpanded ? <X className="w-5 h-5 sm:w-6 sm:h-6 text-white" /> : <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-white" />}
+      </Button>
+    </div>
   )
 })
 

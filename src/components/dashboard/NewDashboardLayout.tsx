@@ -115,15 +115,11 @@ const NewDashboardLayout = memo(function NewDashboardLayout({
         </div>
       </div>
 
-      {/* Floating Quick Actions Bar - improved positioning, responsive design and visual enhancement */}
-      <div className="fixed bottom-3 md:bottom-4 lg:bottom-6 left-1/2 transform -translate-x-1/2 z-50 px-4 py-2 rounded-2xl backdrop-blur-lg bg-card border border-border shadow-xl dark:shadow-2xl hover:shadow-2xl dark:hover:shadow-xl transition-all duration-300" data-testid="floating-actions">
-        <FloatingQuickActions
-          onAddPatient={onAddPatient}
-          onAddAppointment={onAddAppointment}
-          onAddPayment={onAddPayment}
-        />
-      </div>
-
+    <FloatingQuickActions
+        onAddPatient={onAddPatient}
+        onAddAppointment={onAddAppointment}
+        onAddPayment={onAddPayment}
+      />
       {/* Subtle background pattern for visual enhancement */}
       <div className="fixed inset-0 pointer-events-none z-0 opacity-20">
         <div className="absolute inset-0 bg-gradient-to-br from-muted/30 via-transparent to-accent/20" />
