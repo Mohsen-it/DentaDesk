@@ -169,7 +169,7 @@ export default function QuickAccessDashboard({
       </div>
 
       {/* Quick Actions */}
-      <Card >
+      {/* <Card >
         <CardHeader className='dark:bg-slate-900'> 
           <CardTitle className="flex items-center gap-2">
             <Plus className="w-5 h-5" />
@@ -229,7 +229,7 @@ export default function QuickAccessDashboard({
             </ShortcutTooltip>
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Patients */}

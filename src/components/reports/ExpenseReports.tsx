@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo, useCallback, memo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -64,21 +64,22 @@ export default function ExpenseReports() {
   // Use real-time reports hook for automatic updates
   useRealTimeReportsByType('financial')
 
+  // Memoize event handler to prevent unnecessary re-renders
+  const handleExpenseDataChange = useCallback((event: CustomEvent) => {
+    console.log('🔄 Expense data changed:', event.detail)
+    // Reload expense data to ensure synchronization
+    loadExpenses()
+  }, [loadExpenses])
+
   // Real-time synchronization for expense data changes
   useEffect(() => {
-    const handleExpenseDataChange = (event: CustomEvent) => {
-      console.log('🔄 Expense data changed:', event.detail)
-      // Reload expense data to ensure synchronization
-      loadExpenses()
-    }
-
     // Listen for expense data change events
     window.addEventListener('clinic-expenses-changed', handleExpenseDataChange as EventListener)
 
     return () => {
       window.removeEventListener('clinic-expenses-changed', handleExpenseDataChange as EventListener)
     }
-  }, [loadExpenses])
+  }, [handleExpenseDataChange])
 
   useEffect(() => {
     loadExpenses()
@@ -95,14 +96,17 @@ export default function ExpenseReports() {
     return isNaN(num) || !isFinite(num) ? 0 : Math.round(num * 100) / 100
   }
 
-  // Use filtered expenses
-  const safeExpenseStats = expenseStats || { filteredData: [] }
-  const filteredExpenses = Array.isArray(safeExpenseStats.filteredData) && safeExpenseStats.filteredData.length > 0
-    ? safeExpenseStats.filteredData
-    : expenses.filter(e => e.status === 'paid')
+  // Memoize filtered expenses to prevent unnecessary re-computations
+  const safeExpenseStats = useMemo(() => expenseStats || { filteredData: [] }, [expenseStats])
+  const filteredExpenses = useMemo(() => {
+    const data = Array.isArray(safeExpenseStats.filteredData) && safeExpenseStats.filteredData.length > 0
+      ? safeExpenseStats.filteredData
+      : expenses.filter(e => e.status === 'paid')
+    return data
+  }, [safeExpenseStats, expenses])
 
-  // Calculate comprehensive expense analytics
-  const expenseAnalytics = (() => {
+  // Calculate comprehensive expense analytics - memoized
+  const expenseAnalytics = useMemo(() => {
     const totalAmount = filteredExpenses.reduce((sum, expense) => sum + validateAmount(expense.amount), 0)
     const totalExpenses = filteredExpenses.length
     const averageAmount = totalExpenses > 0 ? totalAmount / totalExpenses : 0
@@ -160,10 +164,10 @@ export default function ExpenseReports() {
       monthlyExpenses,
       statusBreakdown
     }
-  })()
+  }, [filteredExpenses, expenses])
 
-  // Chart data preparation
-  const expensesByTypeData = Object.entries(expenseAnalytics.expensesByType).map(([type, amount]) => ({
+  // Chart data preparation - memoized
+  const expensesByTypeData = useMemo(() => Object.entries(expenseAnalytics.expensesByType).map(([type, amount]) => ({
     name: type === 'salary' ? 'رواتب' :
           type === 'utilities' ? 'مرافق' :
           type === 'rent' ? 'إيجار' :
@@ -173,18 +177,18 @@ export default function ExpenseReports() {
           type === 'other' ? 'أخرى' : type,
     value: validateAmount(amount),
     percentage: expenseAnalytics.totalAmount > 0 ? (validateAmount(amount) / expenseAnalytics.totalAmount) * 100 : 0
-  }))
+  })), [expenseAnalytics])
 
-  const expensesByVendorData = Object.entries(expenseAnalytics.expensesByVendor)
+  const expensesByVendorData = useMemo(() => Object.entries(expenseAnalytics.expensesByVendor)
     .sort(([,a], [,b]) => validateAmount(b) - validateAmount(a))
     .slice(0, 10)
     .map(([vendor, amount]) => ({
       vendor: vendor.length > 20 ? vendor.substring(0, 20) + '...' : vendor,
       amount: validateAmount(amount),
       percentage: expenseAnalytics.totalAmount > 0 ? (validateAmount(amount) / expenseAnalytics.totalAmount) * 100 : 0
-    }))
+    })), [expenseAnalytics])
 
-  const monthlyExpenseData = Object.entries(expenseAnalytics.monthlyExpenses)
+  const monthlyExpenseData = useMemo(() => Object.entries(expenseAnalytics.monthlyExpenses)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([month, amount]) => {
       const date = new Date(month + '-01')
@@ -197,9 +201,9 @@ export default function ExpenseReports() {
         amount: validateAmount(amount),
         originalMonth: month
       }
-    })
+    }), [expenseAnalytics])
 
-  const handleExport = async () => {
+  const handleExport = useCallback(async () => {
     try {
       if (filteredExpenses.length === 0) {
         notify.noDataToExport('لا توجد بيانات مصروفات للتصدير')
@@ -212,9 +216,9 @@ export default function ExpenseReports() {
       console.error('Error exporting expense reports:', error)
       notify.exportError('فشل في تصدير تقارير المصروفات')
     }
-  }
+  }, [filteredExpenses])
 
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     try {
       await loadExpenses()
       const event = new CustomEvent('showToast', {
@@ -236,7 +240,7 @@ export default function ExpenseReports() {
       })
       window.dispatchEvent(event)
     }
-  }
+  }, [loadExpenses])
 
   return (
     <div className="space-y-6" dir="rtl">

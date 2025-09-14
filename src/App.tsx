@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, Suspense } from 'react'
 import { usePatientStore } from './store/patientStore'
 import { useAppointmentStore } from './store/appointmentStore'
 import { useSettingsStore } from './store/settingsStore'
@@ -19,21 +19,25 @@ import AppointmentCard from './components/AppointmentCard'
 import AddAppointmentDialog from './components/AddAppointmentDialog'
 import AddPaymentDialog from './components/payments/AddPaymentDialog'
 import QuickShortcutHint from './components/help/QuickShortcutHint'
-import PaymentsPage from './pages/Payments'
-import SettingsPage from './pages/Settings'
-import InventoryPage from './pages/Inventory'
-import ReportsPage from './pages/Reports'
-import Dashboard from './pages/Dashboard'
-import EnhancedDashboard from './pages/EnhancedDashboard'
-import PatientsPage from './pages/Patients'
-import AppointmentsPage from './pages/Appointments'
-import Labs from './pages/Labs'
-import Medications from './pages/Medications'
-import DentalTreatments from './pages/DentalTreatments'
-import ClinicNeeds from './pages/ClinicNeeds'
-import Expenses from './pages/Expenses'
-import ExternalEstimate from './pages/ExternalEstimate'
+import PageLoading from './components/ui/PageLoading'
+import ErrorBoundary from './components/ErrorBoundary'
 import ThemeToggle from './components/ThemeToggle'
+
+// Lazy load heavy page components
+const PaymentsPage = React.lazy(() => import('./pages/Payments'))
+const SettingsPage = React.lazy(() => import('./pages/Settings'))
+const InventoryPage = React.lazy(() => import('./pages/Inventory'))
+const ReportsPage = React.lazy(() => import('./pages/Reports'))
+const Dashboard = React.lazy(() => import('./pages/Dashboard'))
+const EnhancedDashboard = React.lazy(() => import('./pages/EnhancedDashboard'))
+const PatientsPage = React.lazy(() => import('./pages/Patients'))
+const AppointmentsPage = React.lazy(() => import('./pages/Appointments'))
+const Labs = React.lazy(() => import('./pages/Labs'))
+const Medications = React.lazy(() => import('./pages/Medications'))
+const DentalTreatments = React.lazy(() => import('./pages/DentalTreatments'))
+const ClinicNeeds = React.lazy(() => import('./pages/ClinicNeeds'))
+const Expenses = React.lazy(() => import('./pages/Expenses'))
+const ExternalEstimate = React.lazy(() => import('./pages/ExternalEstimate'))
 import { AppSidebar } from './components/AppSidebar'
 import { AppSidebarTrigger } from './components/AppSidebarTrigger'
 import LiveDateTime from './components/LiveDateTime'
@@ -599,7 +603,11 @@ function AppContent() {
           </header>
           <div className="flex flex-1 flex-col gap-4 p-10 pt-4 max-w-full overflow-hidden relative rtl-layout">
             <div className="w-full max-w-none content-wrapper">
-              {renderContent()}
+              <ErrorBoundary>
+                <Suspense fallback={<PageLoading message="جاري تحميل الصفحة..." />}>
+                  {renderContent()}
+                </Suspense>
+              </ErrorBoundary>
             </div>
 
 

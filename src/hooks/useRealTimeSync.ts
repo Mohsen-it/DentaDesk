@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { usePatientStore } from '../store/patientStore'
 import { useAppointmentStore } from '../store/appointmentStore'
 import { usePaymentStore } from '../store/paymentStore'
@@ -16,10 +16,14 @@ export const useRealTimeSync = () => {
   const refreshDashboardStats = useDashboardStore(state => state.refreshStats)
   const loadInventoryItems = useInventoryStore(state => state.loadItems)
 
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const rafIdRef = useRef<number | null>(null)
+
   useEffect(() => {
     // Listen for patient deletion events
-    const handlePatientDeleted = async (event: CustomEvent) => {
-      const { patientId, patientName } = event.detail
+    const handlePatientDeleted = async (event: Event) => {
+      const customEvent = event as CustomEvent
+      const { patientId, patientName } = customEvent.detail
 
       console.log(`🔄 Real-time sync: Patient ${patientName} (${patientId}) deleted, updating all stores...`)
 
@@ -27,76 +31,117 @@ export const useRealTimeSync = () => {
       // This is just for additional coordination and logging
 
       // Optional: Force refresh dashboard stats after a short delay
-      setTimeout(async () => {
-        try {
-          await refreshDashboardStats()
-          console.log('📊 Dashboard stats refreshed via real-time sync')
-        } catch (error) {
-          console.error('Error refreshing dashboard stats:', error)
-        }
-      }, 200)
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current)
+
+      rafIdRef.current = requestAnimationFrame(() => {
+        rafIdRef.current = null
+        timeoutRef.current = setTimeout(async () => {
+          try {
+            await refreshDashboardStats()
+            console.log('📊 Dashboard stats refreshed via real-time sync')
+          } catch (error) {
+            console.error('Error refreshing dashboard stats:', error)
+          }
+          timeoutRef.current = null
+        }, 200)
+      })
     }
 
     // Listen for appointment changes that might affect other stores
-    const handleAppointmentChanged = async (event: CustomEvent) => {
-      const { type, appointmentId } = event.detail
+    const handleAppointmentChanged = async (event: Event) => {
+      const customEvent = event as CustomEvent
+      const { type, appointmentId } = customEvent.detail
 
       console.log(`🔄 Real-time sync: Appointment ${type} (${appointmentId})`)
 
       // Refresh dashboard stats when appointments change
-      setTimeout(async () => {
-        try {
-          await refreshDashboardStats()
-        } catch (error) {
-          console.error('Error refreshing dashboard stats after appointment change:', error)
-        }
-      }, 100)
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current)
+
+      rafIdRef.current = requestAnimationFrame(() => {
+        rafIdRef.current = null
+        timeoutRef.current = setTimeout(async () => {
+          try {
+            await refreshDashboardStats()
+          } catch (error) {
+            console.error('Error refreshing dashboard stats after appointment change:', error)
+          }
+          timeoutRef.current = null
+        }, 150)
+      })
     }
 
     // Listen for payment changes that might affect other stores
-    const handlePaymentChanged = async (event: CustomEvent) => {
-      const { type, paymentId } = event.detail
+    const handlePaymentChanged = async (event: Event) => {
+      const customEvent = event as CustomEvent
+      const { type, paymentId } = customEvent.detail
 
       console.log(`🔄 Real-time sync: Payment ${type} (${paymentId})`)
 
       // Refresh dashboard stats when payments change
-      setTimeout(async () => {
-        try {
-          await refreshDashboardStats()
-        } catch (error) {
-          console.error('Error refreshing dashboard stats after payment change:', error)
-        }
-      }, 100)
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current)
+
+      rafIdRef.current = requestAnimationFrame(() => {
+        rafIdRef.current = null
+        timeoutRef.current = setTimeout(async () => {
+          try {
+            await refreshDashboardStats()
+          } catch (error) {
+            console.error('Error refreshing dashboard stats after payment change:', error)
+          }
+          timeoutRef.current = null
+        }, 150)
+      })
     }
 
     // Listen for inventory changes that might affect other stores
-    const handleInventoryChanged = async (event: CustomEvent) => {
-      const { type, itemId } = event.detail
+    const handleInventoryChanged = async (event: Event) => {
+      const customEvent = event as CustomEvent
+      const { type, itemId } = customEvent.detail
 
       console.log(`🔄 Real-time sync: Inventory ${type} (${itemId})`)
 
       // Refresh dashboard stats when inventory changes
-      setTimeout(async () => {
-        try {
-          await refreshDashboardStats()
-        } catch (error) {
-          console.error('Error refreshing dashboard stats after inventory change:', error)
-        }
-      }, 100)
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current)
+
+      rafIdRef.current = requestAnimationFrame(() => {
+        rafIdRef.current = null
+        timeoutRef.current = setTimeout(async () => {
+          try {
+            await refreshDashboardStats()
+          } catch (error) {
+            console.error('Error refreshing dashboard stats after inventory change:', error)
+          }
+          timeoutRef.current = null
+        }, 150)
+      })
     }
 
     // Add event listeners
-    window.addEventListener('patient-deleted', handlePatientDeleted as EventListener)
-    window.addEventListener('appointment-changed', handleAppointmentChanged as EventListener)
-    window.addEventListener('payment-changed', handlePaymentChanged as EventListener)
-    window.addEventListener('inventory-changed', handleInventoryChanged as EventListener)
+    window.addEventListener('patient-deleted', handlePatientDeleted)
+    window.addEventListener('appointment-changed', handleAppointmentChanged)
+    window.addEventListener('payment-changed', handlePaymentChanged)
+    window.addEventListener('inventory-changed', handleInventoryChanged)
 
     // Cleanup event listeners
     return () => {
-      window.removeEventListener('patient-deleted', handlePatientDeleted as EventListener)
-      window.removeEventListener('appointment-changed', handleAppointmentChanged as EventListener)
-      window.removeEventListener('payment-changed', handlePaymentChanged as EventListener)
-      window.removeEventListener('inventory-changed', handleInventoryChanged as EventListener)
+      // Clear any pending operations
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current)
+        rafIdRef.current = null
+      }
+
+      window.removeEventListener('patient-deleted', handlePatientDeleted)
+      window.removeEventListener('appointment-changed', handleAppointmentChanged)
+      window.removeEventListener('payment-changed', handlePaymentChanged)
+      window.removeEventListener('inventory-changed', handleInventoryChanged)
     }
   }, [refreshDashboardStats])
 
@@ -126,14 +171,21 @@ export const useRealTimeSync = () => {
         detail: { patientId, patientName }
       }))
 
-      // Additional manual refresh as backup
-      setTimeout(async () => {
-        try {
-          await refreshDashboardStats()
-        } catch (error) {
-          console.error('Error in backup sync after patient deletion:', error)
-        }
-      }, 300)
+      // Additional manual refresh as backup with optimized timing
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current)
+
+      rafIdRef.current = requestAnimationFrame(() => {
+        rafIdRef.current = null
+        timeoutRef.current = setTimeout(async () => {
+          try {
+            await refreshDashboardStats()
+          } catch (error) {
+            console.error('Error in backup sync after patient deletion:', error)
+          }
+          timeoutRef.current = null
+        }, 300)
+      })
     }
   }
 }

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react'
+// Removed react-window import due to build issues
 import { ClinicExpense } from '@/types'
 import {
   Table,
@@ -259,6 +260,7 @@ export default function ExpensesTable({
   // Calculate start index for serial numbers
   const startIndex = (currentPage - 1) * pageSize
 
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
   }
@@ -301,118 +303,121 @@ export default function ExpensesTable({
                 </TableHead>
               </TableRow>
             </TableHeader>
-          <TableBody>
-            {paginatedExpenses.map((expense, index) => (
-            <TableRow key={expense.id} className="hover:bg-muted/50">
-              <TableCell className="font-medium text-center w-12 max-w-12 min-w-12 text-xs">
-                {startIndex + index + 1}
-              </TableCell>
-              <TableCell className="font-medium text-center">
-                <div className="flex items-center justify-center space-x-2 space-x-reverse">
-                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-sm font-medium">
-                    <Receipt className="w-4 h-4" />
-                  </div>
-                  <span className="arabic-enhanced">{expense.expense_name}</span>
-                </div>
-              </TableCell>
-              <TableCell className="text-center font-semibold">
-                <CurrencyDisplay amount={expense.amount} />
-              </TableCell>
-              <TableCell className="min-w-[120px] text-center">
-                <Badge variant="outline" className="max-w-[120px] truncate arabic-enhanced">
-                  {getExpenseTypeName(expense.expense_type)}
-                </Badge>
-              </TableCell>
-              <TableCell className="min-w-[120px] text-center table-cell-wrap-truncate-sm">
-                <span className="arabic-enhanced">
-                  {expense.vendor || <span className="text-muted-foreground text-sm arabic-enhanced">غير محدد</span>}
-                </span>
-              </TableCell>
-              <TableCell className="text-center">
-                <div className="flex items-center justify-center space-x-1 space-x-reverse">
-                  <Calendar className="w-3 h-3 text-muted-foreground" />
-                  <span className="text-sm arabic-enhanced">
-                    {formatDate(expense.payment_date)}
-                  </span>
-                </div>
-              </TableCell>
-              <TableCell className="text-center">
-                <Badge variant={getStatusBadgeVariant(expense.status)} className="arabic-enhanced">
-                  {getStatusName(expense.status)}
-                </Badge>
-              </TableCell>
-              <TableCell className="w-auto text-center" dir="rtl">
-                <div className="flex items-center justify-center gap-1" dir="rtl">
-                  {/* الأزرار الرئيسية الثلاثة */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="action-btn-view h-8 px-2 min-w-0"
-                    onClick={() => onViewDetails(expense)}
-                    title="عرض تفاصيل المصروف"
-                  >
-                    <Eye className="w-3 h-3" />
-                    <span className="text-xs arabic-enhanced hidden sm:inline mr-1">عرض</span>
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="action-btn-edit h-8 px-2 min-w-0"
-                    onClick={() => onEdit(expense)}
-                    title="تعديل بيانات المصروف"
-                  >
-                    <Edit className="w-3 h-3" />
-                    <span className="text-xs arabic-enhanced hidden sm:inline mr-1">تعديل</span>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="action-btn-delete text-red-600 hover:text-red-700 hover:bg-red-50 h-8 px-2 min-w-0"
-                    onClick={() => onDelete(expense)}
-                    title="حذف المصروف"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                    <span className="text-xs arabic-enhanced hidden sm:inline mr-1">حذف</span>
-                  </Button>
-
-                  {/* قائمة مزيد للأزرار الإضافية */}
-                  <DropdownMenu dir="rtl">
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 px-2 min-w-0"
-                        title="المزيد من الخيارات"
-                      >
-                        <MoreHorizontal className="w-3 h-3" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="expenses-actions-dropdown" dir="rtl">
-                      {expense.status === 'pending' && onMarkAsPaid && (
-                        <DropdownMenuItem
-                          onClick={() => onMarkAsPaid(expense)}
-                          className="dropdown-item"
+            <TableBody>
+              {paginatedExpenses.map((expense, index) => {
+                const currentIndex = startIndex + index + 1
+                return (
+                  <TableRow key={expense.id} className="hover:bg-muted/50">
+                    <TableCell className="font-medium text-center w-12 max-w-12 min-w-12 text-xs">
+                      {currentIndex}
+                    </TableCell>
+                    <TableCell className="font-medium text-center">
+                      <div className="flex items-center justify-center space-x-2 space-x-reverse">
+                        <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-sm font-medium">
+                          <Receipt className="w-4 h-4" />
+                        </div>
+                        <span className="arabic-enhanced">{expense.expense_name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center font-semibold">
+                      <CurrencyDisplay amount={expense.amount} />
+                    </TableCell>
+                    <TableCell className="min-w-[120px] text-center">
+                      <Badge variant="outline" className="max-w-[120px] truncate arabic-enhanced">
+                        {getExpenseTypeName(expense.expense_type)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="min-w-[120px] text-center table-cell-wrap-truncate-sm">
+                      <span className="arabic-enhanced">
+                        {expense.vendor || <span className="text-muted-foreground text-sm arabic-enhanced">غير محدد</span>}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center space-x-1 space-x-reverse">
+                        <Calendar className="w-3 h-3 text-muted-foreground" />
+                        <span className="text-sm arabic-enhanced">
+                          {formatDate(expense.payment_date)}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant={getStatusBadgeVariant(expense.status)} className="arabic-enhanced">
+                        {getStatusName(expense.status)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="w-auto text-center" dir="rtl">
+                      <div className="flex items-center justify-center gap-1" dir="rtl">
+                        {/* الأزرار الرئيسية الثلاثة */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="action-btn-view h-8 px-2 min-w-0"
+                          onClick={() => onViewDetails(expense)}
+                          title="عرض تفاصيل المصروف"
                         >
-                          <DollarSign className="w-4 h-4 ml-2" />
-                          <span className="arabic-enhanced">تحديد كمدفوع</span>
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => onViewDetails(expense)}
-                        className="dropdown-item"
-                      >
-                        <Eye className="w-4 h-4 ml-2" />
-                        <span className="arabic-enhanced">عرض التفاصيل الكاملة</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
+                          <Eye className="w-3 h-3" />
+                          <span className="text-xs arabic-enhanced hidden sm:inline mr-1">عرض</span>
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="action-btn-edit h-8 px-2 min-w-0"
+                          onClick={() => onEdit(expense)}
+                          title="تعديل بيانات المصروف"
+                        >
+                          <Edit className="w-3 h-3" />
+                          <span className="text-xs arabic-enhanced hidden sm:inline mr-1">تعديل</span>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="action-btn-delete text-red-600 hover:text-red-700 hover:bg-red-50 h-8 px-2 min-w-0"
+                          onClick={() => onDelete(expense)}
+                          title="حذف المصروف"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span className="text-xs arabic-enhanced hidden sm:inline mr-1">حذف</span>
+                        </Button>
+
+                        {/* قائمة مزيد للأزرار الإضافية */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 px-2 min-w-0"
+                              title="المزيد من الخيارات"
+                            >
+                              <MoreHorizontal className="w-3 h-3" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="expenses-actions-dropdown">
+                            {expense.status === 'pending' && onMarkAsPaid && (
+                              <DropdownMenuItem
+                                onClick={() => onMarkAsPaid(expense)}
+                                className="dropdown-item"
+                              >
+                                <DollarSign className="w-4 h-4 ml-2" />
+                                <span className="arabic-enhanced">تحديد كمدفوع</span>
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => onViewDetails(expense)}
+                              className="dropdown-item"
+                            >
+                              <Eye className="w-4 h-4 ml-2" />
+                              <span className="arabic-enhanced">عرض التفاصيل الكاملة</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
         </Table>
       </div>
     </div>

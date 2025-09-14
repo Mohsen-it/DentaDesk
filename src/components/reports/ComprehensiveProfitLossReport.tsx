@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo, useCallback, memo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -70,6 +70,16 @@ export default function ComprehensiveProfitLossReport() {
   const [isLoading, setIsLoading] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
 
+  // Memoize store data to prevent unnecessary re-computations
+  const storeData = useMemo(() => ({
+    payments,
+    clinicExpenses,
+    labOrders,
+    clinicNeeds,
+    inventoryItems,
+    patients,
+    appointments
+  }), [payments, clinicExpenses, labOrders, clinicNeeds, inventoryItems, patients, appointments])
   // دالة مساعدة لتحويل التاريخ إلى تنسيق محلي YYYY-MM-DD
   const formatDateToLocal = (date: Date): string => {
     const year = date.getFullYear()
@@ -194,23 +204,25 @@ export default function ComprehensiveProfitLossReport() {
     }
   }
 
-  // إنشاء التقرير
-  const generateReport = async () => {
+  // Memoize date range calculation
+  const dateRange = useMemo(() => getDateRangeFromPeriod(selectedPeriod, customStartDate, customEndDate), [selectedPeriod, customStartDate, customEndDate])
+
+
+  // إنشاء التقرير - memoized callback to prevent unnecessary re-renders
+  const generateReport = useCallback(async () => {
     setIsLoading(true)
     try {
-      // تحويل TimePeriod إلى ReportFilter
-      const dateRange = getDateRangeFromPeriod(selectedPeriod, customStartDate, customEndDate)
       const reportFilter = dateRange ? { dateRange } : undefined
 
       const report = ComprehensiveProfitLossService.generateComprehensiveProfitLossReport(
-        payments,
-        labOrders,
-        clinicNeeds,
-        inventoryItems,
-        patients,
-        appointments,
+        storeData.payments,
+        storeData.labOrders,
+        storeData.clinicNeeds,
+        storeData.inventoryItems,
+        storeData.patients,
+        storeData.appointments,
         reportFilter,
-        clinicExpenses // تمرير مصروفات العيادة المباشرة
+        storeData.clinicExpenses // تمرير مصروفات العيادة المباشرة
       )
       setReportData(report)
     } catch (error) {
@@ -218,10 +230,10 @@ export default function ComprehensiveProfitLossReport() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [storeData, dateRange])
 
-  // تصدير Excel
-  const handleExportExcel = async () => {
+  // تصدير Excel - memoized callback for stability
+  const handleExportExcel = useCallback(async () => {
     if (!reportData) {
       notify.error('لا توجد بيانات للتصدير')
       return
@@ -231,14 +243,8 @@ export default function ComprehensiveProfitLossReport() {
     try {
       await ExportService.exportProfitLossToExcel({
         reportData,
-        payments,
-        labOrders,
-        clinicNeeds,
-        inventoryItems,
-        clinicExpenses,
-        patients,
-        appointments,
-        filter: getDateRangeFromPeriod(selectedPeriod, customStartDate, customEndDate),
+        ...storeData,
+        filter: dateRange,
         currency
       })
       notify.success('تم تصدير تقرير الأرباح والخسائر إلى Excel بنجاح')
@@ -248,10 +254,10 @@ export default function ComprehensiveProfitLossReport() {
     } finally {
       setIsExporting(false)
     }
-  }
+  }, [reportData, storeData, dateRange, currency])
 
-  // تصدير PDF
-  const handleExportPDF = async () => {
+  // تصدير PDF - memoized callback for stability
+  const handleExportPDF = useCallback(async () => {
     if (!reportData) {
       notify.error('لا توجد بيانات للتصدير')
       return
@@ -261,14 +267,8 @@ export default function ComprehensiveProfitLossReport() {
     try {
       await PdfService.exportProfitLossReport({
         reportData,
-        payments,
-        labOrders,
-        clinicNeeds,
-        inventoryItems,
-        clinicExpenses,
-        patients,
-        appointments,
-        filter: getDateRangeFromPeriod(selectedPeriod, customStartDate, customEndDate),
+        ...storeData,
+        filter: dateRange,
         currency
       }, settings)
       notify.success('تم تصدير تقرير الأرباح والخسائر إلى PDF بنجاح')
@@ -278,363 +278,28 @@ export default function ComprehensiveProfitLossReport() {
     } finally {
       setIsExporting(false)
     }
-  }
+  }, [reportData, storeData, dateRange, currency, settings])
 
   // إنشاء التقرير عند تحميل المكون أو تغيير الفلتر
   useEffect(() => {
     generateReport()
-  }, [selectedPeriod, customStartDate, customEndDate, payments, clinicExpenses, labOrders, clinicNeeds, inventoryItems, patients, appointments])
+  }, [generateReport])
 
-  if (isLoading || !reportData) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-center">
-          <Calculator className="w-12 h-12 mx-auto mb-4 opacity-50" />
-          <p className="text-muted-foreground">جاري حساب التقرير الشامل...</p>
-        </div>
-      </div>
-    )
-  }
+  // ألوان المخططات - memoized (moved before early return to avoid Rules of Hooks violation)
+  const chartColors = useMemo(() => ({
+    primary: isDarkMode ? '#3b82f6' : '#2563eb',
+    secondary: isDarkMode ? '#10b981' : '#059669',
+    warning: isDarkMode ? '#f59e0b' : '#d97706',
+    danger: isDarkMode ? '#ef4444' : '#dc2626',
+    purple: isDarkMode ? '#8b5cf6' : '#7c3aed',
+    teal: isDarkMode ? '#14b8a6' : '#0d9488'
+  }), [isDarkMode])
 
-  const { revenue, expenses, calculations, details, filterInfo } = reportData
-
-  return (
-    <div className="space-y-6" dir="rtl">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground flex items-center gap-3">
-            <Calculator className="w-6 h-6" />
-            التقرير الشامل للأرباح والخسائر
-          </h2>
-          <p className="text-muted-foreground mt-1">
-            تحليل مالي شامل يربط جميع جوانب العيادة - {filterInfo.dateRange}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExportPDF}
-            disabled={isExporting || !reportData}
-          >
-            <Download className="w-4 h-4 ml-2" />
-            {isExporting ? 'جاري التصدير...' : 'تصدير PDF'}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExportExcel}
-            disabled={isExporting || !reportData}
-          >
-            <FileText className="w-4 h-4 ml-2" />
-            {isExporting ? 'جاري التصدير...' : 'تصدير اكسل'}
-          </Button>
-        </div>
-      </div>
-
-      {/* Time Filter */}
-      <Card className={getCardStyles("blue")}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-3">
-            <Filter className={`w-5 h-5 ${getIconStyles("blue")}`} />
-            فلترة التقرير
-          </CardTitle>
-          <CardDescription>
-            اختر الفترة الزمنية للتقرير الشامل للأرباح والخسائر
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Period Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="period">الفترة الزمنية</Label>
-              <Select value={selectedPeriod} onValueChange={(value: TimePeriod) => setSelectedPeriod(value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="اختر الفترة الزمنية" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(TIME_PERIODS).map(([key, label]) => (
-                    <SelectItem key={key} value={key}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Custom Date Range */}
-            {selectedPeriod === 'custom' && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="startDate">تاريخ البداية</Label>
-                  <Input
-                    id="startDate"
-                    type="date"
-                    value={customStartDate}
-                    onChange={(e) => setCustomStartDate(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="endDate">تاريخ النهاية</Label>
-                  <Input
-                    id="endDate"
-                    type="date"
-                    value={customEndDate}
-                    onChange={(e) => setCustomEndDate(e.target.value)}
-                  />
-                </div>
-              </>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* النتيجة النهائية */}
-      <Card className={calculations.isProfit ? getCardStyles("green") : getCardStyles("red")}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-3 text-xl">
-            {calculations.isProfit ? (
-              <>
-                <TrendingUp className={`w-6 h-6 ${getIconStyles("green")}`} />
-                <span>ربح</span>
-                <Badge variant="secondary" className="bg-green-100 text-green-800">
-                  {calculations.profitMargin.toFixed(1)}%
-                </Badge>
-              </>
-            ) : (
-              <>
-                <TrendingDown className={`w-6 h-6 ${getIconStyles("red")}`} />
-                <span>خسارة</span>
-                <Badge variant="destructive">
-                  خسارة
-                </Badge>
-              </>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-3xl font-bold">
-            {calculations.isProfit ? (
-              <CurrencyDisplay amount={calculations.netProfit} currency={currency} />
-            ) : (
-              <CurrencyDisplay amount={calculations.lossAmount} currency={currency} />
-            )}
-          </div>
-          <p className="text-sm text-muted-foreground mt-2">
-            {calculations.isProfit
-              ? `صافي الربح بنسبة ${calculations.profitMargin.toFixed(1)}%`
-              : `إجمالي الخسارة من العمليات`
-            }
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* الإيرادات والمصروفات */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* الإيرادات */}
-        <Card className={getCardStyles("blue")}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-3">
-              <TrendingUp className={`w-5 h-5 ${getIconStyles("blue")}`} />
-              إجمالي الإيرادات
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="text-2xl font-bold">
-              <CurrencyDisplay amount={revenue.totalRevenue} currency={currency} />
-            </div>
-
-            <Separator />
-
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">المدفوعات المكتملة</span>
-                <CurrencyDisplay amount={revenue.completedPayments} currency={currency} />
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">المدفوعات الجزئية</span>
-                <CurrencyDisplay amount={revenue.partialPayments} currency={currency} />
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">المبالغ المتبقية</span>
-                <CurrencyDisplay amount={revenue.remainingBalances} currency={currency} />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* المصروفات */}
-        <Card className={getCardStyles("red")}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-3">
-              <TrendingDown className={`w-5 h-5 ${getIconStyles("red")}`} />
-              إجمالي المصروفات
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="text-2xl font-bold">
-              <CurrencyDisplay amount={calculations.totalExpenses} currency={currency} />
-            </div>
-
-            <Separator />
-
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">مدفوعات المخابر</span>
-                <CurrencyDisplay amount={expenses.labOrdersTotal} currency={currency} />
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">متبقي المخابر</span>
-                <CurrencyDisplay amount={expenses.labOrdersRemaining} currency={currency} />
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">احتياجات العيادة</span>
-                <CurrencyDisplay amount={expenses.clinicNeedsTotal} currency={currency} />
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">متبقي الاحتياجات</span>
-                <CurrencyDisplay amount={expenses.clinicNeedsRemaining} currency={currency} />
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">قيمة المخزون</span>
-                <CurrencyDisplay amount={expenses.inventoryExpenses} currency={currency} />
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">مصروفات العيادة المباشرة</span>
-                <CurrencyDisplay amount={expenses.clinicExpensesTotal || 0} currency={currency} />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* إحصائيات إضافية */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className={getCardStyles("purple")}>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Users className={`w-8 h-8 ${getIconStyles("purple")}`} />
-              <div>
-                <p className="text-sm text-muted-foreground">إجمالي المرضى</p>
-                <p className="text-xl font-bold">{details.totalPatients}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className={getCardStyles("orange")}>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Calendar className={`w-8 h-8 ${getIconStyles("orange")}`} />
-              <div>
-                <p className="text-sm text-muted-foreground">المواعيد</p>
-                <p className="text-xl font-bold">{details.totalAppointments}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className={getCardStyles("cyan")}>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Building2 className={`w-8 h-8 ${getIconStyles("cyan")}`} />
-              <div>
-                <p className="text-sm text-muted-foreground">طلبات المخابر</p>
-                <p className="text-xl font-bold">{details.totalLabOrders}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className={getCardStyles("indigo")}>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Package className={`w-8 h-8 ${getIconStyles("indigo")}`} />
-              <div>
-                <p className="text-sm text-muted-foreground">احتياجات العيادة</p>
-                <p className="text-xl font-bold">{details.totalClinicNeeds}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* متوسطات الإيرادات */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">متوسط الإيرادات لكل مريض</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              <CurrencyDisplay amount={details.averageRevenuePerPatient} currency={currency} />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">متوسط الإيرادات لكل موعد</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              <CurrencyDisplay amount={details.averageRevenuePerAppointment} currency={currency} />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* معلومات الفلترة */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">معلومات التقرير</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-            <div>
-              <span className="text-muted-foreground">الفترة المحددة: </span>
-              <span className="font-medium">{TIME_PERIODS[selectedPeriod]}</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">نطاق التواريخ: </span>
-              <span className="font-medium">{filterInfo.dateRange}</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">إجمالي السجلات: </span>
-              <span className="font-medium">{filterInfo.totalRecords}</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">السجلات المفلترة: </span>
-              <span className="font-medium">{filterInfo.filteredRecords}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* المخططات والرسوم البيانية */}
-      {renderCharts()}
-    </div>
-  )
-
-  // دالة لرسم المخططات
-  function renderCharts() {
-    if (!reportData) return null
-
-    const { revenue, expenses, calculations } = reportData
-
-    // ألوان المخططات
-    const chartColors = {
-      primary: isDarkMode ? '#3b82f6' : '#2563eb',
-      secondary: isDarkMode ? '#10b981' : '#059669',
-      warning: isDarkMode ? '#f59e0b' : '#d97706',
-      danger: isDarkMode ? '#ef4444' : '#dc2626',
-      purple: isDarkMode ? '#8b5cf6' : '#7c3aed',
-      teal: isDarkMode ? '#14b8a6' : '#0d9488'
-    }
-
-    // بيانات توزيع الإيرادات
-    const revenueDistributionData = [
+  // بيانات توزيع الإيرادات - memoized (moved before early return to avoid Rules of Hooks violation)
+  const revenueDistributionData = useMemo(() => {
+    if (!reportData) return []
+    const { revenue } = reportData
+    return [
       {
         name: 'مدفوعات مكتملة',
         value: revenue.completedPayments,
@@ -660,9 +325,13 @@ export default function ComprehensiveProfitLossReport() {
         percentage: revenue.totalRevenue > 0 ? ((revenue.remainingBalances / revenue.totalRevenue) * 100).toFixed(1) : '0'
       }
     ].filter(item => item.value > 0)
+  }, [reportData, chartColors])
 
-    // بيانات توزيع المصروفات
-    const expensesDistributionData = [
+  // بيانات توزيع المصروفات - memoized (moved before early return to avoid Rules of Hooks violation)
+  const expensesDistributionData = useMemo(() => {
+    if (!reportData) return []
+    const { expenses, calculations } = reportData
+    return [
       {
         name: 'طلبات المخابر',
         value: expenses.labOrdersTotal,
@@ -688,9 +357,13 @@ export default function ComprehensiveProfitLossReport() {
         percentage: calculations.totalExpenses > 0 ? (((expenses.clinicExpensesTotal || 0) / calculations.totalExpenses) * 100).toFixed(1) : '0'
       }
     ].filter(item => item.value > 0)
+  }, [reportData, chartColors])
 
-    // بيانات مقارنة الإيرادات والمصروفات
-    const comparisonData = [
+  // بيانات مقارنة الإيرادات والمصروفات - memoized (moved before early return to avoid Rules of Hooks violation)
+  const comparisonData = useMemo(() => {
+    if (!reportData) return []
+    const { revenue, calculations } = reportData
+    return [
       {
         name: 'الإيرادات',
         value: revenue.totalRevenue,
@@ -707,6 +380,15 @@ export default function ComprehensiveProfitLossReport() {
         type: 'profit'
       }
     ]
+  }, [reportData])
+
+  // دالة لرسم المخططات - memoized to prevent unnecessary re-renders (moved before early return to avoid Rules of Hooks violation)
+  const renderCharts = useMemo(() => {
+    if (!reportData) {
+      return <div>Loading charts...</div>
+    }
+
+    const { revenue, expenses, calculations, details, filterInfo } = reportData
 
     // إعدادات المخططات
     const chartConfig = {
@@ -1157,5 +839,339 @@ export default function ComprehensiveProfitLossReport() {
         </div>
       </>
     )
+  }, [reportData, revenueDistributionData, expensesDistributionData, comparisonData, chartColors, currency, isDarkMode, payments])
+
+  if (isLoading || !reportData) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <Calculator className="w-12 h-12 mx-auto mb-4 opacity-50" />
+          <p className="text-muted-foreground">جاري حساب التقرير الشامل...</p>
+        </div>
+      </div>
+    )
   }
+
+  const { revenue, expenses, calculations, details, filterInfo } = reportData
+
+
+  return (
+    <div className="space-y-6" dir="rtl">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground flex items-center gap-3">
+            <Calculator className="w-6 h-6" />
+            التقرير الشامل للأرباح والخسائر
+          </h2>
+          <p className="text-muted-foreground mt-1">
+            تحليل مالي شامل يربط جميع جوانب العيادة - {filterInfo.dateRange}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportPDF}
+            disabled={isExporting || !reportData}
+          >
+            <Download className="w-4 h-4 ml-2" />
+            {isExporting ? 'جاري التصدير...' : 'تصدير PDF'}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportExcel}
+            disabled={isExporting || !reportData}
+          >
+            <FileText className="w-4 h-4 ml-2" />
+            {isExporting ? 'جاري التصدير...' : 'تصدير اكسل'}
+          </Button>
+        </div>
+      </div>
+
+      {/* Time Filter */}
+      <Card className={getCardStyles("blue")}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-3">
+            <Filter className={`w-5 h-5 ${getIconStyles("blue")}`} />
+            فلترة التقرير
+          </CardTitle>
+          <CardDescription>
+            اختر الفترة الزمنية للتقرير الشامل للأرباح والخسائر
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Period Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="period">الفترة الزمنية</Label>
+              <Select value={selectedPeriod} onValueChange={(value: TimePeriod) => setSelectedPeriod(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر الفترة الزمنية" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(TIME_PERIODS).map(([key, label]) => (
+                    <SelectItem key={key} value={key}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Custom Date Range */}
+            {selectedPeriod === 'custom' && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="startDate">تاريخ البداية</Label>
+                  <Input
+                    id="startDate"
+                    type="date"
+                    value={customStartDate}
+                    onChange={(e) => setCustomStartDate(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="endDate">تاريخ النهاية</Label>
+                  <Input
+                    id="endDate"
+                    type="date"
+                    value={customEndDate}
+                    onChange={(e) => setCustomEndDate(e.target.value)}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* النتيجة النهائية */}
+      <Card className={calculations.isProfit ? getCardStyles("green") : getCardStyles("red")}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-3 text-xl">
+            {calculations.isProfit ? (
+              <>
+                <TrendingUp className={`w-6 h-6 ${getIconStyles("green")}`} />
+                <span>ربح</span>
+                <Badge variant="secondary" className="bg-green-100 text-green-800">
+                  {calculations.profitMargin.toFixed(1)}%
+                </Badge>
+              </>
+            ) : (
+              <>
+                <TrendingDown className={`w-6 h-6 ${getIconStyles("red")}`} />
+                <span>خسارة</span>
+                <Badge variant="destructive">
+                  خسارة
+                </Badge>
+              </>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-3xl font-bold">
+            {calculations.isProfit ? (
+              <CurrencyDisplay amount={calculations.netProfit} currency={currency} />
+            ) : (
+              <CurrencyDisplay amount={calculations.lossAmount} currency={currency} />
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground mt-2">
+            {calculations.isProfit
+              ? `صافي الربح بنسبة ${calculations.profitMargin.toFixed(1)}%`
+              : `إجمالي الخسارة من العمليات`
+            }
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* الإيرادات والمصروفات */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* الإيرادات */}
+        <Card className={getCardStyles("blue")}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3">
+              <TrendingUp className={`w-5 h-5 ${getIconStyles("blue")}`} />
+              إجمالي الإيرادات
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="text-2xl font-bold">
+              <CurrencyDisplay amount={revenue.totalRevenue} currency={currency} />
+            </div>
+
+            <Separator />
+
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">المدفوعات المكتملة</span>
+                <CurrencyDisplay amount={revenue.completedPayments} currency={currency} />
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">المدفوعات الجزئية</span>
+                <CurrencyDisplay amount={revenue.partialPayments} currency={currency} />
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">المبالغ المتبقية</span>
+                <CurrencyDisplay amount={revenue.remainingBalances} currency={currency} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* المصروفات */}
+        <Card className={getCardStyles("red")}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3">
+              <TrendingDown className={`w-5 h-5 ${getIconStyles("red")}`} />
+              إجمالي المصروفات
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="text-2xl font-bold">
+              <CurrencyDisplay amount={calculations.totalExpenses} currency={currency} />
+            </div>
+
+            <Separator />
+
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">مدفوعات المخابر</span>
+                <CurrencyDisplay amount={expenses.labOrdersTotal} currency={currency} />
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">متبقي المخابر</span>
+                <CurrencyDisplay amount={expenses.labOrdersRemaining} currency={currency} />
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">احتياجات العيادة</span>
+                <CurrencyDisplay amount={expenses.clinicNeedsTotal} currency={currency} />
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">متبقي الاحتياجات</span>
+                <CurrencyDisplay amount={expenses.clinicNeedsRemaining} currency={currency} />
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">قيمة المخزون</span>
+                <CurrencyDisplay amount={expenses.inventoryExpenses} currency={currency} />
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">مصروفات العيادة المباشرة</span>
+                <CurrencyDisplay amount={expenses.clinicExpensesTotal || 0} currency={currency} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* إحصائيات إضافية */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className={getCardStyles("purple")}>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Users className={`w-8 h-8 ${getIconStyles("purple")}`} />
+              <div>
+                <p className="text-sm text-muted-foreground">إجمالي المرضى</p>
+                <p className="text-xl font-bold">{details.totalPatients}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className={getCardStyles("orange")}>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Calendar className={`w-8 h-8 ${getIconStyles("orange")}`} />
+              <div>
+                <p className="text-sm text-muted-foreground">المواعيد</p>
+                <p className="text-xl font-bold">{details.totalAppointments}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className={getCardStyles("cyan")}>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Building2 className={`w-8 h-8 ${getIconStyles("cyan")}`} />
+              <div>
+                <p className="text-sm text-muted-foreground">طلبات المخابر</p>
+                <p className="text-xl font-bold">{details.totalLabOrders}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className={getCardStyles("indigo")}>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Package className={`w-8 h-8 ${getIconStyles("indigo")}`} />
+              <div>
+                <p className="text-sm text-muted-foreground">احتياجات العيادة</p>
+                <p className="text-xl font-bold">{details.totalClinicNeeds}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* متوسطات الإيرادات */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">متوسط الإيرادات لكل مريض</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              <CurrencyDisplay amount={details.averageRevenuePerPatient} currency={currency} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">متوسط الإيرادات لكل موعد</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              <CurrencyDisplay amount={details.averageRevenuePerAppointment} currency={currency} />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* معلومات الفلترة */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">معلومات التقرير</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+            <div>
+              <span className="text-muted-foreground">الفترة المحددة: </span>
+              <span className="font-medium">{TIME_PERIODS[selectedPeriod]}</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">نطاق التواريخ: </span>
+              <span className="font-medium">{filterInfo.dateRange}</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">إجمالي السجلات: </span>
+              <span className="font-medium">{filterInfo.totalRecords}</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">السجلات المفلترة: </span>
+              <span className="font-medium">{filterInfo.filteredRecords}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* المخططات والرسوم البيانية */}
+      {renderCharts}
+    </div>
+  )
+
 }

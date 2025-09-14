@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useRef } from 'react'
 import { useAppointmentStore } from '@/store/appointmentStore'
 import { usePaymentStore } from '@/store/paymentStore'
 import { usePatientStore } from '@/store/patientStore'
@@ -14,7 +14,11 @@ export function useRealTimeTableSync() {
   const { loadPayments } = usePaymentStore()
   const { loadPatients } = usePatientStore()
   const { loadPrescriptions } = usePrescriptionStore()
-  const { loadInventoryItems } = useInventoryStore()
+  const { loadItems: loadInventoryItems } = useInventoryStore()
+
+  const pendingUpdatesRef = useRef<Set<string>>(new Set())
+  const rafIdRef = useRef<number | null>(null)
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // دالة لإعادة تحميل جميع البيانات
   const refreshAllTables = useCallback(async () => {
@@ -33,7 +37,7 @@ export function useRealTimeTableSync() {
     }
   }, [loadAppointments, loadPayments, loadPatients, loadPrescriptions, loadInventoryItems])
 
-  // دالة لإعادة تحميل جدول محدد
+  // دالة لإعادة تحميل جدول محدد مع تجميع
   const refreshTable = useCallback(async (tableType: string) => {
     console.log(`🔄 Refreshing ${tableType} table...`)
     try {
@@ -62,93 +66,102 @@ export function useRealTimeTableSync() {
     }
   }, [loadAppointments, loadPayments, loadPatients, loadPrescriptions, loadInventoryItems])
 
+  // دالة معالجة الأحداث المجمعة
+  const batchRefresh = useCallback(() => {
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current)
+    }
+
+    debounceTimeoutRef.current = setTimeout(() => {
+      const tablesToRefresh = Array.from(pendingUpdatesRef.current)
+      pendingUpdatesRef.current.clear()
+
+      tablesToRefresh.forEach(table => {
+        refreshTable(table)
+      })
+
+      debounceTimeoutRef.current = null
+    }, 100) // Increased from 50ms to 100ms
+  }, [refreshTable])
+
   useEffect(() => {
     console.log('🔔 Setting up real-time table sync listeners...')
 
-    // دوال معالجة الأحداث
-    const handleAppointmentChange = async (event: any) => {
-      console.log('📅 Appointment changed, refreshing appointments table...', event.detail?.type)
-      setTimeout(() => refreshTable('appointments'), 50)
+    // خريطة لربط الأحداث بالجداول
+    const eventToTableMap: Record<string, string[]> = {
+      'appointment-added': ['appointments'],
+      'appointment-updated': ['appointments'],
+      'appointment-deleted': ['appointments'],
+      'appointment-changed': ['appointments'],
+      'payment-added': ['payments'],
+      'payment-updated': ['payments'],
+      'payment-deleted': ['payments'],
+      'payment-changed': ['payments'],
+      'patient-added': ['patients', 'appointments', 'payments'], // تحديث الجداول المرتبطة
+      'patient-updated': ['patients', 'appointments', 'payments'],
+      'patient-deleted': ['patients', 'appointments', 'payments'],
+      'patient-changed': ['patients', 'appointments', 'payments'],
+      'prescription-added': ['prescriptions'],
+      'prescription-updated': ['prescriptions'],
+      'prescription-deleted': ['prescriptions'],
+      'prescription-changed': ['prescriptions'],
+      'inventory-added': ['inventory'],
+      'inventory-updated': ['inventory'],
+      'inventory-deleted': ['inventory'],
+      'inventory-changed': ['inventory']
     }
 
-    const handlePaymentChange = async (event: any) => {
-      console.log('💰 Payment changed, refreshing payments table...', event.detail?.type)
-      setTimeout(() => refreshTable('payments'), 50)
+    // معالج واحد لجميع الأحداث
+    const handleDataChange = (event: Event) => {
+      const eventName = event.type
+      const tables = eventToTableMap[eventName]
+
+      if (tables) {
+        console.log(`📡 ${eventName} detected, queuing tables for update:`, tables)
+        tables.forEach(table => pendingUpdatesRef.current.add(table))
+
+        // استخدام requestAnimationFrame لتجميع الأحداث السريعة
+        if (rafIdRef.current === null) {
+          rafIdRef.current = requestAnimationFrame(() => {
+            batchRefresh()
+            rafIdRef.current = null
+          })
+        }
+      }
     }
 
-    const handlePatientChange = async (event: any) => {
-      console.log('👤 Patient changed, refreshing patients table...', event.detail?.type)
-      setTimeout(() => refreshTable('patients'), 50)
-      // أيضاً تحديث المواعيد والدفعات لأنها تحتوي على بيانات المرضى
-      setTimeout(() => {
-        refreshTable('appointments')
-        refreshTable('payments')
-      }, 100)
-    }
+    // جميع الأحداث المطلوب مراقبتها
+    const allEvents = Object.keys(eventToTableMap)
 
-    const handlePrescriptionChange = async (event: any) => {
-      console.log('💊 Prescription changed, refreshing prescriptions table...', event.detail?.type)
-      setTimeout(() => refreshTable('prescriptions'), 50)
-    }
-
-    const handleInventoryChange = async (event: any) => {
-      console.log('📦 Inventory changed, refreshing inventory table...', event.detail?.type)
-      setTimeout(() => refreshTable('inventory'), 50)
-    }
-
-    // تسجيل المستمعين لأحداث تغيير البيانات
-    const appointmentEvents = ['appointment-added', 'appointment-updated', 'appointment-deleted', 'appointment-changed']
-    const paymentEvents = ['payment-added', 'payment-updated', 'payment-deleted', 'payment-changed']
-    const patientEvents = ['patient-added', 'patient-updated', 'patient-deleted', 'patient-changed']
-    const prescriptionEvents = ['prescription-added', 'prescription-updated', 'prescription-deleted', 'prescription-changed']
-    const inventoryEvents = ['inventory-added', 'inventory-updated', 'inventory-deleted', 'inventory-changed']
-
-    // إضافة المستمعين
-    appointmentEvents.forEach(eventName => {
-      window.addEventListener(eventName, handleAppointmentChange)
+    // تسجيل معالج واحد لجميع الأحداث
+    allEvents.forEach(eventName => {
+      window.addEventListener(eventName, handleDataChange)
     })
 
-    paymentEvents.forEach(eventName => {
-      window.addEventListener(eventName, handlePaymentChange)
-    })
-
-    patientEvents.forEach(eventName => {
-      window.addEventListener(eventName, handlePatientChange)
-    })
-
-    prescriptionEvents.forEach(eventName => {
-      window.addEventListener(eventName, handlePrescriptionChange)
-    })
-
-    inventoryEvents.forEach(eventName => {
-      window.addEventListener(eventName, handleInventoryChange)
-    })
-
-    // دالة التنظيف
+    // دالة التنظيف المحسنة
     return () => {
       console.log('🔔 Cleaning up real-time table sync listeners...')
 
-      appointmentEvents.forEach(eventName => {
-        window.removeEventListener(eventName, handleAppointmentChange)
+      // إلغاء أي تحديث مؤجل
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current)
+        rafIdRef.current = null
+      }
+
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current)
+        debounceTimeoutRef.current = null
+      }
+
+      // إزالة جميع المستمعين
+      allEvents.forEach(eventName => {
+        window.removeEventListener(eventName, handleDataChange)
       })
 
-      paymentEvents.forEach(eventName => {
-        window.removeEventListener(eventName, handlePaymentChange)
-      })
-
-      patientEvents.forEach(eventName => {
-        window.removeEventListener(eventName, handlePatientChange)
-      })
-
-      prescriptionEvents.forEach(eventName => {
-        window.removeEventListener(eventName, handlePrescriptionChange)
-      })
-
-      inventoryEvents.forEach(eventName => {
-        window.removeEventListener(eventName, handleInventoryChange)
-      })
+      // تنظيف المجموعات
+      pendingUpdatesRef.current.clear()
     }
-  }, [refreshTable])
+  }, [batchRefresh, refreshTable])
 
   return {
     refreshAllTables,

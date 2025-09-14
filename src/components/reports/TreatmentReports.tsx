@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useState, useMemo, useCallback, memo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -248,7 +248,7 @@ export default function TreatmentReports() {
     }
   }, [treatmentStats.filteredData, patients])
 
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     try {
       clearCache()
       await generateReport('treatments')
@@ -259,7 +259,70 @@ export default function TreatmentReports() {
       console.error('Error refreshing treatment reports:', error)
       notify.error('فشل في تحديث تقارير العلاجات')
     }
-  }
+  }, [clearCache, generateReport, loadToothTreatments, loadPatients])
+
+  // Memoized export functions
+  const handleExportExcel = useCallback(async () => {
+    try {
+      const dataToExport = treatmentStats.filteredData.length > 0 ? treatmentStats.filteredData : toothTreatments
+
+      if (dataToExport.length === 0) {
+        notify.noDataToExport('لا توجد بيانات علاجات للتصدير')
+        return
+      }
+
+      const patientMap: Record<string, string> = {}
+      patients.forEach(patient => {
+        patientMap[patient.id] = patient.full_name || `${patient.first_name || ''} ${patient.last_name || ''}`.trim()
+      })
+
+      const dataWithPatientNames = dataToExport.map(treatment => ({
+        ...treatment,
+        patient_name: patientMap[treatment.patient_id] || `مريض ${treatment.patient_id}`
+      }))
+
+      await ExportService.exportTreatmentsToCSV(dataWithPatientNames)
+      notify.exportSuccess(`تم تصدير تقرير العلاجات بنجاح! (${dataToExport.length} علاج)`)
+    } catch (error) {
+      console.error('Error exporting CSV:', error)
+      notify.exportError('فشل في تصدير تقرير العلاجات')
+    }
+  }, [treatmentStats.filteredData, toothTreatments, patients])
+
+  const handleExportPDF = useCallback(async () => {
+    try {
+      const dataToExport = treatmentStats.filteredData.length > 0 ? treatmentStats.filteredData : toothTreatments
+
+      if (dataToExport.length === 0) {
+        notify.noDataToExport('لا توجد بيانات علاجات للتصدير')
+        return
+      }
+
+      const patientMap: Record<string, string> = {}
+      patients.forEach(patient => {
+        patientMap[patient.id] = patient.full_name || `${patient.first_name || ''} ${patient.last_name || ''}`.trim()
+      })
+
+      const dataWithPatientNames = dataToExport.map(treatment => ({
+        ...treatment,
+        patient_name: patientMap[treatment.patient_id] || `مريض ${treatment.patient_id}`
+      }))
+
+      const treatmentReportData = {
+        ...filteredTreatmentStats,
+        filterInfo: treatmentStats.timeFilter.startDate && treatmentStats.timeFilter.endDate
+          ? `البيانات من ${treatmentStats.timeFilter.startDate} إلى ${treatmentStats.timeFilter.endDate}`
+          : 'جميع البيانات',
+        dataCount: dataToExport.length
+      }
+
+      await PdfService.exportTreatmentReport(treatmentReportData, settings)
+      notify.exportSuccess(`تم تصدير تقرير العلاجات كملف PDF بنجاح (${dataToExport.length} علاج)`)
+    } catch (error) {
+      console.error('Error exporting PDF:', error)
+      notify.exportError('فشل في تصدير تقرير العلاجات كملف PDF')
+    }
+  }, [treatmentStats, toothTreatments, patients, filteredTreatmentStats, settings])
 
   if (isLoading) {
     return (
@@ -312,35 +375,7 @@ export default function TreatmentReports() {
           <Button
             variant="outline"
             size="sm"
-            onClick={async () => {
-              try {
-                // Use filtered data for export
-                const dataToExport = treatmentStats.filteredData.length > 0 ? treatmentStats.filteredData : toothTreatments
-
-                if (dataToExport.length === 0) {
-                  notify.noDataToExport('لا توجد بيانات علاجات للتصدير')
-                  return
-                }
-
-                // Add patient names to the data
-                const patientMap = {}
-                patients.forEach(patient => {
-                  patientMap[patient.id] = patient.full_name || `${patient.first_name || ''} ${patient.last_name || ''}`.trim()
-                })
-
-                const dataWithPatientNames = dataToExport.map(treatment => ({
-                  ...treatment,
-                  patient_name: patientMap[treatment.patient_id] || `مريض ${treatment.patient_id}`
-                }))
-
-                // Use ExportService for consistent calculation and export
-                await ExportService.exportTreatmentsToCSV(dataWithPatientNames)
-                notify.exportSuccess(`تم تصدير تقرير العلاجات بنجاح! (${dataToExport.length} علاج)`)
-              } catch (error) {
-                console.error('Error exporting CSV:', error)
-                notify.exportError('فشل في تصدير تقرير العلاجات')
-              }
-            }}
+            onClick={handleExportExcel}
             disabled={isExporting}
           >
             <Download className="w-4 h-4 ml-2" />
@@ -349,44 +384,7 @@ export default function TreatmentReports() {
           <Button
             variant="default"
             size="sm"
-            onClick={async () => {
-              try {
-                // Use filtered data for export
-                const dataToExport = treatmentStats.filteredData.length > 0 ? treatmentStats.filteredData : toothTreatments
-
-                if (dataToExport.length === 0) {
-                  notify.noDataToExport('لا توجد بيانات علاجات للتصدير')
-                  return
-                }
-
-                // Add patient names to the data
-                const patientMap = {}
-                patients.forEach(patient => {
-                  patientMap[patient.id] = patient.full_name || `${patient.first_name || ''} ${patient.last_name || ''}`.trim()
-                })
-
-                const dataWithPatientNames = dataToExport.map(treatment => ({
-                  ...treatment,
-                  patient_name: patientMap[treatment.patient_id] || `مريض ${treatment.patient_id}`
-                }))
-
-                // Use pre-calculated filtered statistics
-                const treatmentReportData = {
-                  ...filteredTreatmentStats,
-                  filterInfo: treatmentStats.timeFilter.startDate && treatmentStats.timeFilter.endDate
-                    ? `البيانات من ${treatmentStats.timeFilter.startDate} إلى ${treatmentStats.timeFilter.endDate}`
-                    : 'جميع البيانات',
-                  dataCount: dataToExport.length
-                }
-
-                // Use PdfService for enhanced PDF export
-                await PdfService.exportTreatmentReport(treatmentReportData, settings)
-                notify.exportSuccess(`تم تصدير تقرير العلاجات كملف PDF بنجاح (${dataToExport.length} علاج)`)
-              } catch (error) {
-                console.error('Error exporting PDF:', error)
-                notify.exportError('فشل في تصدير تقرير العلاجات كملف PDF')
-              }
-            }}
+            onClick={handleExportPDF}
             disabled={isExporting}
           >
             <Download className="w-4 h-4 ml-2" />

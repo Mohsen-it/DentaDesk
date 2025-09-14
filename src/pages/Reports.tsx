@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -17,14 +17,18 @@ import { useRealTimeReports } from '@/hooks/useRealTimeReports'
 import useTimeFilteredStats from '@/hooks/useTimeFilteredStats'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { getCardStyles, getIconStyles } from '@/lib/cardStyles'
-import PatientReports from '@/components/reports/PatientReports'
-import InventoryReports from '@/components/reports/InventoryReports'
-import AppointmentReports from '@/components/reports/AppointmentReports'
-import FinancialReports from '@/components/reports/FinancialReports'
-import TreatmentReports from '@/components/reports/TreatmentReports'
-import ClinicNeedsReports from '@/components/reports/ClinicNeedsReports'
-import ExpenseReports from '@/components/reports/ExpenseReports'
-import ComprehensiveProfitLossReport from '@/components/reports/ComprehensiveProfitLossReport'
+import PageLoading from '@/components/ui/PageLoading'
+import ErrorBoundary from '@/components/ErrorBoundary'
+
+// Lazy load heavy report components
+const PatientReports = React.lazy(() => import('@/components/reports/PatientReports'))
+const InventoryReports = React.lazy(() => import('@/components/reports/InventoryReports'))
+const AppointmentReports = React.lazy(() => import('@/components/reports/AppointmentReports'))
+const FinancialReports = React.lazy(() => import('@/components/reports/FinancialReports'))
+const TreatmentReports = React.lazy(() => import('@/components/reports/TreatmentReports'))
+const ClinicNeedsReports = React.lazy(() => import('@/components/reports/ClinicNeedsReports'))
+const ExpenseReports = React.lazy(() => import('@/components/reports/ExpenseReports'))
+const ComprehensiveProfitLossReport = React.lazy(() => import('@/components/reports/ComprehensiveProfitLossReport'))
 import CurrencyDisplay from '@/components/ui/currency-display'
 import { ComprehensiveExportService, TIME_PERIODS, TimePeriod } from '@/services/comprehensiveExportService'
 import { useDentalTreatmentStore } from '@/store/dentalTreatmentStore'
@@ -978,35 +982,67 @@ export default function Reports() {
 
         {/* Patient Reports Tab */}
         <TabsContent value="patients" dir="rtl">
-          <PatientReports />
+          <ErrorBoundary>
+            <Suspense fallback={<PageLoading message="جاري تحميل تقرير المرضى..." />}>
+              <PatientReports />
+            </Suspense>
+          </ErrorBoundary>
         </TabsContent>
 
         <TabsContent value="appointments" dir="rtl">
-          <AppointmentReports />
+          <ErrorBoundary>
+            <Suspense fallback={<PageLoading message="جاري تحميل تقرير المواعيد..." />}>
+              <AppointmentReports />
+            </Suspense>
+          </ErrorBoundary>
         </TabsContent>
 
         <TabsContent value="financial" dir="rtl">
-          <FinancialReports />
+          <ErrorBoundary>
+            <Suspense fallback={<PageLoading message="جاري تحميل التقرير المالي..." />}>
+              <FinancialReports />
+            </Suspense>
+          </ErrorBoundary>
         </TabsContent>
 
         <TabsContent value="treatments" dir="rtl">
-          <TreatmentReports />
+          <ErrorBoundary>
+            <Suspense fallback={<PageLoading message="جاري تحميل تقرير العلاجات..." />}>
+              <TreatmentReports />
+            </Suspense>
+          </ErrorBoundary>
         </TabsContent>
 
         <TabsContent value="inventory" dir="rtl">
-          <InventoryReports />
+          <ErrorBoundary>
+            <Suspense fallback={<PageLoading message="جاري تحميل تقرير المخزون..." />}>
+              <InventoryReports />
+            </Suspense>
+          </ErrorBoundary>
         </TabsContent>
 
         <TabsContent value="clinicNeeds" dir="rtl">
-          <ClinicNeedsReports />
+          <ErrorBoundary>
+            <Suspense fallback={<PageLoading message="جاري تحميل تقرير احتياجات العيادة..." />}>
+              <ClinicNeedsReports />
+            </Suspense>
+          </ErrorBoundary>
         </TabsContent>
 
         <TabsContent value="expenses" dir="rtl">
-          <ExpenseReports />
+          <ErrorBoundary>
+            <Suspense fallback={<PageLoading message="جاري تحميل تقرير المصروفات..." />}>
+              <ExpenseReports />
+            </Suspense>
+          </ErrorBoundary>
         </TabsContent>
 
         <TabsContent value="profitLoss" dir="rtl">
-          <ComprehensiveProfitLossReport />
+          <ErrorBoundary>
+            <Suspense fallback={<PageLoading message="جاري تحميل التقرير الشامل للأرباح والخسائر..." />}>
+              <ComprehensiveProfitLossReport />
+            </Suspense>
+          </ErrorBoundary>
         </TabsContent>
       </Tabs>
     </div>

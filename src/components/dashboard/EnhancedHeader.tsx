@@ -45,54 +45,10 @@ const EnhancedHeader = memo(function EnhancedHeader({
         {/* Right side - Actions (in RTL) */}
         <div className="flex items-center gap-3">
           {/* Mobile Menu Toggle */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onToggleMobileSidebar}
-            className="md:hidden p-2 bg-slate-100 dark:bg-card hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg"
-            aria-label="فتح القائمة الجانبية"
-          >
-            <Menu className="w-5 h-5 text-slate-700 dark:text-slate-300" aria-hidden="true" />
-          </Button>
+      
+      
 
-          {/* Settings */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onOpenSettings}
-            className="p-2 bg-slate-100 dark:bg-card hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg"
-            aria-label="فتح الإعدادات"
-          >
-            <Settings className="w-5 h-5 text-slate-700 dark:text-slate-300" aria-hidden="true" />
-          </Button>
-
-          {/* Refresh */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isGlobalLoading}
-            className="p-2 bg-slate-100 dark:bg-card hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg"
-            aria-label={isGlobalLoading ? "جاري التحديث..." : "تحديث البيانات"}
-          >
-            <RefreshCw className={`w-5 h-5 text-slate-700 dark:text-slate-300 ${isGlobalLoading ? 'animate-spin' : ''}`} aria-hidden="true" />
-          </Button>
-
-          {/* Notifications */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="relative p-2 bg-slate-100 dark:bg-card hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg"
-            onClick={() => setShowGlobalSearch(false)} // Placeholder - could navigate to alerts
-            aria-label={`التنبيهات ${unreadAlertsCount > 0 ? `(${unreadAlertsCount} جديد)` : ''}`}
-          >
-            <Bell className="w-5 h-5 text-slate-700 dark:text-slate-300" aria-hidden="true" />
-            {unreadAlertsCount > 0 && (
-              <Badge className="absolute -top-1 -left-1 bg-red-500 dark:bg-card text-white dark:text-slate-200 text-xs h-5 w-5 flex items-center justify-center rounded-full p-0" aria-label={`${unreadAlertsCount} تنبيه جديد`}>
-                {unreadAlertsCount > 9 ? '9+' : unreadAlertsCount}
-              </Badge>
-            )}
-          </Button>
+      
         </div>
 
         {/* Center - Search */}
@@ -121,46 +77,7 @@ const EnhancedHeader = memo(function EnhancedHeader({
           </div>
         </div>
 
-        {/* Left side - Logo and clinic name (in RTL) */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-3">
-            <div>
-              <h1 className="text-xl font-bold text-slate-700 dark:text-slate-300">
-                {clinicName}
-              </h1>
-              <p className="text-sm text-slate-700 dark:text-slate-300">
-                نظام إدارة العيادة السنية
-              </p>
-            </div>
-            <div className="w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-blue-500 to-purple-600 dark:from-blue-600 dark:to-purple-700 rounded-xl flex items-center justify-center shadow-lg dark:shadow-xl border border-white/20 dark:border-slate-600/50 overflow-hidden transition-all duration-300 ease-in-out">
-              {clinicLogo ? (
-                <img
-                  src={clinicLogo}
-                  alt="شعار العيادة"
-                  className="w-full h-full object-cover rounded-xl transition-opacity duration-300 ease-in-out"
-                  onError={(e) => {
-                    // Fallback to clinic name if logo fails to load
-                    e.currentTarget.style.display = 'none';
-                    const parent = e.currentTarget.parentElement;
-                    if (parent) {
-                      parent.innerHTML = `<div class="w-full h-full flex items-center justify-center">
-                        <span class="text-white dark:text-slate-100 text-xs font-bold text-center leading-tight px-1 transition-colors duration-300">
-                          ${clinicName ? clinicName.slice(0, 3) : 'عيادة'}
-                        </span>
-                      </div>`;
-                    }
-                  }}
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <span className="text-white dark:text-slate-100 text-xs font-bold text-center leading-tight px-1 transition-colors duration-300">
-                    {clinicName ? clinicName.slice(0, 3) : 'عيادة'}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+       
       </div>
 
       {/* Global Search Overlay */}
@@ -188,3 +105,6 @@ const EnhancedHeader = memo(function EnhancedHeader({
 })
 
 export default EnhancedHeader
+
+
+اريد نقل محتوى هذا الكود 

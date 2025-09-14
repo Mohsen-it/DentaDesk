@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useReportsStore } from '../store/reportsStore'
 
 /**
@@ -8,9 +8,17 @@ import { useReportsStore } from '../store/reportsStore'
 export const useRealTimeReports = (reportTypes: string[] = ['overview']) => {
   const { generateReport, generateAllReports, clearCache } = useReportsStore()
 
-  useEffect(() => {
-    const handleDataChange = async (eventType: string) => {
-      console.log(`🔄 Real-time Reports: ${eventType} detected, refreshing reports...`)
+  const rafIdRef = useRef<number | null>(null)
+  const pendingRefreshRef = useRef<boolean>(false)
+
+  const batchedRefresh = async () => {
+    if (pendingRefreshRef.current) return
+    pendingRefreshRef.current = true
+
+    rafIdRef.current = requestAnimationFrame(async () => {
+      rafIdRef.current = null
+
+      console.log(`🔄 Real-time Reports: Batch refreshing reports...`)
 
       // Clear cache to ensure fresh data
       clearCache()
@@ -29,7 +37,17 @@ export const useRealTimeReports = (reportTypes: string[] = ['overview']) => {
         console.log('✅ Real-time Reports: Refresh completed successfully')
       } catch (error) {
         console.error('❌ Real-time Reports: Refresh failed:', error)
+      } finally {
+        pendingRefreshRef.current = false
       }
+    })
+  }
+
+  useEffect(() => {
+    const handleDataChange = (event: Event) => {
+      const eventType = event.type
+      console.log(`🔄 Real-time Reports: ${eventType} detected, queuing refresh...`)
+      batchedRefresh()
     }
 
     // Define all possible data change events
@@ -56,22 +74,23 @@ export const useRealTimeReports = (reportTypes: string[] = ['overview']) => {
       'clinic-needs-changed'
     ]
 
-    // Create event handlers for each event type
-    const eventHandlers = dataChangeEvents.map(eventType => {
-      const handler = () => handleDataChange(eventType)
-      return { eventType, handler }
-    })
-
-    // Add event listeners
-    eventHandlers.forEach(({ eventType, handler }) => {
-      window.addEventListener(eventType, handler)
+    // Add consolidated event listeners
+    dataChangeEvents.forEach(eventType => {
+      window.addEventListener(eventType, handleDataChange)
     })
 
     // Cleanup event listeners
     return () => {
-      eventHandlers.forEach(({ eventType, handler }) => {
-        window.removeEventListener(eventType, handler)
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current)
+        rafIdRef.current = null
+      }
+
+      dataChangeEvents.forEach(eventType => {
+        window.removeEventListener(eventType, handleDataChange)
       })
+
+      pendingRefreshRef.current = false
     }
   }, [generateReport, generateAllReports, clearCache, reportTypes])
 

@@ -70,36 +70,39 @@ const navigationItems = [
   //   url: "inventory",
   //   icon: Package,
   // },
-  {
-    title: "المختبرات",
-    url: "labs",
-    icon: Microscope,
-  },
+  // {
+  //   title: "المختبرات",
+  //   url: "labs",
+  //   icon: Microscope,
+  // },
   // {
   //   title: "الأدوية والوصفات",
   //   url: "medications",
   //   icon: Pill,
   // },
-  {
-    title: "العلاجات السنية",
-    url: "dental-treatments",
-    icon: Stethoscope,
-  },
+  // {
+  //   title: "العلاجات السنية",
+  //   url: "dental-treatments",
+  //   icon: Stethoscope,
+  // },
   // {
   //   title: "احتياجات العيادة",
   //   url: "clinic-needs",
   //   icon: ClipboardList,
   // },
-  {
-    title: "مصروفات العيادة",
-    url: "expenses",
-    icon: Receipt,
-  },
-  {
-    title: "التقارير",
-    url: "reports",
-    icon: FileBarChart,
-  },
+///////////////////
+  // {
+  //   title: "مصروفات العيادة",
+  //   url: "expenses",
+  //   icon: Receipt,
+  // },
+
+  // {
+  //   title: "التقارير",
+  //   url: "reports",
+  //   icon: FileBarChart,
+  // },
+  ///////////////////////////////
   // {
   //   title: "فاتورة تقديرية ",
   //   url: "external-estimate",

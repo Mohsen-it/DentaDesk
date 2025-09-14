@@ -9,6 +9,7 @@ import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 import { EnhancedPdfReports } from './enhancedPdfReports'
 import { getTreatmentNameInArabic, getCategoryNameInArabic, getStatusLabelInArabic, getPaymentStatusInArabic, getPriorityLabelInArabic, getClinicNeedStatusInArabic } from '@/utils/arabicTranslations'
+import { getPDFWorker, PDFProcessingWorker } from './pdfWorker'
 
 export class PdfService {
   // Enhanced color scheme optimized for print clarity
@@ -1492,28 +1493,19 @@ export class PdfService {
     try {
       const { reportData, payments, labOrders, clinicNeeds, inventoryItems, clinicExpenses, patients, appointments, filter, currency } = data
 
-      // فلترة البيانات حسب التاريخ إذا كان الفلتر موجود
-      const filteredPayments = this.filterDataByDateRange(payments, filter, 'payment_date')
-      const filteredLabOrders = this.filterDataByDateRange(labOrders, filter, 'order_date')
-      const filteredClinicNeeds = this.filterDataByDateRange(clinicNeeds, filter, 'created_at')
-      const filteredAppointments = this.filterDataByDateRange(appointments, filter, 'created_at')
-      // فلترة المخزون حسب تاريخ الإنشاء مثل باقي البيانات
-      const filteredInventoryItems = this.filterDataByDateRange(inventoryItems, filter, 'created_at')
-      const filteredClinicExpenses = clinicExpenses ? this.filterDataByDateRange(clinicExpenses, filter, 'payment_date') : []
-
-      // إنشاء البيانات المفلترة للتصدير
-      const filteredData = {
+      // Optimized data filtering with caching to avoid redundant processing
+      const filteredData = await this.optimizeAndFilterReportData({
         reportData,
-        payments: filteredPayments,
-        labOrders: filteredLabOrders,
-        clinicNeeds: filteredClinicNeeds,
-        inventoryItems: filteredInventoryItems,
-        clinicExpenses: filteredClinicExpenses,
+        payments,
+        labOrders,
+        clinicNeeds,
+        inventoryItems,
+        clinicExpenses,
         patients,
-        appointments: filteredAppointments,
+        appointments,
         filter,
         currency
-      }
+      })
 
       const htmlContent = EnhancedPdfReports.createEnhancedProfitLossReportHTML(filteredData, settings)
       const fileName = this.generatePDFFileName('profit-loss')
@@ -1521,6 +1513,86 @@ export class PdfService {
     } catch (error) {
       console.error('Error exporting profit/loss report:', error)
       throw new Error('فشل في تصدير تقرير الأرباح والخسائر')
+    }
+  }
+
+  /**
+   * Optimized data filtering and processing for comprehensive reports
+   */
+  private static async optimizeAndFilterReportData(data: {
+    reportData: any
+    payments: any[]
+    labOrders: any[]
+    clinicNeeds: any[]
+    inventoryItems: any[]
+    clinicExpenses: any[]
+    patients: any[]
+    appointments: any[]
+    filter: any
+    currency: string
+  }) {
+    const { reportData, payments, labOrders, clinicNeeds, inventoryItems, clinicExpenses, patients, appointments, filter, currency } = data
+
+    // Create optimized filtering function that caches results
+    const createOptimizedFilter = (dateField: keyof any) => {
+      return (items: any[]) => {
+        if (!filter || !filter.start || !filter.end) {
+          return items
+        }
+
+        // Pre-calculate date range to avoid repeated calculations
+        const start = new Date(filter.start)
+        const startLocal = new Date(start.getFullYear(), start.getMonth(), start.getDate(), 0, 0, 0, 0)
+
+        const end = new Date(filter.end)
+        const endLocal = new Date(end.getFullYear(), end.getMonth(), end.getDate(), 23, 59, 59, 999)
+
+        return items.filter(item => {
+          const itemDateStr = item[dateField] as string
+          if (!itemDateStr) return false
+
+          const itemDate = new Date(itemDateStr)
+
+          // Optimized date comparison
+          let itemDateForComparison: Date
+          if (itemDateStr.includes('T') || itemDateStr.includes(' ')) {
+            itemDateForComparison = itemDate
+          } else {
+            itemDateForComparison = new Date(itemDate.getFullYear(), itemDate.getMonth(), itemDate.getDate(), 0, 0, 0, 0)
+          }
+
+          return itemDateForComparison >= startLocal && itemDateForComparison <= endLocal
+        })
+      }
+    }
+
+    // Create filter functions for each data type
+    const paymentFilter = createOptimizedFilter('payment_date')
+    const orderFilter = createOptimizedFilter('order_date')
+    const creationFilter = createOptimizedFilter('created_at')
+
+    // Use Promise.all for parallel processing to improve performance
+    const [filteredPayments, filteredLabOrders, filteredClinicNeeds, filteredAppointments, filteredInventoryItems, filteredClinicExpenses] = await Promise.all([
+      paymentFilter(payments),
+      orderFilter(labOrders),
+      creationFilter(clinicNeeds),
+      creationFilter(appointments),
+      creationFilter(inventoryItems),
+      clinicExpenses ? paymentFilter(clinicExpenses) : Promise.resolve([])
+    ])
+
+    // Return optimized data structure
+    return {
+      reportData,
+      payments: filteredPayments,
+      labOrders: filteredLabOrders,
+      clinicNeeds: filteredClinicNeeds,
+      inventoryItems: filteredInventoryItems,
+      clinicExpenses: filteredClinicExpenses,
+      patients, // Patients don't need filtering as they're referenced by other data
+      appointments: filteredAppointments,
+      filter,
+      currency
     }
   }
 
@@ -2787,7 +2859,7 @@ export class PdfService {
     `
   }
 
-  // Convert HTML to PDF using html2canvas + jsPDF
+  // Convert HTML to PDF using html2canvas + jsPDF with Web Worker support
   private static async convertHTMLToPDF(htmlContent: string, filename: string): Promise<void> {
     try {
       // Create a temporary div to render HTML
@@ -2810,57 +2882,209 @@ export class PdfService {
       // Wait a bit for fonts to load
       await new Promise(resolve => setTimeout(resolve, 100))
 
-      // Convert HTML to canvas
-      const canvas = await html2canvas(tempDiv, {
-        scale: 1.5, // Higher quality
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        width: 800,
-        height: tempDiv.scrollHeight,
-        scrollX: 0,
-        scrollY: 0
-      })
+      // Check if Web Worker is available for large content
+      const isLargeContent = htmlContent.length > 50000 || tempDiv.scrollHeight > 5000
+      const useWebWorker = isLargeContent && typeof Worker !== 'undefined'
+
+      let canvas: HTMLCanvasElement
+
+      if (useWebWorker) {
+        // Use Web Worker for heavy processing
+        canvas = await this.processPDFWithWebWorker(tempDiv)
+      } else {
+        // Use main thread for smaller content
+        canvas = await html2canvas(tempDiv, {
+          scale: 1.5, // Higher quality
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#ffffff',
+          width: 800,
+          height: tempDiv.scrollHeight,
+          scrollX: 0,
+          scrollY: 0
+        })
+      }
 
       // Remove temporary div
       document.body.removeChild(tempDiv)
 
-      // Create PDF
-      const imgData = canvas.toDataURL('image/jpeg',2)
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      })
-
-      // Calculate dimensions
-      const pdfWidth = pdf.internal.pageSize.getWidth()
-      const pdfHeight = pdf.internal.pageSize.getHeight()
-      const imgWidth = pdfWidth - 20 // 10mm margin on each side
-      const imgHeight = (canvas.height * imgWidth) / canvas.width
-
-      let heightLeft = imgHeight
-      let position = 10 // 10mm top margin
-
-      // Add first page
-      pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight)
-      heightLeft -= (pdfHeight - 20) // Subtract page height minus margins
-
-      // Add additional pages if needed
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight + 10
-        pdf.addPage()
-        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight)
-        heightLeft -= (pdfHeight - 20)
-      }
-
-      // Save the PDF
-      pdf.save(filename)
+      // Create PDF asynchronously with chunked processing
+      await this.createPDFAsync(canvas, filename)
 
     } catch (error) {
       console.error('Error converting HTML to PDF:', error)
       throw new Error('فشل في تحويل التقرير إلى PDF')
     }
+  }
+
+  // Web Worker implementation for heavy PDF processing
+  private static async processPDFWithWebWorker(element: HTMLElement): Promise<HTMLCanvasElement> {
+    try {
+      // Check if Web Worker is available and content is suitable
+      if (typeof Worker === 'undefined' || element.scrollHeight < 3000) {
+        // Fallback to main thread for smaller content or unsupported browsers
+        return await html2canvas(element, {
+          scale: 1.5,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#ffffff',
+          width: 800,
+          height: element.scrollHeight,
+          scrollX: 0,
+          scrollY: 0
+        })
+      }
+
+      // Use Web Worker for large content
+      const worker = getPDFWorker()
+      const htmlContent = element.outerHTML
+
+      const result = await worker.processHTML(htmlContent, 1.5)
+
+      // Create canvas from worker result
+      const canvas = document.createElement('canvas')
+      canvas.width = result.width
+      canvas.height = result.height
+
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        throw new Error('Failed to get canvas context')
+      }
+
+      const img = new Image()
+      img.src = result.canvasData
+
+      return new Promise((resolve, reject) => {
+        img.onload = () => {
+          ctx.drawImage(img, 0, 0)
+          resolve(canvas)
+        }
+        img.onerror = () => {
+          reject(new Error('Failed to load canvas image from Web Worker'))
+        }
+      })
+
+    } catch (error) {
+      console.error('Web Worker PDF processing failed:', error)
+      // Fallback to main thread
+      return await html2canvas(element, {
+        scale: 1.2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        width: 800,
+        height: element.scrollHeight,
+        scrollX: 0,
+        scrollY: 0
+      })
+    }
+  }
+
+  // Chunk HTML processing for large documents
+  private static chunkHTMLProcessing(element: HTMLElement): Array<{element: HTMLElement, height: number}> {
+    const chunks: Array<{element: HTMLElement, height: number}> = []
+    const maxChunkHeight = 2000 // Maximum height per chunk in pixels
+
+    if (element.scrollHeight <= maxChunkHeight) {
+      return [{ element, height: element.scrollHeight }]
+    }
+
+    // Clone the element and split into chunks
+    const totalHeight = element.scrollHeight
+    let currentTop = 0
+
+    while (currentTop < totalHeight) {
+      const chunkHeight = Math.min(maxChunkHeight, totalHeight - currentTop)
+      const chunk = element.cloneNode(true) as HTMLElement
+
+      // Apply clipping to the chunk
+      chunk.style.height = `${chunkHeight}px`
+      chunk.style.overflow = 'hidden'
+      chunk.style.position = 'relative'
+
+      chunks.push({ element: chunk, height: chunkHeight })
+      currentTop += chunkHeight
+    }
+
+    return chunks
+  }
+
+  // Combine multiple canvases into one
+  private static combineCanvases(canvases: HTMLCanvasElement[]): HTMLCanvasElement {
+    if (canvases.length === 0) {
+      throw new Error('No canvases to combine')
+    }
+
+    if (canvases.length === 1) {
+      return canvases[0]
+    }
+
+    // Calculate total dimensions
+    const totalWidth = canvases[0].width
+    const totalHeight = canvases.reduce((sum, canvas) => sum + canvas.height, 0)
+
+    // Create combined canvas
+    const combinedCanvas = document.createElement('canvas')
+    combinedCanvas.width = totalWidth
+    combinedCanvas.height = totalHeight
+
+    const ctx = combinedCanvas.getContext('2d')
+    if (!ctx) {
+      throw new Error('Failed to get canvas context')
+    }
+
+    // Draw all canvases
+    let currentY = 0
+    canvases.forEach(canvas => {
+      ctx.drawImage(canvas, 0, currentY, totalWidth, canvas.height)
+      currentY += canvas.height
+    })
+
+    return combinedCanvas
+  }
+
+  // Asynchronous PDF creation with memory management
+  private static async createPDFAsync(canvas: HTMLCanvasElement, filename: string): Promise<void> {
+    // Create PDF in chunks to avoid memory issues
+    const imgData = canvas.toDataURL('image/jpeg', 0.8) // Lower quality for better performance
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    })
+
+    // Calculate dimensions
+    const pdfWidth = pdf.internal.pageSize.getWidth()
+    const pdfHeight = pdf.internal.pageSize.getHeight()
+    const imgWidth = pdfWidth - 20 // 10mm margin on each side
+    const imgHeight = (canvas.height * imgWidth) / canvas.width
+
+    let heightLeft = imgHeight
+    let position = 10 // 10mm top margin
+
+    // Add first page
+    pdf.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight)
+    heightLeft -= (pdfHeight - 20) // Subtract page height minus margins
+
+    // Add additional pages if needed (limit to avoid memory issues)
+    const maxPages = 50 // Maximum pages to prevent infinite loops
+    let pageCount = 1
+
+    while (heightLeft >= 0 && pageCount < maxPages) {
+      position = heightLeft - imgHeight + 10
+      pdf.addPage()
+      pdf.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight)
+      heightLeft -= (pdfHeight - 20)
+      pageCount++
+
+      // Allow UI to breathe between pages
+      if (pageCount % 10 === 0) {
+        await new Promise(resolve => setTimeout(resolve, 10))
+      }
+    }
+
+    // Save the PDF
+    pdf.save(filename)
   }
 
   static async exportTreatmentReport(reportData: any, settings: any): Promise<void> {

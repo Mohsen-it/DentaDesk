@@ -29,7 +29,7 @@ export class PatientIntegrationService {
         throw new Error('المريض غير موجود')
       }
 
-      // جلب جميع البيانات المرتبطة بالمريض بشكل متوازي
+      // جلب جميع البيانات المرتبطة بالمريض بشكل متوازي مع تحسين الأداء
       const [
         appointments,
         treatments,
@@ -71,6 +71,57 @@ export class PatientIntegrationService {
     } catch (error) {
       console.error('خطأ في جلب البيانات المتكاملة للمريض:', error)
       return null
+    }
+  }
+
+  /**
+   * جلب جميع البيانات المتكاملة للمريض باستخدام استعلام واحد محسن (موصى به)
+   * هذا الطريقة تحتاج إلى تنفيذ في الـ backend
+   */
+  static async getPatientIntegratedDataOptimized(patientId: string): Promise<PatientIntegratedData | null> {
+    try {
+      // هذا طريقة مثالية تحتاج إلى backend implementation
+      // const result = await window.electronAPI?.patients?.getIntegratedData?.(patientId)
+
+      // للوقت الحالي، نستخدم الطريقة المحسنة الموجودة
+      return this.getPatientIntegratedDataWithCaching(patientId)
+    } catch (error) {
+      console.error('خطأ في جلب البيانات المتكاملة المحسنة للمريض:', error)
+      // fallback to the original method
+      return this.getPatientIntegratedData(patientId)
+    }
+  }
+
+  /**
+   * جلب البيانات المتكاملة مع caching لتحسين الأداء
+   */
+  private static patientDataCache = new Map<string, { data: PatientIntegratedData | null, timestamp: number }>()
+  private static readonly CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
+
+  static async getPatientIntegratedDataWithCaching(patientId: string): Promise<PatientIntegratedData | null> {
+    // Check cache first
+    const cached = this.patientDataCache.get(patientId)
+    if (cached && (Date.now() - cached.timestamp) < this.CACHE_TTL_MS) {
+      return cached.data
+    }
+
+    // Fetch fresh data
+    const data = await this.getPatientIntegratedData(patientId)
+
+    // Cache the result
+    this.patientDataCache.set(patientId, { data, timestamp: Date.now() })
+
+    return data
+  }
+
+  /**
+   * تنظيف cache البيانات
+   */
+  static clearPatientDataCache(patientId?: string) {
+    if (patientId) {
+      this.patientDataCache.delete(patientId)
+    } else {
+      this.patientDataCache.clear()
     }
   }
 
@@ -159,7 +210,7 @@ export class PatientIntegrationService {
   }
 
   /**
-   * حساب إحصائيات المريض
+   * حساب إحصائيات المريض بطريقة محسنة
    */
   private static calculatePatientStats(data: {
     appointments: Appointment[]
@@ -173,18 +224,38 @@ export class PatientIntegrationService {
     // حساب إجمالي المواعيد
     const totalAppointments = appointments.length
 
-    // حساب العلاجات المكتملة والمعلقة
-    const completedTreatments = treatments.filter(t => t.treatment_status === 'completed').length
-    const pendingTreatments = treatments.filter(t => t.treatment_status === 'planned' || t.treatment_status === 'in_progress').length
+    // حساب العلاجات المكتملة والمعلقة باستخدام Set للأداء الأفضل
+    const treatmentStatusCounts = treatments.reduce((acc, t) => {
+      acc[t.treatment_status] = (acc[t.treatment_status] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
 
-    // حساب المبالغ المالية بالطريقة الصحيحة
+    const completedTreatments = treatmentStatusCounts['completed'] || 0
+    const pendingTreatments = (treatmentStatusCounts['planned'] || 0) + (treatmentStatusCounts['in_progress'] || 0)
+
+    // تحسين حساب المبالغ المالية باستخدام Map للأداء الأفضل
+    const paymentMap = new Map<string, Payment[]>()
+    const generalPayments: Payment[] = []
+
+    // تجميع المدفوعات حسب الموعد لتجنب الـ filtering المتكرر
+    payments.forEach(payment => {
+      if (payment.appointment_id) {
+        if (!paymentMap.has(payment.appointment_id)) {
+          paymentMap.set(payment.appointment_id, [])
+        }
+        paymentMap.get(payment.appointment_id)!.push(payment)
+      } else {
+        generalPayments.push(payment)
+      }
+    })
+
     let totalPaid = 0
     let totalDue = 0
 
-    // حساب المدفوعات المرتبطة بالمواعيد
+    // حساب المدفوعات المرتبطة بالمواعيد بكفاءة أعلى
     appointments.forEach(appointment => {
       if (appointment.cost) {
-        const appointmentPayments = payments.filter(p => p.appointment_id === appointment.id)
+        const appointmentPayments = paymentMap.get(appointment.id) || []
         const appointmentTotalPaid = appointmentPayments.reduce((sum, p) => sum + (p.amount || 0), 0)
         totalDue += appointment.cost
         totalPaid += appointmentTotalPaid
@@ -192,7 +263,6 @@ export class PatientIntegrationService {
     })
 
     // إضافة المدفوعات العامة غير المرتبطة بمواعيد
-    const generalPayments = payments.filter(payment => !payment.appointment_id)
     generalPayments.forEach(payment => {
       totalPaid += payment.amount || 0
       if (payment.total_amount_due) {
@@ -203,22 +273,42 @@ export class PatientIntegrationService {
     // حساب المبلغ المتبقي بشكل صحيح: الإجمالي المطلوب - الإجمالي المدفوع
     const remainingBalance = Math.max(0, totalDue - totalPaid)
 
-    // آخر زيارة
-    const lastVisit = appointments
-      .filter(apt => apt.status === 'completed')
-      .sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())[0]?.start_time
+    // تحسين البحث عن آخر زيارة والموعد القادم
+    const currentTime = new Date().getTime()
 
-    // الموعد القادم
-    const nextAppointment = appointments
-      .filter(apt => apt.status === 'scheduled' && new Date(apt.start_time) > new Date())
-      .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())[0]?.start_time
+    // فلترة المواعيد المكتملة وغير المكتملة في عملية واحدة
+    const completedAppointments: Appointment[] = []
+    const scheduledAppointments: Appointment[] = []
+
+    appointments.forEach(apt => {
+      if (apt.status === 'completed') {
+        completedAppointments.push(apt)
+      } else if (apt.status === 'scheduled') {
+        scheduledAppointments.push(apt)
+      }
+    })
+
+    // آخر زيارة - فرز المواعيد المكتملة
+    let lastVisit: string | undefined
+    if (completedAppointments.length > 0) {
+      completedAppointments.sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())
+      lastVisit = completedAppointments[0].start_time
+    }
+
+    // الموعد القادم - فرز المواعيد المجدولة المستقبلية
+    let nextAppointment: string | undefined
+    const futureAppointments = scheduledAppointments.filter(apt => new Date(apt.start_time).getTime() > currentTime)
+    if (futureAppointments.length > 0) {
+      futureAppointments.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+      nextAppointment = futureAppointments[0].start_time
+    }
 
     return {
       totalAppointments,
       completedTreatments,
       pendingTreatments,
-      totalPaid,
-      remainingBalance,
+      totalPaid: Math.round(totalPaid * 100) / 100, // تحسين الدقة
+      remainingBalance: Math.round(remainingBalance * 100) / 100,
       lastVisit,
       nextAppointment
     }

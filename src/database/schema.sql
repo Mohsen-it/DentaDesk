@@ -581,6 +581,43 @@ CREATE INDEX IF NOT EXISTS idx_treatment_plan_items_plan ON treatment_plan_items
 CREATE INDEX IF NOT EXISTS idx_treatment_plan_items_sequence ON treatment_plan_items(treatment_plan_id, sequence_order);
 CREATE INDEX IF NOT EXISTS idx_treatment_plan_items_status ON treatment_plan_items(status);
 
+-- Additional composite indexes for performance optimization
+-- Patient data access patterns (common in reports and patient details)
+CREATE INDEX IF NOT EXISTS idx_patients_date_added_name ON patients(date_added, full_name);
+CREATE INDEX IF NOT EXISTS idx_patients_gender_age ON patients(gender, age);
+CREATE INDEX IF NOT EXISTS idx_patients_age_gender ON patients(age, gender);
+
+-- Appointments optimization for patient history and scheduling
+CREATE INDEX IF NOT EXISTS idx_appointments_patient_status_date ON appointments(patient_id, status, start_time);
+CREATE INDEX IF NOT EXISTS idx_appointments_status_date_patient ON appointments(status, start_time, patient_id);
+CREATE INDEX IF NOT EXISTS idx_appointments_treatment_patient ON appointments(treatment_id, patient_id);
+
+-- Payments optimization for financial reports and patient balances
+CREATE INDEX IF NOT EXISTS idx_payments_patient_date_status ON payments(patient_id, payment_date, status);
+CREATE INDEX IF NOT EXISTS idx_payments_appointment_patient ON payments(appointment_id, patient_id);
+CREATE INDEX IF NOT EXISTS idx_payments_patient_appointment ON payments(patient_id, appointment_id);
+CREATE INDEX IF NOT EXISTS idx_payments_status_date_amount ON payments(status, payment_date, amount);
+
+-- Tooth treatments optimization for patient treatment history
+CREATE INDEX IF NOT EXISTS idx_tooth_treatments_patient_status ON tooth_treatments(patient_id, treatment_status);
+CREATE INDEX IF NOT EXISTS idx_tooth_treatments_patient_category ON tooth_treatments(patient_id, treatment_category);
+CREATE INDEX IF NOT EXISTS idx_tooth_treatments_status_category ON tooth_treatments(treatment_status, treatment_category);
+
+-- Lab orders optimization for patient lab history
+CREATE INDEX IF NOT EXISTS idx_lab_orders_patient_date_status ON lab_orders(patient_id, order_date, status);
+CREATE INDEX IF NOT EXISTS idx_lab_orders_patient_treatment ON lab_orders(patient_id, tooth_treatment_id);
+CREATE INDEX IF NOT EXISTS idx_lab_orders_status_date_patient ON lab_orders(status, order_date, patient_id);
+
+-- Prescriptions optimization for patient medication history
+CREATE INDEX IF NOT EXISTS idx_prescriptions_patient_date ON prescriptions(patient_id, prescription_date);
+CREATE INDEX IF NOT EXISTS idx_prescriptions_patient_treatment ON prescriptions(patient_id, tooth_treatment_id);
+CREATE INDEX IF NOT EXISTS idx_prescriptions_treatment_patient ON prescriptions(tooth_treatment_id, patient_id);
+
+-- Treatment sessions optimization for session tracking
+CREATE INDEX IF NOT EXISTS idx_treatment_sessions_treatment_date ON treatment_sessions(tooth_treatment_id, session_date);
+CREATE INDEX IF NOT EXISTS idx_treatment_sessions_status_date ON treatment_sessions(session_status, session_date);
+CREATE INDEX IF NOT EXISTS idx_treatment_sessions_treatment_status ON treatment_sessions(tooth_treatment_id, session_status);
+
 -- Triggers for automatic tooth_number population in lab_orders
 CREATE TRIGGER IF NOT EXISTS update_lab_order_tooth_number
 AFTER UPDATE OF tooth_treatment_id ON lab_orders

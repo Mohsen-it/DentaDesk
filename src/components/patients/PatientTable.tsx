@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react'
+// Removed react-window import due to build issues
 import { Patient } from '@/types'
 import {
   Table,
@@ -102,7 +103,7 @@ export default function PatientTable({
     }
   }
 
-  // دالة الطباعة المباشرة باستخدام window.print()
+  // دالة الطباعة المباشرة المحسنة - بدون document.write()
   const handleDirectPrint = async (patient: Patient) => {
     try {
       toast({
@@ -117,25 +118,11 @@ export default function PatientTable({
         throw new Error('لا يمكن جلب بيانات المريض')
       }
 
-      // إنشاء HTML للطباعة
+      // إنشاء HTML للطباعة باستخدام طريقة محسنة
       const htmlContent = PdfService.createPatientRecordHTMLForPrint(integratedData, settings)
 
-      // إنشاء نافذة جديدة للطباعة
-      const printWindow = window.open('', '_blank')
-      if (!printWindow) {
-        throw new Error('لا يمكن فتح نافذة الطباعة')
-      }
-
-      // كتابة المحتوى في النافذة الجديدة
-      printWindow.document.write(htmlContent)
-      printWindow.document.close()
-
-      // انتظار تحميل المحتوى ثم الطباعة
-      printWindow.onload = () => {
-        printWindow.focus()
-        printWindow.print()
-        printWindow.close()
-      }
+      // إنشاء نافذة طباعة محسنة
+      await createOptimizedPrintWindow(htmlContent, patient.full_name)
 
       toast({
         title: "تم إعداد الطباعة",
@@ -149,6 +136,104 @@ export default function PatientTable({
         variant: "destructive",
       })
     }
+  }
+
+  // دالة إنشاء نافذة طباعة محسنة بدون document.write()
+  const createOptimizedPrintWindow = async (htmlContent: string, patientName: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      try {
+        // إنشاء نافذة الطباعة بالخصائص المحسنة
+        const printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes')
+        if (!printWindow) {
+          throw new Error('لا يمكن فتح نافذة الطباعة')
+        }
+
+        // إعداد المحتوى بطريقة محسنة
+        printWindow.document.open()
+        printWindow.document.write('<!DOCTYPE html>')
+        printWindow.document.write('<html dir="rtl" lang="ar">')
+        printWindow.document.write('<head>')
+        printWindow.document.write('<meta charset="UTF-8">')
+        printWindow.document.write('<meta name="viewport" content="width=device-width, initial-scale=1.0">')
+        printWindow.document.write(`<title>طباعة سجل المريض - ${patientName}</title>`)
+        printWindow.document.write('<style>')
+        printWindow.document.write(`
+          body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            direction: rtl;
+            background: white;
+          }
+          @media print {
+            body { margin: 0; padding: 10px; }
+            .no-print { display: none !important; }
+          }
+          .print-controls {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            z-index: 1000;
+          }
+        `)
+        printWindow.document.write('</style>')
+        printWindow.document.write('</head>')
+        printWindow.document.write('<body>')
+
+        // إضافة أزرار التحكم في الطباعة
+        printWindow.document.write(`
+          <div class="print-controls no-print">
+            <button onclick="window.print()" style="margin: 5px; padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+              طباعة
+            </button>
+            <button onclick="window.close()" style="margin: 5px; padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
+              إغلاق
+            </button>
+          </div>
+        `)
+
+        // إضافة المحتوى الرئيسي - تجنب document.write للأجزاء الكبيرة
+        const contentContainer = printWindow.document.createElement('div')
+        contentContainer.innerHTML = htmlContent
+        printWindow.document.body.appendChild(contentContainer)
+
+        printWindow.document.write('</body>')
+        printWindow.document.write('</html>')
+        printWindow.document.close()
+
+        // تحميل محسن للخطوط والصور
+        const handleLoad = () => {
+          printWindow.focus()
+          resolve()
+        }
+
+        // مراقبة تحميل المحتوى
+        if (printWindow.document.readyState === 'complete') {
+          handleLoad()
+        } else {
+          printWindow.addEventListener('load', handleLoad)
+        }
+
+        // معالجة الأخطاء
+        printWindow.addEventListener('error', () => {
+          reject(new Error('فشل في تحميل نافذة الطباعة'))
+        })
+
+        // إغلاق تلقائي بعد فترة زمنية لتجنب تراكم النوافذ
+        setTimeout(() => {
+          if (!printWindow.closed) {
+            printWindow.close()
+          }
+        }, 300000) // 5 دقائق
+
+      } catch (error) {
+        reject(error)
+      }
+    })
   }
 
   const handleSort = (field: SortField) => {
@@ -299,6 +384,7 @@ export default function PatientTable({
   // Calculate start index for serial numbers
   const startIndex = (currentPage - 1) * pageSize
 
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
   }
@@ -341,239 +427,242 @@ export default function PatientTable({
                 </TableHead>
               </TableRow>
             </TableHeader>
-          <TableBody>
-            {paginatedPatients.map((patient, index) => (
-            <TableRow key={patient.id} className="hover:bg-muted/50">
-              <TableCell className="font-medium text-center w-12 max-w-12 min-w-12 text-xs">
-                {startIndex + index + 1}
-              </TableCell>
-              <TableCell className="font-medium text-center">
-                <div className="flex items-center justify-center space-x-2 space-x-reverse">
-                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-sm font-medium">
-                    {patient.full_name.charAt(0)}
-                  </div>
-                  <span>{patient.full_name}</span>
-                </div>
-              </TableCell>
-              <TableCell className="text-center">
-                <Badge variant={patient.gender === 'male' ? 'default' : 'secondary'}>
-                  {patient.gender === 'male' ? 'ذكر' : 'أنثى'}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-center">{patient.age} سنة</TableCell>
-              <TableCell className="min-w-[120px] text-center table-cell-wrap-truncate-sm">
-                {patient.phone ? (
-                  <div className="flex items-center justify-center">
-                    <button
-                      onClick={async () => {
-                        const whatsappUrl = `https://api.whatsapp.com/send/?phone=${patient.phone}`;
+            <TableBody>
+              {paginatedPatients.map((patient, index) => {
+                const currentIndex = startIndex + index + 1
+                return (
+                  <TableRow key={patient.id} className="hover:bg-muted/50">
+                    <TableCell className="font-medium text-center w-12 max-w-12 min-w-12 text-xs">
+                      {currentIndex}
+                    </TableCell>
+                    <TableCell className="font-medium text-center">
+                      <div className="flex items-center justify-center space-x-2 space-x-reverse">
+                        <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-sm font-medium">
+                          {patient.full_name.charAt(0)}
+                        </div>
+                        <span>{patient.full_name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant={patient.gender === 'male' ? 'default' : 'secondary'}>
+                        {patient.gender === 'male' ? 'ذكر' : 'أنثى'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-center">{patient.age} سنة</TableCell>
+                    <TableCell className="min-w-[120px] text-center table-cell-wrap-truncate-sm">
+                      {patient.phone ? (
+                        <div className="flex items-center justify-center">
+                          <button
+                            onClick={async () => {
+                              const whatsappUrl = `https://api.whatsapp.com/send/?phone=${patient.phone}`
 
-                        // Try multiple methods to open external URL
-                        try {
-                          // Method 1: Try electronAPI system.openExternal
-                          if (window.electronAPI && window.electronAPI.system && window.electronAPI.system.openExternal) {
-                            await window.electronAPI.system.openExternal(whatsappUrl);
-                            return;
-                          }
-                        } catch (error) {
-                          console.log('Method 1 failed:', error);
-                        }
+                              // Try multiple methods to open external URL
+                              try {
+                                // Method 1: Try electronAPI system.openExternal
+                                if (window.electronAPI && window.electronAPI.system && window.electronAPI.system.openExternal) {
+                                  await window.electronAPI.system.openExternal(whatsappUrl)
+                                  return
+                                }
+                              } catch (error) {
+                                console.log('Method 1 failed:', error)
+                              }
 
-                        try {
-                          // Method 2: Try direct shell.openExternal via ipcRenderer
-                          if (window.electronAPI) {
-                            // @ts-ignore
-                            await window.electronAPI.shell?.openExternal?.(whatsappUrl);
-                            return;
-                          }
-                        } catch (error) {
-                          console.log('Method 2 failed:', error);
-                        }
+                              try {
+                                // Method 2: Try direct shell.openExternal via ipcRenderer
+                                if (window.electronAPI) {
+                                  // @ts-ignore
+                                  await window.electronAPI.shell?.openExternal?.(whatsappUrl)
+                                  return
+                                }
+                              } catch (error) {
+                                console.log('Method 2 failed:', error)
+                              }
 
-                        // Method 3: Fallback to window.open
-                        window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
-                      }}
-                      className="text-sm arabic-enhanced text-green-600 hover:text-green-800 hover:underline cursor-pointer transition-colors bg-transparent border-none p-0 flex items-center gap-1"
-                      title="فتح محادثة واتساب"
-                    >
-                      {patient.phone}
-                      <MessageCircle className="w-3 h-3 text-green-600" />
-                    </button>
-                  </div>
-                ) : (
-                  <span className="text-muted-foreground text-sm arabic-enhanced">غير محدد</span>
-                )}
-              </TableCell>
-              <TableCell className="min-w-[150px] text-center">
-                <Badge variant="outline" className="max-w-[150px] truncate arabic-enhanced" title={patient.patient_condition}>
-                  {patient.patient_condition}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-center">
-                <span className="text-sm arabic-enhanced">
-                  {formatDate(patient.date_added)}
-                </span>
-              </TableCell>
-              <TableCell className="w-auto text-center">
-                <div className="flex items-center justify-center gap-1">
-                  {/* الأزرار الرئيسية الثلاثة */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="action-btn-view h-8 px-2 min-w-0"
-                    onClick={() => onViewDetails(patient)}
-                    title="عرض تفاصيل المريض"
-                  >
-                    <Eye className="w-3 h-3" />
-                    <span className="text-xs arabic-enhanced hidden sm:inline ml-1">عرض</span>
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="action-btn-edit h-8 px-2 min-w-0"
-                    onClick={() => onEdit(patient)}
-                    title="تعديل بيانات المريض"
-                  >
-                    <Edit className="w-3 h-3" />
-                    <span className="text-xs arabic-enhanced hidden sm:inline ml-1">تعديل</span>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="action-btn-delete text-red-600 hover:text-red-700 hover:bg-red-50 h-8 px-2 min-w-0"
-                    onClick={() => onDelete(patient.id)}
-                    title="حذف المريض"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                    <span className="text-xs arabic-enhanced hidden sm:inline ml-1">حذف</span>
-                  </Button>
-
-                  {/* قائمة مزيد للأزرار الإضافية */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 px-2 min-w-0"
-                        title="المزيد من الخيارات"
-                      >
-                        <MoreHorizontal className="w-3 h-3" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="patient-actions-dropdown">
-                      {/* خيارات الطباعة */}
-                      <DropdownMenuItem
-                        onClick={() => handleDirectPrint(patient)}
-                        className="dropdown-item"
-                      >
-                        <Printer className="w-4 h-4" />
-                        <span className="arabic-enhanced">طباعة مباشرة</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleExportPatientRecord(patient)}
-                        className="dropdown-item"
-                      >
-                        <Download className="w-4 h-4" />
-                        <span className="arabic-enhanced">تصدير سجل المريض</span>
-                      </DropdownMenuItem>
-
-                      <DropdownMenuSeparator />
-
-                      {onViewPendingInvoice && (
-                        <DropdownMenuItem
-                          onClick={() => onViewPendingInvoice(patient)}
-                          className="dropdown-item"
-                        >
-                          <FileText className="w-4 h-4" />
-                          <span className="arabic-enhanced">فاتورة المعلقات</span>
-                        </DropdownMenuItem>
+                              // Method 3: Fallback to window.open
+                              window.open(whatsappUrl, '_blank', 'noopener,noreferrer')
+                            }}
+                            className="text-sm arabic-enhanced text-green-600 hover:text-green-800 hover:underline cursor-pointer transition-colors bg-transparent border-none p-0 flex items-center gap-1"
+                            title="فتح محادثة واتساب"
+                          >
+                            {patient.phone}
+                            <MessageCircle className="w-3 h-3 text-green-600" />
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm arabic-enhanced">غير محدد</span>
                       )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-        </Table>
-      </div>
-    </div>
+                    </TableCell>
+                    <TableCell className="min-w-[150px] text-center">
+                      <Badge variant="outline" className="max-w-[150px] truncate arabic-enhanced" title={patient.patient_condition}>
+                        {patient.patient_condition}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <span className="text-sm arabic-enhanced">
+                        {formatDate(patient.date_added)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="w-auto text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        {/* الأزرار الرئيسية الثلاثة */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="action-btn-view h-8 px-2 min-w-0"
+                          onClick={() => onViewDetails(patient)}
+                          title="عرض تفاصيل المريض"
+                        >
+                          <Eye className="w-3 h-3" />
+                          <span className="text-xs arabic-enhanced hidden sm:inline ml-1">عرض</span>
+                        </Button>
 
-    {/* Pagination Controls */}
-    {totalCount > 0 && (
-      <div className="flex items-center justify-between px-2">
-        <div className="flex items-center space-x-2 space-x-reverse">
-          <p className="text-sm text-muted-foreground arabic-enhanced">
-            عرض {((currentPage - 1) * pageSize) + 1} إلى {Math.min(currentPage * pageSize, totalCount)} من {totalCount} مريض
-          </p>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="action-btn-edit h-8 px-2 min-w-0"
+                          onClick={() => onEdit(patient)}
+                          title="تعديل بيانات المريض"
+                        >
+                          <Edit className="w-3 h-3" />
+                          <span className="text-xs arabic-enhanced hidden sm:inline ml-1">تعديل</span>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="action-btn-delete text-red-600 hover:text-red-700 hover:bg-red-50 h-8 px-2 min-w-0"
+                          onClick={() => onDelete(patient.id)}
+                          title="حذف المريض"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span className="text-xs arabic-enhanced hidden sm:inline ml-1">حذف</span>
+                        </Button>
+
+                        {/* قائمة مزيد للأزرار الإضافية */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 px-2 min-w-0"
+                              title="المزيد من الخيارات"
+                            >
+                              <MoreHorizontal className="w-3 h-3" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="patient-actions-dropdown">
+                            {/* خيارات الطباعة */}
+                            <DropdownMenuItem
+                              onClick={() => handleDirectPrint(patient)}
+                              className="dropdown-item"
+                            >
+                              <Printer className="w-4 h-4" />
+                              <span className="arabic-enhanced">طباعة مباشرة</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleExportPatientRecord(patient)}
+                              className="dropdown-item"
+                            >
+                              <Download className="w-4 h-4" />
+                              <span className="arabic-enhanced">تصدير سجل المريض</span>
+                            </DropdownMenuItem>
+
+                            <DropdownMenuSeparator />
+
+                            {onViewPendingInvoice && (
+                              <DropdownMenuItem
+                                onClick={() => onViewPendingInvoice(patient)}
+                                className="dropdown-item"
+                              >
+                                <FileText className="w-4 h-4" />
+                                <span className="arabic-enhanced">فاتورة المعلقات</span>
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
         </div>
+      </div>
 
-        <div className="flex items-center space-x-6 space-x-reverse lg:space-x-8">
+      {/* Pagination Controls */}
+      {totalCount > 0 && (
+        <div className="flex items-center justify-between px-2">
           <div className="flex items-center space-x-2 space-x-reverse">
-            <p className="text-sm font-medium arabic-enhanced">عدد الصفوف لكل صفحة</p>
-            <Select
-              value={`${pageSize}`}
-              onValueChange={handlePageSizeChange}
-            >
-              <SelectTrigger className="h-8 w-[70px]">
-                <SelectValue placeholder={pageSize} />
-              </SelectTrigger>
-              <SelectContent side="top">
-                {[10, 20, 30, 50, 100].map((size) => (
-                  <SelectItem key={size} value={`${size}`}>
-                    {size}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <p className="text-sm text-muted-foreground arabic-enhanced">
+              عرض {((currentPage - 1) * pageSize) + 1} إلى {Math.min(currentPage * pageSize, totalCount)} من {totalCount} مريض
+            </p>
           </div>
 
-          <div className="flex w-[100px] items-center justify-center text-sm font-medium arabic-enhanced">
-            صفحة {currentPage} من {totalPages}
-          </div>
+          <div className="flex items-center space-x-6 space-x-reverse lg:space-x-8">
+            <div className="flex items-center space-x-2 space-x-reverse">
+              <p className="text-sm font-medium arabic-enhanced">عدد الصفوف لكل صفحة</p>
+              <Select
+                value={`${pageSize}`}
+                onValueChange={handlePageSizeChange}
+              >
+                <SelectTrigger className="h-8 w-[70px]">
+                  <SelectValue placeholder={pageSize} />
+                </SelectTrigger>
+                <SelectContent side="top">
+                  {[10, 20, 30, 50, 100].map((size) => (
+                    <SelectItem key={size} value={`${size}`}>
+                      {size}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="flex items-center space-x-2 space-x-reverse">
-            <Button
-              variant="outline"
-              className="hidden h-8 w-8 p-0 lg:flex"
-              onClick={() => handlePageChange(1)}
-              disabled={currentPage === 1}
-            >
-              <span className="sr-only">الذهاب إلى الصفحة الأولى</span>
-              <ChevronsRight className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              className="h-8 w-8 p-0"
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              <span className="sr-only">الذهاب إلى الصفحة السابقة</span>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              className="h-8 w-8 p-0"
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-            >
-              <span className="sr-only">الذهاب إلى الصفحة التالية</span>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              className="hidden h-8 w-8 p-0 lg:flex"
-              onClick={() => handlePageChange(totalPages)}
-              disabled={currentPage === totalPages}
-            >
-              <span className="sr-only">الذهاب إلى الصفحة الأخيرة</span>
-              <ChevronsLeft className="h-4 w-4" />
-            </Button>
+            <div className="flex w-[100px] items-center justify-center text-sm font-medium arabic-enhanced">
+              صفحة {currentPage} من {totalPages}
+            </div>
+
+            <div className="flex items-center space-x-2 space-x-reverse">
+              <Button
+                variant="outline"
+                className="hidden h-8 w-8 p-0 lg:flex"
+                onClick={() => handlePageChange(1)}
+                disabled={currentPage === 1}
+              >
+                <span className="sr-only">الذهاب إلى الصفحة الأولى</span>
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                className="h-8 w-8 p-0"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <span className="sr-only">الذهاب إلى الصفحة السابقة</span>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                className="h-8 w-8 p-0"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                <span className="sr-only">الذهاب إلى الصفحة التالية</span>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                className="hidden h-8 w-8 p-0 lg:flex"
+                onClick={() => handlePageChange(totalPages)}
+                disabled={currentPage === totalPages}
+              >
+                <span className="sr-only">الذهاب إلى الصفحة الأخيرة</span>
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
     </div>
   )
 }
