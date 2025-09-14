@@ -436,7 +436,7 @@ export default function PatientDetailsModal({
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 overflow-hidden" dir="rtl">
-          <TabsList className="grid w-full grid-cols-5 rtl-tabs" dir="rtl">
+          <TabsList className="grid w-full grid-cols-4 rtl-tabs" dir="rtl">
             <TabsTrigger value="info" className="arabic-enhanced flex items-center justify-center gap-2 flex-row-reverse">
               <User className="w-4 h-4" />
               معلومات المريض
@@ -453,10 +453,10 @@ export default function PatientDetailsModal({
               <DollarSign className="w-4 h-4" />
               المدفوعات ({patientPayments.length})
             </TabsTrigger>
-            <TabsTrigger value="prescriptions" className="arabic-enhanced flex items-center justify-center gap-2 flex-row-reverse">
+            {/* <TabsTrigger value="prescriptions" className="arabic-enhanced flex items-center justify-center gap-2 flex-row-reverse">
               <FileText className="w-4 h-4" />
               الوصفات ({patientPrescriptions.length})
-            </TabsTrigger>
+            </TabsTrigger> */}
           </TabsList>
 
           <div className="mt-4 overflow-y-auto max-h-[calc(90vh-200px)] dialog-rtl" dir="rtl">
