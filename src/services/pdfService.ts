@@ -20,69 +20,109 @@ import {
 } from '../lib/utils'
 
 export class PdfService {
-  // Enhanced color scheme optimized for print clarity
+  // Enhanced color scheme optimized for print clarity with modern design
   private static readonly COLORS = {
-    primary: '#1a365d',      // Dark blue for better print contrast
-    secondary: '#2c5282',    // Medium blue
-    accent: '#92400e',       // Dark amber for print clarity
-    success: '#065f46',      // Dark green for better print visibility
-    warning: '#92400e',      // Dark amber
-    danger: '#991b1b',       // Dark red
-    muted: '#374151',        // Darker gray for better readability
-    light: '#f9fafb',        // Very light gray with better contrast
+    primary: '#1e40af',      // Professional blue for better print contrast
+    secondary: '#3b82f6',    // Vibrant blue for accents
+    accent: '#f59e0b',       // Warm amber for highlights
+    success: '#059669',      // Professional green for positive elements
+    warning: '#d97706',      // Warm orange for warnings
+    danger: '#dc2626',       // Clear red for alerts
+    info: '#0891b2',         // Professional cyan for information
+    muted: '#6b7280',        // Improved gray for readability
+    light: '#f8fafc',        // Clean light background
     white: '#ffffff',
-    border: '#d1d5db',       // Darker border for print visibility
+    border: '#e5e7eb',       // Subtle borders for clean look
+    surface: '#f1f5f9',      // Surface background for cards
+    shadow: 'rgba(0,0,0,0.08)', // Soft shadows for depth
     text: {
-      primary: '#111827',    // Almost black for maximum print contrast
-      secondary: '#374151',  // Dark gray
-      muted: '#4b5563'       // Medium gray for better readability
+      primary: '#0f172a',    // Rich black for maximum readability
+      secondary: '#475569',  // Professional dark gray
+      muted: '#64748b',      // Soft gray for secondary text
+      accent: '#1e40af'      // Professional blue for emphasis
+    },
+    gradients: {
+      primary: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
+      success: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+      accent: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)',
+      card: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+      header: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)'
     }
   }
 
-  // Enhanced typography settings
+  // Enhanced typography settings with improved readability
   private static readonly TYPOGRAPHY = {
     fonts: {
-      primary: "'Tajawal', 'Cairo', Arial, sans-serif",
-      secondary: "'Tajawal', Arial, sans-serif",
-      monospace: "'Courier New', monospace"
+      primary: "'Tajawal', 'Cairo', 'Segoe UI', system-ui, sans-serif",
+      secondary: "'Tajawal', 'Cairo', 'Segoe UI', system-ui, sans-serif",
+      heading: "'Tajawal', 'Cairo', 'Segoe UI', system-ui, sans-serif",
+      monospace: "'JetBrains Mono', 'Fira Code', 'Courier New', monospace"
     },
     sizes: {
-      h1: '28px',
-      h2: '24px',
-      h3: '20px',
-      h4: '18px',
-      h5: '16px',
-      body: '14px',
-      small: '12px',
-      tiny: '10px'
+      h1: '32px',
+      h2: '26px',
+      h3: '22px',
+      h4: '20px',
+      h5: '18px',
+      h6: '16px',
+      body: '15px',
+      small: '13px',
+      tiny: '11px',
+      micro: '9px'
     },
     weights: {
       light: '300',
       normal: '400',
       medium: '500',
       semibold: '600',
-      bold: '700'
+      bold: '700',
+      extrabold: '800'
+    },
+    lineHeights: {
+      tight: '1.25',
+      normal: '1.5',
+      relaxed: '1.75',
+      loose: '2'
+    },
+    letterSpacing: {
+      tight: '-0.025em',
+      normal: '0',
+      wide: '0.025em'
     }
   }
 
-  // Enhanced layout settings
+  // Enhanced layout settings with improved spacing and visual hierarchy
   private static readonly LAYOUT = {
     margins: {
-      top: '40px',
-      bottom: '40px',
-      left: '30px',
-      right: '30px'
+      top: '50px',
+      bottom: '50px',
+      left: '35px',
+      right: '35px'
     },
     spacing: {
-      section: '30px',
-      card: '20px',
-      element: '15px',
-      small: '10px'
+      section: '40px',
+      subsection: '25px',
+      card: '24px',
+      element: '18px',
+      small: '12px',
+      tiny: '8px'
     },
-    borderRadius: '12px',
+    borderRadius: {
+      small: '6px',
+      medium: '10px',
+      large: '16px',
+      xl: '20px'
+    },
     shadows: {
-      card: '0 4px 20px rgba(0,0,0,0.08)',
-      header: '0 2px 10px rgba(0,0,0,0.05)'
+      card: '0 6px 24px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04)',
+      header: '0 4px 16px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.06)',
+      elevation: '0 12px 32px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.06)',
+      inset: 'inset 0 2px 4px rgba(0,0,0,0.06)'
+    },
+    borderWidth: {
+      thin: '1px',
+      medium: '2px',
+      thick: '3px'
     }
   }
 
@@ -166,25 +206,30 @@ export class PdfService {
         }
 
         body {
-          font-family: ${this.TYPOGRAPHY.fonts.primary};
-          direction: rtl;
-          line-height: 1.6;
-          color: ${this.COLORS.text.primary};
-          background: ${this.COLORS.white};
-          margin: ${this.LAYOUT.margins.top} ${this.LAYOUT.margins.right} ${this.LAYOUT.margins.bottom} ${this.LAYOUT.margins.left};
-          font-size: ${this.TYPOGRAPHY.sizes.body};
+           font-family: ${this.TYPOGRAPHY.fonts.primary};
+           direction: rtl;
+           line-height: ${this.TYPOGRAPHY.lineHeights.normal};
+           color: ${this.COLORS.text.primary};
+           background: linear-gradient(135deg, ${this.COLORS.light} 0%, ${this.COLORS.white} 100%);
+           margin: ${this.LAYOUT.margins.top} ${this.LAYOUT.margins.right} ${this.LAYOUT.margins.bottom} ${this.LAYOUT.margins.left};
+           font-size: ${this.TYPOGRAPHY.sizes.body};
+           font-weight: ${this.TYPOGRAPHY.weights.normal};
+           letter-spacing: ${this.TYPOGRAPHY.letterSpacing.normal};
+           -webkit-font-smoothing: antialiased;
+           -moz-osx-font-smoothing: grayscale;
         }
 
         /* Enhanced Header Styles */
         .enhanced-header {
-          background: linear-gradient(135deg, ${this.COLORS.primary} 0%, ${this.COLORS.secondary} 100%);
-          color: ${this.COLORS.white};
-          padding: ${this.LAYOUT.spacing.card};
-          border-radius: ${this.LAYOUT.borderRadius};
-          margin-bottom: ${this.LAYOUT.spacing.section};
-          box-shadow: ${this.LAYOUT.shadows.header};
-          position: relative;
-          overflow: hidden;
+           background: ${this.COLORS.gradients.header};
+           color: ${this.COLORS.white};
+           padding: ${this.LAYOUT.spacing.card} ${this.LAYOUT.spacing.element};
+           border-radius: ${this.LAYOUT.borderRadius.large};
+           margin-bottom: ${this.LAYOUT.spacing.section};
+           box-shadow: ${this.LAYOUT.shadows.header};
+           position: relative;
+           overflow: hidden;
+           border: ${this.LAYOUT.borderWidth.thin} solid rgba(255,255,255,0.1);
         }
 
         .header-content {
@@ -272,24 +317,26 @@ export class PdfService {
 
         /* Enhanced Card Styles */
         .summary-cards {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: ${this.LAYOUT.spacing.element};
-          margin: ${this.LAYOUT.spacing.section} 0;
+           display: grid;
+           grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+           gap: ${this.LAYOUT.spacing.element};
+           margin: ${this.LAYOUT.spacing.section} 0;
         }
 
         .summary-card {
-          background: ${this.COLORS.white};
-          border: 2px solid ${this.COLORS.border};
-          border-radius: ${this.LAYOUT.borderRadius};
-          padding: ${this.LAYOUT.spacing.card};
-          box-shadow: ${this.LAYOUT.shadows.card};
-          transition: all 0.3s ease;
-          position: relative;
-          overflow: hidden;
-          display: flex;
-          align-items: center;
-          gap: 15px;
+           background: ${this.COLORS.gradients.card};
+           border: ${this.LAYOUT.borderWidth.medium} solid ${this.COLORS.border};
+           border-radius: ${this.LAYOUT.borderRadius.medium};
+           padding: ${this.LAYOUT.spacing.card};
+           box-shadow: ${this.LAYOUT.shadows.card};
+           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+           position: relative;
+           overflow: hidden;
+           display: flex;
+           align-items: center;
+           gap: ${this.LAYOUT.spacing.element};
+           backdrop-filter: blur(10px);
+           border-bottom: ${this.LAYOUT.borderWidth.medium} solid ${this.COLORS.primary};
         }
 
         .summary-card.primary::before {
@@ -333,15 +380,35 @@ export class PdfService {
         }
 
         .card-icon {
-          font-size: 32px;
-          min-width: 50px;
-          height: 50px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: ${this.COLORS.light};
-          border-radius: 50%;
-          flex-shrink: 0;
+           font-size: 36px;
+           min-width: 60px;
+           height: 60px;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           background: linear-gradient(135deg, ${this.COLORS.white} 0%, ${this.COLORS.surface} 100%);
+           border-radius: ${this.LAYOUT.borderRadius.large};
+           flex-shrink: 0;
+           box-shadow: ${this.LAYOUT.shadows.inset};
+           border: ${this.LAYOUT.borderWidth.medium} solid ${this.COLORS.border};
+           position: relative;
+           overflow: hidden;
+        }
+
+        .card-icon::before {
+           content: '';
+           position: absolute;
+           top: -50%;
+           left: -50%;
+           width: 200%;
+           height: 200%;
+           background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+           animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+           0%, 100% { transform: scale(1); opacity: 0.7; }
+           50% { transform: scale(1.1); opacity: 1; }
         }
 
         .card-content {
@@ -357,10 +424,25 @@ export class PdfService {
         }
 
         .summary-card .number {
-          font-size: ${this.TYPOGRAPHY.sizes.h2};
-          font-weight: ${this.TYPOGRAPHY.weights.bold};
-          color: ${this.COLORS.primary};
-          margin-bottom: 5px;
+           font-size: ${this.TYPOGRAPHY.sizes.h1};
+           font-weight: ${this.TYPOGRAPHY.weights.extrabold};
+           color: ${this.COLORS.primary};
+           margin-bottom: ${this.LAYOUT.spacing.tiny};
+           text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+           font-family: ${this.TYPOGRAPHY.fonts.monospace};
+           letter-spacing: ${this.TYPOGRAPHY.letterSpacing.tight};
+           position: relative;
+        }
+
+        .summary-card .number::after {
+           content: '';
+           position: absolute;
+           bottom: -2px;
+           left: 0;
+           right: 0;
+           height: 3px;
+           background: linear-gradient(90deg, ${this.COLORS.primary}, ${this.COLORS.secondary});
+           border-radius: ${this.LAYOUT.borderRadius.small};
         }
 
         .summary-card .currency {
@@ -377,31 +459,36 @@ export class PdfService {
 
         /* Enhanced Section Styles */
         .section {
-          margin: ${this.LAYOUT.spacing.section} 0;
-          background: ${this.COLORS.white};
-          border-radius: ${this.LAYOUT.borderRadius};
-          overflow: hidden;
-          box-shadow: ${this.LAYOUT.shadows.card};
-          page-break-inside: avoid !important;
-          break-inside: avoid !important;
+           margin: ${this.LAYOUT.spacing.section} 0;
+           background: ${this.COLORS.white};
+           border-radius: ${this.LAYOUT.borderRadius.large};
+           overflow: hidden;
+           box-shadow: ${this.LAYOUT.shadows.elevation};
+           border: ${this.LAYOUT.borderWidth.thin} solid ${this.COLORS.border};
+           page-break-inside: avoid !important;
+           break-inside: avoid !important;
+           position: relative;
         }
 
         .section-title {
-          font-size: ${this.TYPOGRAPHY.sizes.h4};
-          font-weight: ${this.TYPOGRAPHY.weights.semibold};
-          color: ${this.COLORS.primary};
-          margin-bottom: ${this.LAYOUT.spacing.element};
-          padding: ${this.LAYOUT.spacing.element} ${this.LAYOUT.spacing.card};
-          background: linear-gradient(90deg, ${this.COLORS.light} 0%, ${this.COLORS.white} 100%);
-          border-bottom: 2px solid ${this.COLORS.border};
-          position: relative;
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          page-break-after: avoid !important;
-          break-after: avoid !important;
-          page-break-inside: avoid !important;
-          break-inside: avoid !important;
+           font-size: ${this.TYPOGRAPHY.sizes.h4};
+           font-weight: ${this.TYPOGRAPHY.weights.bold};
+           color: ${this.COLORS.text.primary};
+           margin-bottom: ${this.LAYOUT.spacing.element};
+           padding: ${this.LAYOUT.spacing.element} ${this.LAYOUT.spacing.card};
+           background: ${this.COLORS.gradients.primary};
+           color: ${this.COLORS.white};
+           border-bottom: ${this.LAYOUT.borderWidth.medium} solid rgba(255,255,255,0.2);
+           position: relative;
+           display: flex;
+           align-items: center;
+           gap: ${this.LAYOUT.spacing.small};
+           page-break-after: avoid !important;
+           break-after: avoid !important;
+           page-break-inside: avoid !important;
+           break-inside: avoid !important;
+           text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+           letter-spacing: ${this.TYPOGRAPHY.letterSpacing.wide};
         }
 
         .section-title::before {
@@ -518,17 +605,113 @@ export class PdfService {
         }
 
         .pagination-info {
-          text-align: center;
-          padding: 20px;
-          background: ${this.COLORS.light};
-          border-radius: 8px;
-          margin-top: 20px;
+           text-align: center;
+           padding: ${this.LAYOUT.spacing.card};
+           background: linear-gradient(135deg, ${this.COLORS.light} 0%, ${this.COLORS.surface} 100%);
+           border-radius: ${this.LAYOUT.borderRadius.large};
+           margin-top: ${this.LAYOUT.spacing.element};
+           border: ${this.LAYOUT.borderWidth.medium} solid ${this.COLORS.border};
+           box-shadow: ${this.LAYOUT.shadows.card};
+         }
+
+         .pagination-info p {
+           color: ${this.COLORS.text.secondary};
+           font-size: ${this.TYPOGRAPHY.sizes.body};
+           margin: 0;
+           font-weight: ${this.TYPOGRAPHY.weights.medium};
+         }
+
+        /* Data Quality Indicators */
+        .data-quality-indicator {
+           display: inline-flex;
+           align-items: center;
+           gap: ${this.LAYOUT.spacing.tiny};
+           padding: ${this.LAYOUT.spacing.tiny} ${this.LAYOUT.spacing.small};
+           background: ${this.COLORS.surface};
+           border-radius: ${this.LAYOUT.borderRadius.medium};
+           border: ${this.LAYOUT.borderWidth.thin} solid ${this.COLORS.border};
+           font-size: ${this.TYPOGRAPHY.sizes.micro};
+           font-weight: ${this.TYPOGRAPHY.weights.bold};
+           color: ${this.COLORS.text.secondary};
+           margin: 0 ${this.LAYOUT.spacing.tiny};
         }
 
-        .pagination-info p {
-          color: ${this.COLORS.text.muted};
-          font-size: 14px;
-          margin: 0;
+        .accuracy-badge {
+           display: inline-flex;
+           align-items: center;
+           gap: ${this.LAYOUT.spacing.tiny};
+           padding: ${this.LAYOUT.spacing.tiny} ${this.LAYOUT.spacing.small};
+           border-radius: ${this.LAYOUT.borderRadius.small};
+           font-size: ${this.TYPOGRAPHY.sizes.micro};
+           font-weight: ${this.TYPOGRAPHY.weights.bold};
+           text-transform: uppercase;
+           letter-spacing: ${this.TYPOGRAPHY.letterSpacing.wide};
+        }
+
+        .accuracy-badge.verified {
+           background: linear-gradient(135deg, ${this.COLORS.success}, rgba(16, 185, 129, 0.8));
+           color: ${this.COLORS.white};
+        }
+
+        .accuracy-badge.pending {
+           background: linear-gradient(135deg, ${this.COLORS.warning}, rgba(245, 158, 11, 0.8));
+           color: ${this.COLORS.white};
+        }
+
+        /* KPI Cards */
+        .kpi-card {
+           background: linear-gradient(135deg, ${this.COLORS.white} 0%, ${this.COLORS.surface} 100%);
+           border: ${this.LAYOUT.borderWidth.medium} solid ${this.COLORS.border};
+           border-radius: ${this.LAYOUT.borderRadius.large};
+           padding: ${this.LAYOUT.spacing.card};
+           text-align: center;
+           box-shadow: ${this.LAYOUT.shadows.card};
+           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+           position: relative;
+           overflow: hidden;
+        }
+
+        .kpi-card::before {
+           content: '';
+           position: absolute;
+           top: 0;
+           left: 0;
+           right: 0;
+           height: 4px;
+           background: ${this.COLORS.gradients.primary};
+        }
+
+        .kpi-value {
+           font-size: ${this.TYPOGRAPHY.sizes.h2};
+           font-weight: ${this.TYPOGRAPHY.weights.extrabold};
+           color: ${this.COLORS.primary};
+           margin-bottom: ${this.LAYOUT.spacing.tiny};
+           font-family: ${this.TYPOGRAPHY.fonts.monospace};
+        }
+
+        .kpi-label {
+           font-size: ${this.TYPOGRAPHY.sizes.small};
+           color: ${this.COLORS.text.secondary};
+           font-weight: ${this.TYPOGRAPHY.weights.medium};
+           text-transform: uppercase;
+           letter-spacing: ${this.TYPOGRAPHY.letterSpacing.wide};
+        }
+
+        .kpi-trend {
+           display: inline-flex;
+           align-items: center;
+           gap: ${this.LAYOUT.spacing.tiny};
+           font-size: ${this.TYPOGRAPHY.sizes.tiny};
+           font-weight: ${this.TYPOGRAPHY.weights.bold};
+           margin-top: ${this.LAYOUT.spacing.tiny};
+        }
+
+        .kpi-trend.positive {
+           color: ${this.COLORS.success};
+        }
+
+        .kpi-trend.negative {
+           color: ${this.COLORS.danger};
         }
 
         /* Appointment Cards Grid */
@@ -650,32 +833,48 @@ export class PdfService {
 
         /* Enhanced Table Styles */
         table {
-          width: 100%;
-          border-collapse: collapse;
-          margin: ${this.LAYOUT.spacing.element} 0;
-          background: ${this.COLORS.white};
-          border-radius: ${this.LAYOUT.borderRadius};
-          overflow: hidden;
-          box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+           width: 100%;
+           border-collapse: separate;
+           border-spacing: 0;
+           margin: ${this.LAYOUT.spacing.element} 0;
+           background: ${this.COLORS.white};
+           border-radius: ${this.LAYOUT.borderRadius.medium};
+           overflow: hidden;
+           box-shadow: ${this.LAYOUT.shadows.card};
+           border: ${this.LAYOUT.borderWidth.thin} solid ${this.COLORS.border};
         }
 
         th {
-          background: linear-gradient(135deg, ${this.COLORS.primary} 0%, ${this.COLORS.secondary} 100%);
-          color: ${this.COLORS.white};
-          font-weight: ${this.TYPOGRAPHY.weights.semibold};
-          font-size: ${this.TYPOGRAPHY.sizes.small};
-          padding: ${this.LAYOUT.spacing.element};
-          text-align: center;
-          border: none;
-          text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+           background: ${this.COLORS.gradients.primary};
+           color: ${this.COLORS.white};
+           font-weight: ${this.TYPOGRAPHY.weights.bold};
+           font-size: ${this.TYPOGRAPHY.sizes.small};
+           padding: ${this.LAYOUT.spacing.element} ${this.LAYOUT.spacing.small};
+           text-align: center;
+           border: none;
+           text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+           letter-spacing: ${this.TYPOGRAPHY.letterSpacing.normal};
+           position: relative;
+        }
+
+        th::after {
+           content: '';
+           position: absolute;
+           bottom: 0;
+           left: 0;
+           right: 0;
+           height: 2px;
+           background: rgba(255,255,255,0.3);
         }
 
         td {
-          padding: ${this.LAYOUT.spacing.small} ${this.LAYOUT.spacing.element};
-          text-align: center;
-          border-bottom: 1px solid ${this.COLORS.border};
-          font-size: ${this.TYPOGRAPHY.sizes.small};
-          color: ${this.COLORS.text.primary};
+           padding: ${this.LAYOUT.spacing.element} ${this.LAYOUT.spacing.small};
+           text-align: center;
+           border-bottom: ${this.LAYOUT.borderWidth.thin} solid ${this.COLORS.border};
+           font-size: ${this.TYPOGRAPHY.sizes.body};
+           color: ${this.COLORS.text.primary};
+           font-weight: ${this.TYPOGRAPHY.weights.medium};
+           line-height: ${this.TYPOGRAPHY.lineHeights.normal};
         }
 
         tr:nth-child(even) {
@@ -780,18 +979,80 @@ export class PdfService {
         }
 
         .category-cell {
-          text-align: right !important;
-          font-weight: ${this.TYPOGRAPHY.weights.medium};
+           text-align: right !important;
+           font-weight: ${this.TYPOGRAPHY.weights.semibold};
+           color: ${this.COLORS.text.primary};
+           background: ${this.COLORS.surface};
+           border-left: ${this.LAYOUT.borderWidth.medium} solid ${this.COLORS.primary};
+           padding-left: ${this.LAYOUT.spacing.small} !important;
         }
 
         .number-cell {
-          font-weight: ${this.TYPOGRAPHY.weights.bold};
-          color: ${this.COLORS.primary};
+           font-weight: ${this.TYPOGRAPHY.weights.bold};
+           color: ${this.COLORS.primary};
+           font-size: ${this.TYPOGRAPHY.sizes.small};
+           background: linear-gradient(135deg, rgba(30, 64, 175, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%);
+           border-radius: ${this.LAYOUT.borderRadius.small};
+           margin: 0 ${this.LAYOUT.spacing.tiny};
         }
 
         .percentage-cell {
-          font-weight: ${this.TYPOGRAPHY.weights.medium};
-          color: ${this.COLORS.text.secondary};
+           font-weight: ${this.TYPOGRAPHY.weights.semibold};
+           color: ${this.COLORS.info};
+           background: linear-gradient(135deg, rgba(8, 145, 178, 0.1) 0%, rgba(8, 145, 178, 0.05) 100%);
+           border-radius: ${this.LAYOUT.borderRadius.small};
+           padding: ${this.LAYOUT.spacing.tiny} ${this.LAYOUT.spacing.small} !important;
+           margin: 0 ${this.LAYOUT.spacing.tiny};
+        }
+
+        .currency-cell {
+           font-weight: ${this.TYPOGRAPHY.weights.extrabold};
+           color: ${this.COLORS.success};
+           background: linear-gradient(135deg, rgba(5, 150, 105, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+           border-radius: ${this.LAYOUT.borderRadius.small};
+           padding: ${this.LAYOUT.spacing.tiny} ${this.LAYOUT.spacing.small} !important;
+           margin: 0 ${this.LAYOUT.spacing.tiny};
+           font-family: ${this.TYPOGRAPHY.fonts.monospace};
+           letter-spacing: ${this.TYPOGRAPHY.letterSpacing.tight};
+        }
+
+        .status-cell {
+           padding: ${this.LAYOUT.spacing.tiny} !important;
+        }
+
+        .status-badge {
+           display: inline-block;
+           padding: ${this.LAYOUT.spacing.tiny} ${this.LAYOUT.spacing.small};
+           border-radius: ${this.LAYOUT.borderRadius.small};
+           font-size: ${this.TYPOGRAPHY.sizes.micro};
+           font-weight: ${this.TYPOGRAPHY.weights.bold};
+           text-transform: uppercase;
+           letter-spacing: ${this.TYPOGRAPHY.letterSpacing.wide};
+           border: ${this.LAYOUT.borderWidth.thin} solid transparent;
+        }
+
+        .status-badge.success {
+           background: linear-gradient(135deg, ${this.COLORS.success}, rgba(16, 185, 129, 0.8));
+           color: ${this.COLORS.white};
+           border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .status-badge.warning {
+           background: linear-gradient(135deg, ${this.COLORS.warning}, rgba(245, 158, 11, 0.8));
+           color: ${this.COLORS.white};
+           border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        .status-badge.danger {
+           background: linear-gradient(135deg, ${this.COLORS.danger}, rgba(239, 68, 68, 0.8));
+           color: ${this.COLORS.white};
+           border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .status-badge.info {
+           background: linear-gradient(135deg, ${this.COLORS.info}, rgba(8, 145, 178, 0.8));
+           color: ${this.COLORS.white};
+           border-color: rgba(8, 145, 178, 0.3);
         }
 
         .chart-cell {
@@ -800,22 +1061,40 @@ export class PdfService {
         }
 
         .progress-bar {
-          width: 100%;
-          height: 20px;
-          background: ${this.COLORS.light};
-          border: 1px solid ${this.COLORS.border};
-          border-radius: 10px;
-          overflow: hidden;
-          position: relative;
+           width: 100%;
+           height: 24px;
+           background: linear-gradient(135deg, ${this.COLORS.light} 0%, ${this.COLORS.surface} 100%);
+           border: ${this.LAYOUT.borderWidth.medium} solid ${this.COLORS.border};
+           border-radius: ${this.LAYOUT.borderRadius.medium};
+           overflow: hidden;
+           position: relative;
+           box-shadow: ${this.LAYOUT.shadows.inset};
         }
 
         .progress-fill {
-          height: 100%;
-          background: ${this.COLORS.primary};
-          border-radius: 8px;
-          transition: width 0.3s ease;
-          position: relative;
-          border: 1px solid ${this.COLORS.secondary};
+           height: 100%;
+           background: ${this.COLORS.gradients.primary};
+           border-radius: ${this.LAYOUT.borderRadius.small};
+           transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+           position: relative;
+           border: ${this.LAYOUT.borderWidth.thin} solid rgba(255,255,255,0.3);
+           box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .progress-fill::after {
+           content: '';
+           position: absolute;
+           top: 0;
+           left: 0;
+           right: 0;
+           bottom: 0;
+           background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+           animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+           0% { transform: translateX(-100%); }
+           100% { transform: translateX(100%); }
         }
 
         .progress-fill.gender-male {
