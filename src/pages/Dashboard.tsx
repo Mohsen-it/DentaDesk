@@ -249,25 +249,25 @@ const Dashboard = React.memo(function Dashboard({ onAddPatient, onAddAppointment
   const todayAppointments = getAppointmentsForDate(new Date())
 
   return (
-    <div className="space-y-6 rtl-layout">
-      {/* Welcome Section */}
-      <div className="flex items-center justify-between">
-        <div>
+    <div className="space-y-4 md:space-y-6 lg:space-y-8 rtl-layout p-2 md:p-4">
+      {/* Enhanced Welcome Section */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-4 md:p-6 bg-gradient-to-r from-muted/50 to-accent/20 rounded-xl backdrop-blur-sm border border-border">
+        <div className="space-y-2">
           <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-3xl font-bold text-foreground">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground">
               مرحباً بك في {clinicName}
             </h1>
           </div>
-          <p className="text-muted-foreground">
+          <p className="text-sm md:text-base text-muted-foreground">
             إليك ما يحدث في عيادتك - تحديث تلقائي في الوقت الفعلي
           </p>
         </div>
-        <div className="flex space-x-3-rtl">
-          <Button onClick={onAddAppointment} className="btn-rtl dark:hover:bg-slate-700 dark:focus:ring-slate-500">
+        <div className="flex flex-col sm:flex-row gap-2 md:gap-3 w-full md:w-auto">
+          <Button onClick={onAddAppointment} className="btn-rtl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200 rounded-lg px-4 py-2 md:px-6 md:py-3">
             <Plus className="w-4 h-4 icon-right" />
             موعد جديد
           </Button>
-          <Button variant="outline" onClick={onAddPatient} className="btn-rtl dark:hover:bg-slate-700 dark:focus:ring-slate-500">
+          <Button variant="outline" onClick={onAddPatient} className="btn-rtl border-border hover:bg-accent shadow-lg hover:shadow-xl transition-all duration-200 rounded-lg px-4 py-2 md:px-6 md:py-3">
             <Plus className="w-4 h-4 icon-right" />
             مريض جديد
           </Button>
@@ -294,20 +294,20 @@ const Dashboard = React.memo(function Dashboard({ onAddPatient, onAddAppointment
         />
       </div>
 
-      {/* Stats Cards */}
-      <div className="dashboard-grid-rtl">
-        <Card className={`${getCardStyles("blue")} stats-card-rtl`}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+      {/* Enhanced Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 border-blue-200/50 dark:border-blue-700/50 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-semibold text-blue-700 dark:text-blue-300">
               إجمالي المرضى
             </CardTitle>
-            <Users className={`h-4 w-4 stats-icon ${getIconStyles("blue")}`} />
+            <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           </CardHeader>
-          <CardContent className="stats-content">
-            <div className="text-2xl font-bold text-foreground">
+          <CardContent className="pt-0">
+            <div className="text-2xl md:text-3xl font-bold text-blue-800 dark:text-blue-200 mb-1">
               {patients.length}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-blue-600 dark:text-blue-400">
               إجمالي المرضى المسجلين
             </p>
           </CardContent>
@@ -459,20 +459,20 @@ const Dashboard = React.memo(function Dashboard({ onAddPatient, onAddAppointment
         </Card>
       </div>
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Enhanced Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         {/* Enhanced Revenue Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2 space-x-reverse">
-              <TrendingUp className="w-5 h-5" />
+        <Card className="bg-card backdrop-blur-sm border-border shadow-xl hover:shadow-2xl transition-all duration-300">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center space-x-2 space-x-reverse text-foreground">
+              <TrendingUp className="w-5 h-5 text-primary" />
               <span>اتجاه الإيرادات</span>
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-muted-foreground">
               الإيرادات الشهرية خلال آخر 6 أشهر ({formatAmount(stats.totalRevenue)} إجمالي)
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-0">
             {revenueData.length === 0 ? (
               <div className="flex items-center justify-center h-80 text-muted-foreground">
                 <div className="text-center">
@@ -537,13 +537,13 @@ const Dashboard = React.memo(function Dashboard({ onAddPatient, onAddAppointment
         </Card>
 
         {/* Enhanced Appointment Status Chart */}
-        <Card>
+        <Card className="bg-card border-border shadow-xl hover:shadow-2xl transition-all duration-300">
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2 space-x-reverse">
-              <Calendar className="w-5 h-5" />
+            <CardTitle className="flex items-center space-x-2 space-x-reverse text-foreground">
+              <Calendar className="w-5 h-5 text-primary" />
               <span>حالة المواعيد</span>
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-muted-foreground">
               توزيع حالات المواعيد ({appointments.length} موعد إجمالي)
             </CardDescription>
           </CardHeader>
@@ -614,10 +614,10 @@ const Dashboard = React.memo(function Dashboard({ onAddPatient, onAddAppointment
       </div>
 
       {/* Today's Appointments */}
-      <Card>
+      <Card className="bg-card border-border shadow-xl hover:shadow-2xl transition-all duration-300">
         <CardHeader>
-          <CardTitle>مواعيد اليوم</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-foreground">مواعيد اليوم</CardTitle>
+          <CardDescription className="text-muted-foreground">
             {todayAppointments.length} موعد مجدول لتاريخ {formatDate(new Date(), 'long')}
           </CardDescription>
         </CardHeader>

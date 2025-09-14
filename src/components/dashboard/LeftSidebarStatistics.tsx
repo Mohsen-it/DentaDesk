@@ -44,14 +44,7 @@ const LeftSidebarStatistics = memo(function LeftSidebarStatistics() {
       bgColor: 'bg-blue-100 dark:bg-slate-900',
       trend: '+2 هذا الأسبوع'
     },
-    {
-      title: 'المدفوعات المعلقة',
-      value: formatAmount(pendingAmount),
-      icon: DollarSign,
-      color: 'text-orange-600 dark:text-orange-400',
-      bgColor: 'bg-orange-100 dark:bg-orange-900',
-      trend: 'يحتاج متابعة'
-    },
+
     {
       title: 'التنبيهات العاجلة',
       value: urgentAlerts,
@@ -63,45 +56,45 @@ const LeftSidebarStatistics = memo(function LeftSidebarStatistics() {
   ], [patients.length, pendingAmount, urgentAlerts, formatAmount])
 
   return (
-    <div className="h-full p-6 dark:bg-gray-900" role="region" aria-label="إحصائيات العيادة">
-      <div className="space-y-6  ">
-        <div className="text-center ">
-          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-2 ">
+    <div className="h-full p-4 md:p-5 lg:p-6 bg-sidebar" role="region" aria-label="إحصائيات العيادة">
+      <div className="space-y-5 md:space-y-6 lg:space-y-7">
+        <div className="text-center space-y-2">
+          <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-sidebar-foreground mb-1 md:mb-2">
             إحصائيات سريعة
           </h2>
-          <p className="text-sm text-slate-800 dark:text-slate-200">
+          <p className="text-xs md:text-sm text-sidebar-foreground/70">
             نظرة عامة على العيادة
           </p>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3 md:space-y-4">
           {stats.map((stat, index) => {
             const Icon = stat.icon
             return (
-              <Card key={index} className="relative overflow-hidden bg-white dark:bg-gray-900 border-slate-200 dark:border-slate-700 shadow-lg dark:shadow-lg hover:shadow-xl dark:hover:shadow-xl transition-all duration-300 rtl" role="article" aria-label={`إحصائية ${stat.title}`} data-testid="stat-card">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4 rtl:flex-row-reverse">
-                    <div className={`p-3 rounded-xl ${stat.bgColor}`} aria-hidden="true">
-                      <Icon className={`w-8 h-8 ${stat.color}`} />
+              <Card key={index} className="relative overflow-hidden bg-card border-border shadow-md dark:shadow-lg hover:shadow-lg dark:hover:shadow-xl transition-all duration-300 rtl backdrop-blur-sm" role="article" aria-label={`إحصائية ${stat.title}`} data-testid="stat-card">
+                <CardContent className="p-4 md:p-5 lg:p-6">
+                  <div className="flex items-center justify-between mb-3 md:mb-4 rtl:flex-row-reverse">
+                    <div className={`p-2 md:p-3 rounded-lg md:rounded-xl ${stat.bgColor} shadow-sm`} aria-hidden="true">
+                      <Icon className={`w-6 h-6 md:w-7 md:h-7 lg:w-8 lg:h-8 ${stat.color}`} />
                     </div>
-                    <Badge variant="secondary" className="text-xs rtl:flex-row-reverse" aria-label={`اتجاه: ${stat.trend}`}>
+                    <Badge variant="secondary" className="text-xs px-2 py-1 rtl:flex-row-reverse shadow-sm" aria-label={`اتجاه: ${stat.trend}`}>
                       <TrendingUp className="w-3 h-3 ml-1 rtl:mr-1 rtl:ml-0" aria-hidden="true" />
                       {stat.trend}
                     </Badge>
                   </div>
 
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
+                  <div className="space-y-1 md:space-y-2">
+                    <p className="text-xs md:text-sm font-medium text-foreground">
                       {stat.title}
                     </p>
-                    <p className={`text-3xl font-bold ${stat.color}`} aria-live="polite">
+                    <p className={`text-2xl md:text-3xl font-bold ${stat.color}`} aria-live="polite">
                       {stat.value}
                     </p>
                   </div>
 
-                  {/* Animated background effect for urgent alerts */}
+                  {/* Enhanced animated background effect for urgent alerts */}
                   {stat.title === 'التنبيهات العاجلة' && urgentAlerts > 0 && (
-                    <div className="absolute inset-0 bg-red-500/10 dark:bg-red-500/10 animate-pulse rounded-lg pointer-events-none" aria-hidden="true" data-testid="urgent-alerts" />
+                    <div className="absolute inset-0 bg-red-500/5 dark:bg-red-500/10 animate-pulse rounded-lg pointer-events-none" aria-hidden="true" data-testid="urgent-alerts" />
                   )}
                 </CardContent>
               </Card>
@@ -109,15 +102,18 @@ const LeftSidebarStatistics = memo(function LeftSidebarStatistics() {
           })}
         </div>
 
-        {/* Additional quick stats */}
-        <Card className="bg-white dark:bg-card border-slate-200 dark:border-slate-700 shadow-lg dark:shadow-lg backdrop-blur-sm">
-          <CardContent className="p-4">
-            <div className="text-center space-y-2">
-              <div className="text-sm text-slate-800 dark:text-slate-200">
+        {/* Enhanced additional quick stats */}
+        <Card className="bg-card border-border shadow-md dark:shadow-lg backdrop-blur-sm hover:shadow-lg dark:hover:shadow-xl transition-all duration-300">
+          <CardContent className="p-3 md:p-4">
+            <div className="text-center space-y-1 md:space-y-2">
+              <div className="text-xs md:text-sm text-foreground font-medium">
                 مواعيد اليوم
               </div>
-              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+              <div className="text-xl md:text-2xl font-bold text-green-600 dark:text-green-400">
                 {todayAppointments}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                مواعيد مجدولة
               </div>
             </div>
           </CardContent>

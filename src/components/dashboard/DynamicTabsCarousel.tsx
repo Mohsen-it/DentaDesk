@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, memo, lazy, Suspense } from 'react'
+import React, { useState, useCallback, useMemo, memo, lazy, Suspense, useEffect, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -39,6 +39,11 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [touchStart, setTouchStart] = useState<number | null>(null)
   const [touchEnd, setTouchEnd] = useState<number | null>(null)
+
+  // Refs for logging
+  const containerRef = useRef<HTMLDivElement>(null)
+  const headerRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
 
   // Minimum swipe distance (in px)
   const minSwipeDistance = 50
@@ -91,6 +96,65 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
       navigateTab('prev')
     }
   }, [touchStart, touchEnd])
+
+  // Diagnostic logging for layout dimensions, spacing, and responsive behavior
+  useEffect(() => {
+    const logDimensions = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect()
+        console.log('[DynamicTabsCarousel] Container dimensions:', {
+          width: rect.width,
+          height: rect.height,
+          top: rect.top,
+          left: rect.left,
+          activeTab,
+          isTransitioning
+        })
+      }
+
+      if (headerRef.current) {
+        const rect = headerRef.current.getBoundingClientRect()
+        const style = window.getComputedStyle(headerRef.current)
+        console.log('[DynamicTabsCarousel] Header dimensions and spacing:', {
+          width: rect.width,
+          height: rect.height,
+          paddingTop: style.paddingTop,
+          paddingBottom: style.paddingBottom,
+          paddingLeft: style.paddingLeft,
+          paddingRight: style.paddingRight,
+          marginTop: style.marginTop,
+          marginBottom: style.marginBottom,
+          gap: style.gap,
+          activeTab
+        })
+      }
+
+      if (contentRef.current) {
+        const rect = contentRef.current.getBoundingClientRect()
+        console.log('[DynamicTabsCarousel] Content area dimensions:', {
+          width: rect.width,
+          height: rect.height,
+          activeTab,
+          isTransitioning
+        })
+      }
+    }
+
+    // Log on mount and when activeTab or isTransitioning changes
+    logDimensions()
+
+    // Add resize listener for responsive behavior
+    const handleResize = () => {
+      console.log('[DynamicTabsCarousel] Window resize detected')
+      logDimensions()
+    }
+
+    window.addEventListener('resize', handleResize)
+
+    return () => {
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [activeTab, isTransitioning])
 
   const handleTabChange = useCallback((tabId: string) => {
     if (isTransitioning) return
@@ -161,27 +225,30 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
     }
   }, [activeTab, isTransitioning, onNavigateToPatients, onNavigateToAppointments, onNavigateToPayments, onNavigateToTreatments, onAddPatient, onAddAppointment, onAddPayment])
 
+  const renderStart = performance.now()
+
   return (
     <div
-      className="h-full flex flex-col bg-slate-100 dark:bg-card rounded-xl shadow-xl dark:shadow-lg overflow-hidden"
+      ref={containerRef}
+      className="h-full flex flex-col bg-card rounded-xl shadow-xl dark:shadow-2xl overflow-hidden backdrop-blur-sm"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
     >
-      {/* Tab Navigation Header */}
-      <div className="bg-slate-100 dark:bg-card p-6 border-b border-slate-200 dark:border-slate-700">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
+      {/* Enhanced Tab Navigation Header */}
+      <div ref={headerRef} className="bg-card p-4 md:p-5 lg:p-6 border-b border-border backdrop-blur-sm">
+        <div className="flex items-center justify-between mb-3 md:mb-4">
+          <div className="flex items-center gap-3 md:gap-4">
             {activeTabData && (
-              <div className={`p-3 rounded-xl ${activeTabData.bgColor}`}>
-                <activeTabData.icon className={`w-6 h-6 ${activeTabData.color}`} />
+              <div className={`p-2 md:p-3 rounded-lg md:rounded-xl ${activeTabData.bgColor} shadow-sm`}>
+                <activeTabData.icon className={`w-5 h-5 md:w-6 md:h-6 ${activeTabData.color}`} />
               </div>
             )}
-            <div>
-              <h2 className="text-2xl font-bold text-slate-700 dark:text-slate-300">
+            <div className="space-y-1">
+              <h2 className="text-xl md:text-2xl font-bold text-foreground">
                 {activeTabData?.title}
               </h2>
-              <p className="text-sm text-slate-700 dark:text-slate-300">
+              <p className="text-xs md:text-sm text-muted-foreground">
                 {activeTab === 'today' && 'الأنشطة والمواعيد اليومية'}
                 {activeTab === 'statistics' && 'تحليلات وإحصائيات شاملة'}
                 {activeTab === 'alerts' && 'التنبيهات والإشعارات المهمة'}
@@ -189,14 +256,14 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
             </div>
           </div>
 
-          {/* Navigation Buttons */}
+          {/* Enhanced Navigation Buttons */}
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={() => navigateTab('prev')}
               disabled={isTransitioning}
-              className="bg-slate-100 dark:bg-card hover:bg-slate-200 dark:hover:bg-slate-700"
+              className="bg-background hover:bg-accent border-border shadow-sm backdrop-blur-sm"
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
@@ -205,15 +272,15 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
               size="sm"
               onClick={() => navigateTab('next')}
               disabled={isTransitioning}
-              className="bg-slate-100 dark:bg-card hover:bg-slate-200 dark:hover:bg-slate-700"
+              className="bg-background hover:bg-accent border-border shadow-sm backdrop-blur-sm"
             >
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
         </div>
 
-        {/* Tab Indicators */}
-        <div className="flex items-center justify-center gap-2" role="tablist" aria-label="أشرطة التبويب">
+        {/* Enhanced Tab Indicators */}
+        <div className="flex items-center justify-center gap-2 md:gap-3" role="tablist" aria-label="أشرطة التبويب">
           {tabs.map((tab, index) => {
             const Icon = tab.icon
             const isActive = tab.id === activeTab
@@ -244,16 +311,16 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
                     handleTabChange(tabs[tabs.length - 1].id)
                   }
                 }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 ${
+                className={`flex items-center gap-2 px-3 md:px-4 py-2 md:py-3 rounded-lg md:rounded-xl transition-all duration-300 shadow-sm ${
                   isActive
-                    ? `bg-white dark:bg-slate-900 shadow-md dark:shadow-lg ${tab.color} font-semibold`
-                    : 'bg-slate-100 dark:bg-card hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+                    ? `bg-background shadow-md dark:shadow-lg ${tab.color} font-semibold ring-2 ring-offset-2 ring-current ring-opacity-20`
+                    : 'bg-muted hover:bg-accent text-foreground hover:shadow-md backdrop-blur-sm'
                 }`}
               >
-                <Icon className="w-4 h-4" aria-hidden="true" />
-                <span className="text-sm text-slate-700 dark:text-slate-300">{tab.title}</span>
+                <Icon className={`w-4 h-4 md:w-5 md:h-5 ${isActive ? '' : 'text-muted-foreground'}`} aria-hidden="true" />
+                <span className={`text-xs md:text-sm ${isActive ? 'text-foreground' : 'text-foreground'}`}>{tab.title}</span>
                 {isActive && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-current rounded-full" aria-hidden="true" />
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-current rounded-full animate-pulse" aria-hidden="true" />
                 )}
               </button>
             )
@@ -262,19 +329,25 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 overflow-hidden relative" role="tabpanel" id={`tabpanel-${activeTab}`} aria-labelledby={`tab-${activeTab}`}>
+      <div ref={contentRef} className="flex-1 overflow-hidden relative" role="tabpanel" id={`tabpanel-${activeTab}`} aria-labelledby={`tab-${activeTab}`}>
         {renderTabContent}
 
         {/* Loading overlay */}
         {isTransitioning && (
-          <div className="absolute inset-0 bg-white/50 dark:bg-slate-900/50 flex items-center justify-center z-10">
-            <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+          <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-10">
+            <div className="flex items-center gap-2 text-foreground">
               <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              <span className="text-slate-700 dark:text-slate-300">جاري التحميل...</span>
+              <span className="text-foreground">جاري التحميل...</span>
             </div>
           </div>
         )}
       </div>
+
+      {(() => {
+        const renderEnd = performance.now()
+        console.log(`[DynamicTabsCarousel] Render performance: ${(renderEnd - renderStart).toFixed(2)}ms for tab ${activeTab}`)
+        return null
+      })()}
     </div>
   )
 })

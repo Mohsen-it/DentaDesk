@@ -72,6 +72,9 @@ import { Appointment } from './types'
 import './App.css'
 import './styles/globals.css'
 
+// Lazy load GlobalSearch component
+const GlobalSearch = React.lazy(() => import('@/components/globalThis/GlobalSearch'))
+
 function AppContent() {
   const { isDarkMode, setDarkMode } = useTheme()
   const { toast } = useToast()
@@ -214,11 +217,8 @@ function AppContent() {
       // Search (دعم الحرف العربي ب)
       if (enhanced.mappedKey.toLowerCase() === 'f') {
         enhanced.preventDefault()
-        console.log('🎯 Shortcut F/ب pressed - Opening search')
-        // فتح البحث العام في لوحة التحكم
-        if (activeTab === 'dashboard') {
-          // سيتم التعامل مع هذا في EnhancedDashboard
-        }
+        console.log('🎯 Shortcut F/ب pressed - Opening global search')
+        setShowGlobalSearch(true)
       }
 
 
@@ -250,6 +250,40 @@ function AppContent() {
   const [showPasswordResetModal, setShowPasswordResetModal] = useState(false)
   const [showPasswordSetupModal, setShowPasswordSetupModal] = useState(false)
   const [isPaymentsAuthenticated, setIsPaymentsAuthenticated] = useState(false)
+
+  // Global search state
+  const [showGlobalSearch, setShowGlobalSearch] = useState(false)
+
+  // Handle global search result selection
+  const handleSearchResultSelect = useCallback((result: any) => {
+    console.log('🎯 Search result selected:', result)
+
+    // Navigate to appropriate tab based on result type
+    switch (result.type) {
+      case 'patient':
+        setActiveTab('patients')
+        break
+      case 'appointment':
+        setActiveTab('appointments')
+        break
+      case 'payment':
+        handleTabChange('payments')
+        break
+      case 'treatment':
+        setActiveTab('dental-treatments')
+        break
+      case 'prescription':
+        setActiveTab('medications')
+        break
+      default:
+        // Default to dashboard if type is unknown
+        setActiveTab('dashboard')
+        break
+    }
+
+    // Close the search overlay
+    setShowGlobalSearch(false)
+  }, [])
 
   // Custom tab change handler with optional password protection
   const handleTabChange = (tab: string) => {
@@ -575,6 +609,7 @@ function AppContent() {
         <AppSidebar activeTab={activeTab} onTabChange={handleTabChange} />
         <SidebarInset>
           <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/40 rtl-layout">
+            {/* Left side - Breadcrumbs */}
             <div className="flex items-center gap-2 px-4">
               <Breadcrumb>
                 <BreadcrumbList className="flex-rtl">
@@ -590,6 +625,34 @@ function AppContent() {
                 </BreadcrumbList>
               </Breadcrumb>
             </div>
+
+            {/* Center - Global Search */}
+            <div className="flex-1 max-w-md mx-8">
+              <div className="relative">
+                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-700 dark:text-slate-300 w-5 h-5 rtl:left-3 rtl:right-auto" aria-hidden="true" />
+                <Input
+                  placeholder="البحث الشامل... (F)"
+                  className="pr-10 pl-4 py-2 bg-slate-50 dark:bg-card border-slate-200 dark:border-slate-700 rounded-lg shadow-sm dark:shadow-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-slate-700 focus:border-transparent rtl:pr-4 rtl:pl-10"
+                  readOnly
+                  onClick={() => setShowGlobalSearch(true)}
+                  aria-label="البحث الشامل"
+                  aria-describedby="search-shortcut"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      setShowGlobalSearch(true)
+                    }
+                  }}
+                />
+                <span id="search-shortcut" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-xs text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-card px-2 py-1 rounded rtl:right-3 rtl:left-auto" aria-hidden="true">
+                  F
+                </span>
+              </div>
+            </div>
+
+            {/* Right side - Controls */}
             <div className="ml-auto-rtl flex items-center gap-3 px-4 space-x-3-rtl">
               <SidebarTrigger />
               <Separator orientation="vertical" className="mx-2 h-4" />
@@ -711,10 +774,25 @@ function AppContent() {
           onSuccess={handlePasswordSetupSuccess}
         />
 
+        {/* Global Search Overlay */}
+        {showGlobalSearch && (
+          <div className="fixed inset-0 bg-black/50 dark:bg-slate-900/50 z-50 flex items-start justify-center pt-24">
+            <div className="w-full max-w-2xl mx-4">
+              <Suspense fallback={<div className="flex items-center justify-center h-32"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 dark:border-slate-700"></div></div>}>
+                <GlobalSearch
+                  onResultSelect={handleSearchResultSelect}
+                  onClose={() => setShowGlobalSearch(false)}
+                  autoFocus={true}
+                />
+              </Suspense>
+            </div>
+          </div>
+        )}
+
         <Toaster />
       </SidebarProvider>
-  );
-}
+    );
+  }
 
 function App() {
   return (

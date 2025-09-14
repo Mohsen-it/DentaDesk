@@ -47,36 +47,36 @@ const FloatingQuickActions = memo(function FloatingQuickActions({
   ], [onAddPatient, onAddAppointment, onAddPayment])
 
   return (
-    <Card className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 shadow-lg dark:shadow-lg border-0 bg-white dark:bg-card backdrop-blur-lg rtl md:bottom-8" role="toolbar" aria-label="إجراءات سريعة">
-      <div className="flex flex-col md:flex-row items-center gap-2 p-3 rtl-layout">
-        {/* Action buttons */}
+    <Card className="fixed bottom-4 md:bottom-6 lg:bottom-8 left-1/2 transform -translate-x-1/2 z-50 shadow-xl dark:shadow-2xl border-0 bg-card backdrop-blur-xl rtl rounded-2xl" role="toolbar" aria-label="إجراءات سريعة">
+      <div className="flex flex-col md:flex-row items-center gap-3 p-4 rtl-layout">
+        {/* Enhanced Action buttons */}
         {actions.map((action, index) => {
           const Icon = action.icon
           return (
             <Button
               key={index}
               onClick={action.onClick}
-              className={`flex items-center gap-2 px-4 py-3 md:px-6 md:py-4 rounded-lg font-medium transition-all duration-200 hover:scale-105 shadow-lg dark:shadow-lg ${action.color} ${action.textColor} rtl:flex-row-reverse text-sm md:text-base min-h-[44px] md:min-h-[48px] active:scale-95`}
+              className={`flex items-center gap-2 px-4 py-3 md:px-6 md:py-4 rounded-xl font-medium transition-all duration-300 hover:scale-105 hover:shadow-lg shadow-md ${action.color} ${action.textColor} rtl:flex-row-reverse text-sm md:text-base min-h-[44px] md:min-h-[48px] active:scale-95 focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
               aria-label={`${action.label} (${action.shortcut})`}
             >
-              <Icon className="w-5 h-5" aria-hidden="true" />
-              <span>{action.label}</span>
-              <span className="text-xs opacity-75 bg-black/20 dark:bg-slate-900/20 px-2 py-1 rounded" aria-hidden="true">
+              <Icon className="w-4 h-4 md:w-5 md:h-5" aria-hidden="true" />
+              <span className="font-semibold">{action.label}</span>
+              <span className="text-xs opacity-90 bg-black/25 dark:bg-white/25 px-2 py-1 rounded-lg font-mono" aria-hidden="true">
                 {action.shortcut}
               </span>
             </Button>
           )
         })}
 
-        {/* Quick access indicator */}
-        <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200 ml-4 rtl:mr-4 rtl:ml-0 rtl:flex-row-reverse">
-          <Zap className="w-4 h-4 rtl:order-2" />
-          <span className="text-sm font-medium rtl:order-1">إجراءات سريعة</span>
+        {/* Enhanced Quick access indicator */}
+        <div className="flex items-center gap-2 text-foreground ml-4 rtl:mr-4 rtl:ml-0 rtl:flex-row-reverse bg-muted/50 px-3 py-2 rounded-xl">
+          <Zap className="w-4 h-4 rtl:order-2 text-primary" />
+          <span className="text-sm font-semibold rtl:order-1">إجراءات سريعة</span>
         </div>
       </div>
 
-      {/* Floating animation effect */}
-      <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-green-500/20 to-purple-500/20 dark:from-slate-500/20 dark:via-slate-500/20 dark:to-slate-500/20 rounded-lg blur opacity-25 -z-10 animate-pulse" />
+      {/* Enhanced floating animation effect */}
+      <div className="absolute -inset-2 bg-gradient-to-r from-primary/15 via-accent/15 to-muted/15 rounded-2xl blur-lg opacity-30 -z-10 animate-pulse" />
     </Card>
   )
 })
