@@ -335,7 +335,8 @@ app.whenReady().then(async () => {
           whatsapp_reminder_enabled: settings.whatsapp_reminder_enabled || 0,
           whatsapp_reminder_hours_before: hours,
           whatsapp_reminder_minutes_before: minutesResolved,
-          whatsapp_reminder_message: settings.whatsapp_reminder_message || 'مرحبًا {{patient_name}}، تذكير بموعدك في عيادة الأسنان بتاريخ {{appointment_date}} الساعة {{appointment_time}}. نشكرك على التزامك.'
+          whatsapp_reminder_message: settings.whatsapp_reminder_message || '',
+          whatsapp_reminder_custom_enabled: settings.whatsapp_reminder_custom_enabled || 0,
         };
       } catch (error) {
         console.error('Error getting settings (inlined from scheduler):', error);
@@ -454,8 +455,12 @@ app.whenReady().then(async () => {
           if (!hasMinutes) {
             databaseService.db.prepare('ALTER TABLE settings ADD COLUMN whatsapp_reminder_minutes_before INTEGER DEFAULT 0').run();
           }
+          const hasCustomEnabled = cols && cols.some(c => c.name === 'whatsapp_reminder_custom_enabled');
+          if (!hasCustomEnabled) {
+            databaseService.db.prepare('ALTER TABLE settings ADD COLUMN whatsapp_reminder_custom_enabled INTEGER DEFAULT 0').run();
+          }
         } catch (e) {
-          console.error('Error ensuring minutes column for scheduler (inlined):', e);
+          console.error('Error ensuring minutes/custom_enabled columns for scheduler:', e);
         }
 
         const settings = await getSettings();
@@ -487,7 +492,13 @@ app.whenReady().then(async () => {
               continue;
             }
 
-            const message = replaceMessageVariables(settings.whatsapp_reminder_message, appointment);
+            // Define a default message if custom messages are not allowed
+            const defaultMessage = `مرحباً بك يا {{patient_name}}! نود تذكيرك بموعدك في عيادة الأسنان بتاريخ {{appointment_date}} الساعة {{appointment_time}}. نتطلع لرؤيتك!`;
+
+            const message = settings.whatsapp_reminder_custom_enabled === 1
+              ? replaceMessageVariables(settings.whatsapp_reminder_message, appointment)
+              : replaceMessageVariables(defaultMessage, appointment);
+
             console.log(`Generated message for ${appointment.id}: ${message.substring(0, 50)}...`);
 
             console.log('Sending WhatsApp reminder to (inlined from scheduler):', normalizedPhone, 'appointmentId:', appointment.id);
@@ -3133,46 +3144,52 @@ try {
   const { ipcMain } = require('electron')
   ipcMain.handle('whatsapp-reminders:get-settings', async () => {
     try {
-      const stmt = databaseService.db.prepare(
-        'SELECT whatsapp_reminder_enabled AS whatsapp_reminder_enabled, whatsapp_reminder_hours_before AS hours_before, whatsapp_reminder_message AS message, whatsapp_reminder_custom_enabled AS custom_enabled FROM settings WHERE id = ?'
-      )
-      const row = stmt.get('clinic_settings')
-      if (!row) {
-        return {
-          whatsapp_reminder_enabled: 0,
-          hours_before: 3,
-          message:
-            'مرحبًا {{patient_name}}، تذكير بموعدك في عيادة الأسنان بتاريخ {{appointment_date}} الساعة {{appointment_time}}. نشكرك على التزامك.',
-          custom_enabled: 0
-        }
-      }
-      return row
+      const settings = databaseService.getSettings ? await databaseService.getSettings() : null;
+      const hours = settings.whatsapp_reminder_hours_before || 3;
+      const minutesRaw = settings.whatsapp_reminder_minutes_before;
+      const minutesResolved = (typeof minutesRaw === 'number' && minutesRaw > 0) ? minutesRaw : (hours * 60);
+      return {
+        whatsapp_reminder_enabled: settings.whatsapp_reminder_enabled || 0,
+        hours_before: hours,
+        minutes_before: minutesResolved,
+        message: settings.whatsapp_reminder_message || '',
+        custom_enabled: settings.whatsapp_reminder_custom_enabled || 0,
+      };
     } catch (error) {
-      console.error('Error getting WhatsApp settings (alias, js):', error)
-      throw error
+      console.error('Error getting WhatsApp settings:', error);
+      return null;
     }
-  })
+  });
 
-  ipcMain.handle('whatsapp-reminders:set-settings', async (_, payload) => {
+  ipcMain.handle('whatsapp-reminders:set-settings', async (_event, newSettings) => {
     try {
-      const now = new Date().toISOString()
-      const stmt = databaseService.db.prepare(
-        'UPDATE settings SET whatsapp_reminder_enabled = ?, whatsapp_reminder_hours_before = ?, whatsapp_reminder_message = ?, whatsapp_reminder_custom_enabled = ?, updated_at = ? WHERE id = ?'
-      )
-      const result = stmt.run(
-        payload.whatsapp_reminder_enabled,
-        payload.hours_before,
-        payload.message,
-        payload.custom_enabled,
-        now,
-        'clinic_settings'
-      )
-      return result.changes > 0
+      if (databaseService) {
+        const currentSettings = await databaseService.getSettings();
+        const updatedSettings = {
+          ...currentSettings,
+          whatsapp_reminder_enabled: newSettings.whatsapp_reminder_enabled !== undefined ? newSettings.whatsapp_reminder_enabled : currentSettings.whatsapp_reminder_enabled,
+          whatsapp_reminder_hours_before: newSettings.hours_before !== undefined ? newSettings.hours_before : currentSettings.whatsapp_reminder_hours_before,
+          whatsapp_reminder_minutes_before: newSettings.minutes_before !== undefined ? newSettings.minutes_before : (currentSettings.whatsapp_reminder_minutes_before || newSettings.hours_before * 60),
+          whatsapp_reminder_message: newSettings.message !== undefined ? newSettings.message : currentSettings.whatsapp_reminder_message,
+          whatsapp_reminder_custom_enabled: newSettings.custom_enabled !== undefined ? newSettings.custom_enabled : currentSettings.whatsapp_reminder_custom_enabled,
+        };
+
+        // Apply default minutes if not explicitly set and custom_enabled is off
+        if (updatedSettings.whatsapp_reminder_minutes_before === 0 && updatedSettings.whatsapp_reminder_hours_before > 0) {
+          updatedSettings.whatsapp_reminder_minutes_before = updatedSettings.whatsapp_reminder_hours_before * 60;
+        }
+
+        await databaseService.updateSettings(updatedSettings);
+        console.log('✅ WhatsApp settings saved:', updatedSettings);
+        return { success: true };
+      } else {
+        return { success: false, error: 'Database service not available' };
+      }
     } catch (error) {
-      console.error('Error updating WhatsApp settings (alias, js):', error)
-      throw error
+      console.error('Error saving WhatsApp settings:', error);
+      return { success: false, error: error.message || 'Failed to save WhatsApp settings' };
     }
-  })
+  });
 
   ipcMain.handle('whatsapp-reminders:reset-session', async () => {
     try {
@@ -3204,8 +3221,12 @@ try {
         if (!hasMinutes) {
           databaseService.db.prepare('ALTER TABLE settings ADD COLUMN whatsapp_reminder_minutes_before INTEGER DEFAULT 0').run();
         }
+        const hasCustomEnabled = cols && cols.some(c => c.name === 'whatsapp_reminder_custom_enabled');
+        if (!hasCustomEnabled) {
+          databaseService.db.prepare('ALTER TABLE settings ADD COLUMN whatsapp_reminder_custom_enabled INTEGER DEFAULT 0').run();
+        }
       } catch (e) {
-        console.error('Error ensuring minutes column for diagnostic:', e);
+        console.error('Error ensuring minutes/custom_enabled columns for diagnostic:', e);
       }
 
       const settings = databaseService.getSettings ? await databaseService.getSettings() : null;
@@ -3258,8 +3279,12 @@ try {
         if (!hasMinutes) {
           databaseService.db.prepare('ALTER TABLE settings ADD COLUMN whatsapp_reminder_minutes_before INTEGER DEFAULT 0').run();
         }
+        const hasCustomEnabled = cols && cols.some(c => c.name === 'whatsapp_reminder_custom_enabled');
+        if (!hasCustomEnabled) {
+          databaseService.db.prepare('ALTER TABLE settings ADD COLUMN whatsapp_reminder_custom_enabled INTEGER DEFAULT 0').run();
+        }
       } catch (e) {
-        console.error('Error ensuring minutes column for scheduler:', e);
+        console.error('Error ensuring minutes/custom_enabled columns for scheduler:', e);
       }
 
       // Inlined logic from whatsappReminderScheduler.ts
@@ -3398,8 +3423,12 @@ try {
             if (!hasMinutes) {
               databaseService.db.prepare('ALTER TABLE settings ADD COLUMN whatsapp_reminder_minutes_before INTEGER DEFAULT 0').run();
             }
+            const hasCustomEnabled = cols && cols.some(c => c.name === 'whatsapp_reminder_custom_enabled');
+            if (!hasCustomEnabled) {
+              databaseService.db.prepare('ALTER TABLE settings ADD COLUMN whatsapp_reminder_custom_enabled INTEGER DEFAULT 0').run();
+            }
           } catch (e) {
-            console.error('Error ensuring minutes column for scheduler (inlined):', e);
+            console.error('Error ensuring minutes/custom_enabled columns for scheduler (inlined):', e);
           }
 
           const settings = await getSettings();
@@ -3431,7 +3460,13 @@ try {
                 continue;
               }
 
-              const message = replaceMessageVariables(settings.whatsapp_reminder_message, appointment);
+              // Define a default message if custom messages are not allowed
+              const defaultMessage = `مرحباً بك يا {{patient_name}}! نود تذكيرك بموعدك في عيادة الأسنان بتاريخ {{appointment_date}} الساعة {{appointment_time}}. نتطلع لرؤيتك!`;
+
+              const message = settings.whatsapp_reminder_custom_enabled === 1
+                ? replaceMessageVariables(settings.whatsapp_reminder_message, appointment)
+                : replaceMessageVariables(defaultMessage, appointment);
+
               console.log(`Generated message for ${appointment.id}: ${message.substring(0, 50)}...`);
 
               console.log('Sending WhatsApp reminder to (inlined from scheduler):', normalizedPhone, 'appointmentId:', appointment.id);

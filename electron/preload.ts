@@ -85,12 +85,14 @@ export interface ElectronAPI {
       hours_before: number
       message: string
       custom_enabled: boolean
+      minutes_before?: number // Add minutes_before here
     }>
     setSettings: (settings: {
       whatsapp_reminder_enabled?: boolean
       hours_before?: number
       message?: string
       custom_enabled?: boolean
+      minutes_before?: number // Add minutes_before here
     }) => Promise<void>
     testSendReminder: (phoneNumber: string, message: string) => Promise<{
       success: boolean
@@ -478,12 +480,16 @@ declare global {
         hoursBefore: number
         messageText: string
         allowCustomMessage: boolean
+        minutes_before?: number // Add minutes_before here
+        custom_enabled?: boolean // Add custom_enabled here
       }>
       setWhatsAppSettings(settings: {
         enableReminder: boolean
         hoursBefore: number
         messageText: string
         allowCustomMessage: boolean
+        minutes_before?: number // Add minutes_before here
+        custom_enabled?: boolean // Add custom_enabled here
       }): Promise<void>
     }
   }
