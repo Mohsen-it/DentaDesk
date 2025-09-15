@@ -11,6 +11,7 @@ import ElegantShortcutsDisplay from '@/components/help/ElegantShortcutsDisplay'
 import { DatabaseDiagnostics } from '@/components/DatabaseDiagnostics'
 import { ExportService } from '@/services/exportService'
 import { useDentalTreatmentStore } from '@/store/dentalTreatmentStore'
+import { Switch } from '@/components/ui/switch'
 import {
   Download,
   Upload,
@@ -46,6 +47,15 @@ export default function Settings() {
     type: 'success' | 'error' | 'info'
     show: boolean
   }>({ message: '', type: 'success', show: false })
+
+  // WhatsApp Reminder Settings State
+  const [enableReminder, setEnableReminder] = useState(false)
+  const [hoursBefore, setHoursBefore] = useState(24)
+  const [minutesBefore, setMinutesBefore] = useState<number>(0)
+  const [messageText, setMessageText] = useState('')
+  const [allowCustomMessage, setAllowCustomMessage] = useState(false)
+  const [showQRModal, setShowQRModal] = useState(false)
+  const [qrData, setQrData] = useState<string>('')
 
   const {
     backups,
@@ -107,6 +117,39 @@ export default function Settings() {
     }
   }, [showDeleteConfirm])
 
+  // Subscribe to WhatsApp QR events when modal is open
+  useEffect(() => {
+    if (!showQRModal) return
+
+    // First, check if we already have QR data from the current session
+    const checkExistingQr = async () => {
+      try {
+        // @ts-ignore
+        if (window.electronAPI?.whatsappReminders?.getStatus) {
+          // @ts-ignore
+          const status = await window.electronAPI.whatsappReminders.getStatus()
+          if (status.qr) {
+            setQrData(status.qr)
+            return
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to check existing QR status:', error)
+      }
+    }
+
+    checkExistingQr()
+
+    // @ts-ignore
+    const unsubscribe = window.onWhatsAppQR?.((qr: string) => {
+      console.log('🔄 QR data received:', qr.substring(0, 50) + '...')
+      setQrData(qr)
+    })
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe()
+    }
+  }, [showQRModal])
+
   // Handle keyboard events for modal
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -129,11 +172,66 @@ export default function Settings() {
     }
   }, [showDeleteConfirm])
 
+  // Fetch initial WhatsApp settings
+  useEffect(() => {
+    const fetchWhatsAppSettings = async () => {
+      try {
+        // Prefer new API via electronAPI.whatsappReminders; fallback to legacy window.electron
+        let data: any
+        if (window.electronAPI?.whatsappReminders?.getSettings) {
+          data = await window.electronAPI.whatsappReminders.getSettings()
+          setEnableReminder(Boolean(data.whatsapp_reminder_enabled))
+          setHoursBefore(Number(data.hours_before ?? 24))
+          setMinutesBefore(Number((data as any).minutes_before ?? (data.hours_before ?? 0) * 60))
+          setMessageText(String(data.message ?? ''))
+          setAllowCustomMessage(Boolean(data.custom_enabled))
+        } else if (window.electron?.getWhatsAppSettings) {
+          const legacy = await window.electron.getWhatsAppSettings()
+          setEnableReminder(legacy.enableReminder || false)
+          setHoursBefore(legacy.hoursBefore || 24)
+          setMessageText(legacy.messageText || '')
+          setAllowCustomMessage(legacy.allowCustomMessage || false)
+        } else {
+          console.warn('WhatsApp settings API not available')
+        }
+      } catch (error) {
+        console.error('Error fetching WhatsApp settings:', error)
+      }
+    }
+    fetchWhatsAppSettings()
+  }, [])
+
   const showNotification = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
     setNotification({ message, type, show: true })
     setTimeout(() => {
       setNotification(prev => ({ ...prev, show: false }))
     }, 3000)
+  }
+
+  // Save WhatsApp settings
+  const saveWhatsAppSettings = async () => {
+    try {
+      if (window.electronAPI?.whatsappReminders?.setSettings) {
+        await window.electronAPI.whatsappReminders.setSettings({
+          whatsapp_reminder_enabled: enableReminder ? 1 : 0,
+          hours_before: hoursBefore,
+          minutes_before: minutesBefore,
+          message: messageText,
+          custom_enabled: allowCustomMessage ? 1 : 0,
+        })
+      } else if (window.electron?.setWhatsAppSettings) {
+        await window.electron.setWhatsAppSettings({
+          enableReminder,
+          hoursBefore,
+          messageText,
+          allowCustomMessage,
+        })
+      }
+      showNotification('تم حفظ إعدادات تذكير واتساب بنجاح', 'success')
+    } catch (error) {
+      console.error('Error saving WhatsApp settings:', error)
+      showNotification('فشل في حفظ إعدادات تذكير واتساب', 'error')
+    }
   }
 
   // Handle logo upload with validation
@@ -356,6 +454,7 @@ export default function Settings() {
             { id: 'backup', name: 'النسخ الاحتياطية', icon: Database },
             { id: 'diagnostics', name: 'تشخيص النظام', icon: AlertTriangle },
             { id: 'appearance', name: 'المظهر', icon: Palette },
+            { id: 'whatsapp', name: 'تذكيرات واتساب', icon: Phone },
             { id: 'shortcuts', name: 'اختصارات لوحة المفاتيح', icon: Keyboard },
             { id: 'security', name: 'الأمان', icon: Key },
             { id: 'clinic', name: 'إعدادات العيادة', icon: SettingsIcon },
@@ -655,6 +754,62 @@ export default function Settings() {
               </p>
             </div>
             <div className="p-6 space-y-6">
+              {/* Reset WhatsApp Session */}
+              <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-muted/30">
+                <div>
+                  <label className="text-sm font-medium text-foreground">إعادة تهيئة اتصال واتساب</label>
+                  <p className="text-xs text-muted-foreground mt-1">حذف الجلسة الحالية لإظهار رمز QR من جديد وإعادة الربط.</p>
+                </div>
+                <button
+                  onClick={async () => {
+                    const confirmed = window.confirm('سيتم حذف جلسة واتساب الحالية. هل تريد المتابعة؟')
+                    if (!confirmed) return
+                    try {
+                      const res = await window.electronAPI?.whatsappReminders?.resetSession?.()
+                      if (res?.success) {
+                        showNotification('تمت إعادة تهيئة جلسة واتساب. راقب وحدة التحكم لرمز QR', 'success')
+                      } else {
+                        showNotification(res?.error || 'فشل في إعادة تهيئة الجلسة', 'error')
+                      }
+                    } catch (error) {
+                      console.error('Failed to reset WhatsApp session:', error)
+                      showNotification('حدث خطأ أثناء إعادة التهيئة', 'error')
+                    }
+                  }}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  حذف جلسة الربط (QR)
+                </button>
+              </div>
+
+              {/* Scan QR Button */}
+              <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-muted/30">
+                <div>
+                  <label className="text-sm font-medium text-foreground">مسح رمز QR للربط</label>
+                  <p className="text-xs text-muted-foreground mt-1">اضغط لبدء التهيئة وعرض رمز QR داخل التطبيق للمسح.</p>
+                </div>
+                <button
+                  onClick={async () => {
+                    try {
+                      setQrData('')
+                      setShowQRModal(true)
+                      // Try to get current status first
+                      const status = await window.electronAPI?.whatsappReminders?.getStatus?.()
+                      if (status?.qr) {
+                        setQrData(status.qr)
+                      }
+                      // Ensure client emits QR; resetting session guarantees QR if not authenticated
+                      await window.electronAPI?.whatsappReminders?.resetSession?.()
+                    } catch (error) {
+                      console.error('Failed to start QR flow:', error)
+                      showNotification('تعذر بدء عملية الربط عبر QR', 'error')
+                    }
+                  }}
+                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+                >
+                  مسح ال qr code
+                </button>
+              </div>
               {/* Dark Mode Toggle */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3 space-x-reverse">
@@ -709,8 +864,9 @@ export default function Settings() {
                         <div className="w-8 h-6 bg-secondary rounded text-xs"></div>
                       </div>
                     </div>
+          
+          
                   </div>
-
                   {/* Theme Info */}
                   <div className="p-4 border border-border rounded-lg bg-muted/50">
                     <h5 className="text-sm font-medium text-foreground mb-2">مميزات المظهر</h5>
@@ -725,6 +881,254 @@ export default function Settings() {
               </div>
 
 
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* WhatsApp Reminder Settings Tab */}
+      {activeTab === 'whatsapp' && (
+        <div className="space-y-6">
+          {/* Debug: Rendering WhatsApp reminders tab */}
+          <div className="bg-card rounded-lg shadow border border-border">
+            <div className="p-6 border-b border-border">
+              <h3 className="text-lg font-medium text-foreground">إعدادات تذكير واتساب</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                إعدادات إرسال التذكيرات عبر واتساب قبل المواعيد
+              </p>
+            </div>
+            <div className="p-6 space-y-6">
+              {/* Enable Reminder Toggle */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3 space-x-reverse">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Phone className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground">تفعيل التذكير</label>
+                    <p className="text-sm text-muted-foreground">
+                      إرسال تذكيرات واتساب تلقائياً قبل المواعيد
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  checked={enableReminder}
+                  onCheckedChange={(checked) => setEnableReminder(checked)}
+                />
+              </div>
+
+              {/* Hours Before Input */}
+              <div className="space-y-2">
+                <label htmlFor="hoursBefore" className="text-sm font-medium text-foreground">
+                  عدد الساعات قبل الموعد
+                </label>
+                <input
+                  type="number"
+                  id="hoursBefore"
+                  min="0"
+                  max="168"
+                  step="0.01"
+                  value={hoursBefore}
+                  onChange={(e) => setHoursBefore(Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <p className="text-xs text-muted-foreground">
+                  عدد الساعات لإرسال التذكير قبل الموعد (0 - 168 ساعة، يدعم الكسور مثل 0.01)
+                </p>
+              </div>
+
+              {/* Minutes Before Input */}
+              <div className="space-y-2">
+                <label htmlFor="minutesBefore" className="text-sm font-medium text-foreground">
+                  عدد الدقائق قبل الموعد
+                </label>
+                <input
+                  type="number"
+                  id="minutesBefore"
+                  min="0"
+                  max="10080"
+                  value={minutesBefore}
+                  onChange={(e) => setMinutesBefore(Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <p className="text-xs text-muted-foreground">
+                  عدد الدقائق لإرسال التذكير قبل الموعد (يمكن استخدامه بدلاً من الساعات)
+                </p>
+              </div>
+
+              {/* Message Text Textarea */}
+              <div className="space-y-2">
+                <label htmlFor="messageText" className="text-sm font-medium text-foreground">
+                  نص الرسالة
+                </label>
+                <textarea
+                  id="messageText"
+                  rows={4}
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
+                  placeholder="أدخل نص الرسالة التي سيتم إرسالها..."
+                  className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <p className="text-xs text-muted-foreground">
+                  نص الرسالة الذي سيتم إرساله عبر واتساب
+                </p>
+              </div>
+
+              {/* Allow Custom Message Toggle */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-sm font-medium text-foreground">السماح بتخصيص الرسالة للمريض</label>
+                  <p className="text-sm text-muted-foreground">
+                    السماح بتخصيص نص الرسالة لكل مريض على حدة
+                  </p>
+                </div>
+                <Switch
+                  checked={allowCustomMessage}
+                  onCheckedChange={(checked) => setAllowCustomMessage(checked)}
+                />
+
+              {/* Explicit save button to persist settings */}
+              <div className="flex justify-end">
+                <button
+                  onClick={saveWhatsAppSettings}
+                  className="px-6 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+                >
+                  حفظ إعدادات واتساب
+                </button>
+              </div>
+              </div>
+
+              {/* WhatsApp Linking Options */}
+              <div className="mt-6 space-y-4">
+                {/* Warning about WhatsApp compatibility */}
+                <div className="p-4 border border-yellow-200 dark:border-yellow-800 rounded-lg bg-yellow-50 dark:bg-yellow-900/20">
+                  <div className="flex items-start space-x-3 space-x-reverse">
+                    <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">تنبيه مهم</h4>
+                      <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                        WhatsApp Web قد لا يعمل مع الإصدارات الأحدث من التطبيق. إذا لم يعمل رمز QR، استخدم الخيار البديل.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* WhatsApp QR Code Linking */}
+                {(() => {
+                  console.log('🔍 Rendering QR code section')
+                  return (
+                    <div className="p-6 border-2 border-primary/20 rounded-lg bg-primary/5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <label className="text-base font-semibold text-foreground mb-2 block">🔗 ربط عبر رمز QR</label>
+                          <p className="text-sm text-muted-foreground">
+                            ربط حساب واتساب الخاص بك عبر رمز QR لتفعيل التذكيرات
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            اضغط لعرض رمز QR ومسحه بتطبيق واتساب على هاتفك
+                          </p>
+                        </div>
+                        <button
+                          onClick={async () => {
+                            console.log('🔗 QR button clicked in WhatsApp reminders tab')
+                            try {
+                              setQrData('')
+                              setShowQRModal(true)
+                              console.log('📱 QR modal opened, resetting session...')
+                              // Reset session to trigger QR generation
+                              const result = await window.electronAPI?.whatsappReminders?.resetSession?.()
+                              console.log('🔄 Reset session result:', result)
+                            } catch (error) {
+                              console.error('❌ Failed to start QR flow:', error)
+                              showNotification('تعذر بدء عملية الربط عبر QR', 'error')
+                            }
+                          }}
+                          className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center space-x-2 space-x-reverse font-medium shadow-md"
+                        >
+                          <Phone className="w-5 h-5" />
+                          <span>ربط عبر QR</span>
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })()}
+
+                {/* WhatsApp Test Send */}
+                <div className="p-6 border border-border rounded-lg">
+                  <label className="text-base font-semibold text-foreground mb-3 block">إرسال اختبار واتساب</label>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <input
+                      type="tel"
+                      placeholder="مثال: 9639XXXXXXXX"
+                      id="wa_test_phone"
+                      className="px-3 py-2 border border-input bg-background text-foreground rounded-md"
+                    />
+                    <input
+                      type="text"
+                      placeholder="نص الرسالة التجريبية"
+                      id="wa_test_message"
+                      className="px-3 py-2 border border-input bg-background text-foreground rounded-md"
+                      defaultValue="اختبار تذكير واتساب من نظام العيادة"
+                    />
+                    <button
+                      onClick={async () => {
+                        try {
+                          const phone = (document.getElementById('wa_test_phone') as HTMLInputElement)?.value || ''
+                          const msg = (document.getElementById('wa_test_message') as HTMLInputElement)?.value || ''
+                          if (!phone) {
+                            showNotification('يرجى إدخال رقم الهاتف بصيغة دولية صحيحة', 'error')
+                            return
+                          }
+                          const res = await window.electronAPI?.whatsappReminders?.testSendReminder?.(phone, msg)
+                          if (res?.success) {
+                            showNotification('تم إرسال الرسالة التجريبية بنجاح', 'success')
+                          } else {
+                            showNotification(res?.error || 'فشل في إرسال الرسالة التجريبية', 'error')
+                          }
+                        } catch (err) {
+                          showNotification('حدث خطأ أثناء إرسال الاختبار', 'error')
+                        }
+                      }}
+                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                    >
+                      إرسال اختبار
+                    </button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">استخدم رقم دولي بدون + أو مسافات. مثال: 9639XXXXXXXX</p>
+                </div>
+
+                {/* Alternative WhatsApp Web Option */}
+                <div className="p-6 border-2 border-green-200 dark:border-green-800 rounded-lg bg-green-50 dark:bg-green-900/20">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <label className="text-base font-semibold text-green-800 dark:text-green-200 mb-2 block">🌐 الخيار البديل - WhatsApp Web</label>
+                      <p className="text-sm text-green-700 dark:text-green-300">
+                        افتح WhatsApp Web واستخدمه مباشرة للتذكيرات (أكثر موثوقية)
+                      </p>
+                      <p className="text-xs text-green-600 dark:text-green-400 mt-2">
+                        سيفتح WhatsApp Web في المتصفح - قم بتسجيل الدخول يدوياً
+                      </p>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        try {
+                          // Open WhatsApp Web in external browser
+                          await window.electronAPI?.system?.openExternal?.('https://web.whatsapp.com')
+                          showNotification('تم فتح WhatsApp Web في المتصفح', 'info')
+                        } catch (error) {
+                          console.error('Failed to open WhatsApp Web:', error)
+                          // Fallback: try window.open
+                          window.open('https://web.whatsapp.com', '_blank')
+                        }
+                      }}
+                      className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 space-x-reverse font-medium shadow-md"
+                    >
+                      <Info className="w-5 h-5" />
+                      <span>فتح WhatsApp Web</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1267,6 +1671,47 @@ export default function Settings() {
       )}
 
 
+
+      {/* WhatsApp QR Modal */}
+      {showQRModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowQRModal(false)} />
+          <div className="relative bg-card border border-border rounded-lg shadow-2xl max-w-md w-full mx-4" dir="rtl">
+            <div className="p-6 space-y-4">
+              <h3 className="text-lg font-semibold text-foreground">ربط واتساب عبر رمز QR</h3>
+              <p className="text-sm text-muted-foreground">افتح تطبيق واتساب على هاتفك، ثم: الإعدادات &gt; الأجهزة المرتبطة &gt; ربط جهاز.</p>
+              <div className="flex items-center justify-center p-4 bg-background border border-border rounded-lg min-h-[220px]">
+                {qrData ? (
+                  (() => {
+                    console.log('🖼️ Displaying QR with data:', qrData.substring(0, 30) + '...')
+                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrData)}`
+                    console.log('🔗 QR URL:', qrUrl)
+                    return <img alt="WhatsApp QR" src={qrUrl} />
+                  })()
+                ) : (
+                  <div className="text-sm text-muted-foreground">جاري انتظار رمز QR...</div>
+                )}
+              </div>
+              <div className="flex justify-end gap-2">
+                <button onClick={() => setShowQRModal(false)} className="px-4 py-2 border border-input rounded-lg">إغلاق</button>
+                <button
+                  onClick={async () => {
+                    try {
+                      setQrData('')
+                      const status = await window.electronAPI?.whatsappReminders?.getStatus?.()
+                      if (status?.qr) setQrData(status.qr)
+                      await window.electronAPI?.whatsappReminders?.resetSession?.()
+                    } catch {}
+                  }}
+                  className="px-4 py-2 bg-primary text-white rounded-lg"
+                >
+                  إعادة توليد QR
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Notification */}
       {notification.show && (

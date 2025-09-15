@@ -78,6 +78,32 @@ export interface ElectronAPI {
     update: (settings: any) => Promise<any>
   }
 
+  // WhatsApp reminder operations
+  whatsappReminders: {
+    getSettings: () => Promise<{
+      whatsapp_reminder_enabled: boolean
+      hours_before: number
+      message: string
+      custom_enabled: boolean
+    }>
+    setSettings: (settings: {
+      whatsapp_reminder_enabled?: boolean
+      hours_before?: number
+      message?: string
+      custom_enabled?: boolean
+    }) => Promise<void>
+    testSendReminder: (phoneNumber: string, message: string) => Promise<{
+      success: boolean
+      error?: string
+    }>
+    resetSession: () => Promise<void>
+    getStatus: () => Promise<{
+      isReady: boolean
+      hasQr: boolean
+      qr?: string
+    }>
+  }
+
   // Lab operations
   labs: {
     getAll: () => Promise<any[]>
@@ -291,6 +317,14 @@ const electronAPI: ElectronAPI = {
     update: (settings) => ipcRenderer.invoke('settings:update', settings),
   },
 
+  whatsappReminders: {
+    getSettings: () => ipcRenderer.invoke('whatsapp-reminders:get-settings'),
+    setSettings: (settings) => ipcRenderer.invoke('whatsapp-reminders:set-settings', settings),
+    testSendReminder: (phoneNumber, message) => ipcRenderer.invoke('whatsapp-reminders:test-send', phoneNumber, message),
+    resetSession: () => ipcRenderer.invoke('whatsapp-reminders:reset-session'),
+    getStatus: () => ipcRenderer.invoke('whatsapp-reminders:get-status'),
+  },
+
   labs: {
     getAll: () => ipcRenderer.invoke('db:labs:getAll'),
     create: (lab) => ipcRenderer.invoke('db:labs:create', lab),
@@ -407,6 +441,27 @@ const electronAPI: ElectronAPI = {
 }
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI)
+// Expose WhatsApp settings APIs
+contextBridge.exposeInMainWorld('electron', {
+  getWhatsAppSettings: () => ipcRenderer.invoke('get-whatsapp-settings'),
+  setWhatsAppSettings: (settings: any) => ipcRenderer.invoke('set-whatsapp-settings', settings)
+})
+
+// Expose QR event subscription
+// @ts-ignore
+contextBridge.exposeInMainWorld('onWhatsAppQR', (callback: (qr: string) => void) => {
+  const listener = (_event: any, qr: string) => callback(qr)
+  ipcRenderer.on('whatsapp:qr', listener)
+  return () => ipcRenderer.removeListener('whatsapp:qr', listener)
+})
+
+// Notify renderer when WhatsApp becomes ready
+// @ts-ignore
+contextBridge.exposeInMainWorld('onWhatsAppReady', (callback: () => void) => {
+  const listener = () => callback()
+  ipcRenderer.on('whatsapp:ready', listener)
+  return () => ipcRenderer.removeListener('whatsapp:ready', listener)
+})
 
 // Debug: Log available APIs
 console.log('Preload: electronAPI exposed with keys:', Object.keys(electronAPI))
@@ -417,5 +472,19 @@ console.log('Preload: uploadDentalImage available:', !!electronAPI.files?.upload
 declare global {
   interface Window {
     electronAPI: ElectronAPI
+    electron: {
+      getWhatsAppSettings(): Promise<{
+        enableReminder: boolean
+        hoursBefore: number
+        messageText: string
+        allowCustomMessage: boolean
+      }>
+      setWhatsAppSettings(settings: {
+        enableReminder: boolean
+        hoursBefore: number
+        messageText: string
+        allowCustomMessage: boolean
+      }): Promise<void>
+    }
   }
 }

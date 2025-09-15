@@ -173,8 +173,54 @@ declare global {
         getRecurring: () => Promise<any[]>
         getStatistics: () => Promise<any>
       }
+      whatsappReminders: {
+        getSettings: () => Promise<{
+          whatsapp_reminder_enabled: boolean
+          hours_before: number
+          message: string
+          custom_enabled: boolean
+        }>
+        setSettings: (settings: {
+          whatsapp_reminder_enabled?: boolean
+          hours_before?: number
+          message?: string
+          custom_enabled?: boolean
+        }) => Promise<void>
+        testSendReminder: (phoneNumber: string, message: string) => Promise<{
+          success: boolean
+          error?: string
+        }>
+        resetSession: () => Promise<void>
+        getStatus: () => Promise<{
+          isReady: boolean
+          hasQr: boolean
+          qr?: string
+        }>
+      }
+      system: {
+        getVersion: () => Promise<string>
+        getPath: (name: string) => Promise<string>
+        openExternal: (url: string) => Promise<void>
+      }
+    }
+    electron: {
+      getWhatsAppSettings(): Promise<{
+        enableReminder: boolean
+        hoursBefore: number
+        messageText: string
+        allowCustomMessage: boolean
+      }>
+      setWhatsAppSettings(settings: {
+        enableReminder: boolean
+        hoursBefore: number
+        messageText: string
+        allowCustomMessage: boolean
+      }): Promise<void>
     }
   }
 }
 
 export {}
+
+// Type shim for qrcode-terminal
+declare module 'qrcode-terminal'

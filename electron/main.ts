@@ -5,6 +5,8 @@ import { DataMigrationService } from '../src/services/dataMigrationService'
 import { BackupService } from '../src/services/backupService'
 import { AutoSaveService } from '../src/services/autoSaveService'
 import { ReportsService } from '../src/services/reportsService'
+import { initializeClient, resetWhatsAppSession, getWhatsAppStatus } from './services/whatsapp'
+import { startScheduler, runReminderDiagnostic } from './services/whatsappReminderScheduler'
 
 const isDev = process.env.IS_DEV === 'true'
 
@@ -108,6 +110,18 @@ app.whenReady().then(async () => {
   }
 
   initializeAutoBackup()
+
+  // Initialize WhatsApp client and start reminder scheduler
+  try {
+    await initializeClient()
+  } catch (e) {
+    console.warn('WhatsApp client initialization warning:', e)
+  }
+  try {
+    await startScheduler()
+  } catch (e) {
+    console.error('Failed to start WhatsApp reminder scheduler:', e)
+  }
 })
 
 app.on('window-all-closed', () => {
@@ -634,7 +648,217 @@ ipcMain.handle('settings:update', async (_, settings) => {
   return await databaseService.updateSettings(settings)
 })
 
+// WhatsApp Settings IPC Handlers
+ipcMain.handle('get-whatsapp-settings', async () => {
+  try {
+    console.log('Getting WhatsApp settings...')
+    // Ensure minutes column exists
+    try {
+      const cols = databaseService.db.prepare(`PRAGMA table_info(settings)`).all()
+      const hasMinutes = cols?.some((c: any) => c.name === 'whatsapp_reminder_minutes_before')
+      if (!hasMinutes) {
+        databaseService.db.prepare(`ALTER TABLE settings ADD COLUMN whatsapp_reminder_minutes_before INTEGER DEFAULT 0`).run()
+      }
+    } catch {}
+
+    const stmt = databaseService.db.prepare(`
+      SELECT
+        whatsapp_reminder_enabled,
+        whatsapp_reminder_hours_before,
+        whatsapp_reminder_message,
+        whatsapp_reminder_custom_enabled,
+        whatsapp_reminder_minutes_before
+      FROM settings
+      WHERE id = ?
+    `)
+    const settings = stmt.get('clinic_settings')
+
+    if (!settings) {
+      console.log('No settings found, returning defaults')
+      return {
+        whatsapp_reminder_enabled: 0,
+        whatsapp_reminder_hours_before: 3,
+        whatsapp_reminder_message: 'مرحبًا {{patient_name}}، تذكير بموعدك في عيادة الأسنان بتاريخ {{appointment_date}} الساعة {{appointment_time}}. نشكرك على التزامك.',
+        whatsapp_reminder_custom_enabled: 0,
+        whatsapp_reminder_minutes_before: 180
+      }
+    }
+
+    console.log('Retrieved WhatsApp settings:', settings)
+    return settings
+  } catch (error) {
+    console.error('Error getting WhatsApp settings:', error)
+    throw error
+  }
+})
+
+ipcMain.handle('set-whatsapp-settings', async (_, whatsappSettings) => {
+  try {
+    console.log('Updating WhatsApp settings:', whatsappSettings)
+    const now = new Date().toISOString()
+
+    const stmt = databaseService.db.prepare(`
+      UPDATE settings SET
+        whatsapp_reminder_enabled = ?,
+        whatsapp_reminder_hours_before = ?,
+        whatsapp_reminder_message = ?,
+        whatsapp_reminder_custom_enabled = ?,
+        whatsapp_reminder_minutes_before = ?,
+        updated_at = ?
+      WHERE id = ?
+    `)
+
+    const result = stmt.run(
+      whatsappSettings.whatsapp_reminder_enabled,
+      whatsappSettings.whatsapp_reminder_hours_before,
+      whatsappSettings.whatsapp_reminder_message,
+      whatsappSettings.whatsapp_reminder_custom_enabled,
+      Number(whatsappSettings.whatsapp_reminder_minutes_before ?? (whatsappSettings.whatsapp_reminder_hours_before * 60)),
+      now,
+      'clinic_settings'
+    )
+
+    console.log('WhatsApp settings updated successfully:', result.changes)
+    return result.changes > 0
+  } catch (error) {
+    console.error('Error updating WhatsApp settings:', error)
+    throw error
+  }
+})
+
+// New aliases matching preload whatsappReminders API
+ipcMain.handle('whatsapp-reminders:get-settings', async () => {
+  try {
+    console.log('Main: Handling whatsapp-reminders:get-settings request.');
+    // Ensure minutes column exists to avoid failures on fresh DBs
+    try {
+      const cols = databaseService.db.prepare(`PRAGMA table_info(settings)`).all()
+      const hasMinutes = cols?.some((c: any) => c.name === 'whatsapp_reminder_minutes_before')
+      if (!hasMinutes) {
+        databaseService.db.prepare(`ALTER TABLE settings ADD COLUMN whatsapp_reminder_minutes_before INTEGER DEFAULT 0`).run()
+      }
+    } catch {}
+    const stmt = databaseService.db.prepare(`
+      SELECT
+        whatsapp_reminder_enabled AS whatsapp_reminder_enabled,
+        whatsapp_reminder_hours_before AS hours_before,
+        whatsapp_reminder_message AS message,
+        whatsapp_reminder_custom_enabled AS custom_enabled,
+        whatsapp_reminder_minutes_before AS minutes_before
+      FROM settings
+      WHERE id = ?
+    `)
+    const row = stmt.get('clinic_settings')
+
+    let result = row || null
+    if (result) {
+      const hours = typeof result.hours_before === 'number' ? result.hours_before : 3
+      const min = typeof result.minutes_before === 'number' ? result.minutes_before : 0
+      if (!min || min <= 0) {
+        result.minutes_before = hours * 60
+      }
+    }
+
+    console.log('Main: whatsapp-reminders:get-settings - DB result (normalized):', result);
+    if (!result) {
+      console.log('Main: No settings found, returning defaults from get-settings.');
+      return {
+        whatsapp_reminder_enabled: 0,
+        hours_before: 3,
+        message: 'مرحبًا {{patient_name}}، تذكير بموعدك في عيادة الأسنان بتاريخ {{appointment_date}} الساعة {{appointment_time}}. نشكرك على التزامك.',
+        custom_enabled: 0,
+        minutes_before: 180
+      }
+    }
+
+    return result
+  } catch (error) {
+    console.error('Error getting WhatsApp settings (alias):', error)
+    throw error
+  }
+})
+
+ipcMain.handle('whatsapp-reminders:set-settings', async (_, payload) => {
+  try {
+    console.log('Main: Handling whatsapp-reminders:set-settings request with payload:', payload);
+    // Ensure minutes column exists before update
+    try {
+      const cols = databaseService.db.prepare(`PRAGMA table_info(settings)`).all()
+      const hasMinutes = cols?.some((c: any) => c.name === 'whatsapp_reminder_minutes_before')
+      if (!hasMinutes) {
+        databaseService.db.prepare(`ALTER TABLE settings ADD COLUMN whatsapp_reminder_minutes_before INTEGER DEFAULT 0`).run()
+      }
+    } catch {}
+    const now = new Date().toISOString()
+
+    // Normalize minutes_before so that 0 is replaced by hours_before * 60
+    const hours = Number(payload.hours_before || 0)
+    const rawMinutes = Number(payload.minutes_before || 0)
+    const minutesNormalized = rawMinutes > 0 ? rawMinutes : (hours > 0 ? hours * 60 : 0)
+
+    const stmt = databaseService.db.prepare(`
+      UPDATE settings SET
+        whatsapp_reminder_enabled = ?,
+        whatsapp_reminder_hours_before = ?,
+        whatsapp_reminder_message = ?,
+        whatsapp_reminder_custom_enabled = ?,
+        whatsapp_reminder_minutes_before = ?,
+        updated_at = ?
+      WHERE id = ?
+    `)
+
+    const result = stmt.run(
+      payload.whatsapp_reminder_enabled,
+      hours,
+      payload.message,
+      payload.custom_enabled,
+      minutesNormalized,
+      now,
+      'clinic_settings'
+    )
+
+    console.log('Main: whatsapp-reminders:set-settings - Update result changes:', result.changes, 'minutes_before stored:', minutesNormalized);
+    return result.changes > 0
+  } catch (error) {
+    console.error('Error updating WhatsApp settings (alias):', error)
+    throw error
+  }
+})
+
 // Reports IPC Handlers
+ipcMain.handle('whatsapp-reminders:reset-session', async () => {
+  try {
+    await resetWhatsAppSession()
+    return { success: true }
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Failed to reset session' }
+  }
+})
+
+ipcMain.handle('whatsapp-reminders:get-status', async () => {
+  try {
+    return getWhatsAppStatus()
+  } catch (error) {
+    return { isReady: false, hasQr: false }
+  }
+})
+
+ipcMain.handle('whatsapp-reminders:run-diagnostic', async () => {
+  try {
+    return await runReminderDiagnostic()
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'diagnostic failed' }
+  }
+})
+ipcMain.handle('whatsapp-reminders:run-scheduler-once', async () => {
+  try {
+    const { runSchedulerOnce } = require('./services/whatsappReminderScheduler')
+    await runSchedulerOnce()
+    return { success: true }
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'failed' }
+  }
+})
 ipcMain.handle('reports:generatePatientReport', async (_, filter) => {
   try {
     const patients = await databaseService.getAllPatients()

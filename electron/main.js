@@ -89,8 +89,8 @@ function createWindow() {
         ...details.responseHeaders,
         'Content-Security-Policy': [
           isDev
-            ? "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: http://localhost:5173 ws://localhost:5173 https://fonts.googleapis.com https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:5173; style-src 'self' 'unsafe-inline' http://localhost:5173 https://fonts.googleapis.com; img-src 'self' data: blob: http://localhost:5173; font-src 'self' data: http://localhost:5173 https://fonts.gstatic.com;"
-            : "default-src 'self' 'unsafe-inline' data: blob: https://fonts.googleapis.com https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob:; font-src 'self' data: https://fonts.gstatic.com;"
+            ? "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: http://localhost:5173 ws://localhost:5173 https://fonts.googleapis.com https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:5173; style-src 'self' 'unsafe-inline' http://localhost:5173 https://fonts.googleapis.com; img-src 'self' data: blob: http://localhost:5173 https://api.qrserver.com; font-src 'self' data: http://localhost:5173 https://fonts.gstatic.com;"
+            : "default-src 'self' 'unsafe-inline' data: blob: https://fonts.googleapis.com https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://api.qrserver.com; font-src 'self' data: https://fonts.gstatic.com;"
         ]
       }
     })
@@ -313,8 +313,229 @@ function createWindow() {
 app.whenReady().then(async () => {
   console.log('🚀 Electron app is ready, initializing services...')
 
+  // Initialize WhatsApp client and start reminder scheduler
+  try {
+    const { initializeClient, getWhatsAppStatus, sendMessage } = require('./services/whatsapp')
+    const cron = require('node-cron');
+
+    await initializeClient()
+
+    // Inlined logic from whatsappReminderScheduler.ts
+    let cronJob = null;
+    const APP_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+
+    // Helper functions (inlined)
+    const getSettings = async () => {
+      try {
+        const settings = await databaseService.getSettings();
+        const hours = settings.whatsapp_reminder_hours_before || 3;
+        const minutesRaw = settings.whatsapp_reminder_minutes_before;
+        const minutesResolved = (typeof minutesRaw === 'number' && minutesRaw > 0) ? minutesRaw : (hours * 60);
+        return {
+          whatsapp_reminder_enabled: settings.whatsapp_reminder_enabled || 0,
+          whatsapp_reminder_hours_before: hours,
+          whatsapp_reminder_minutes_before: minutesResolved,
+          whatsapp_reminder_message: settings.whatsapp_reminder_message || 'مرحبًا {{patient_name}}، تذكير بموعدك في عيادة الأسنان بتاريخ {{appointment_date}} الساعة {{appointment_time}}. نشكرك على التزامك.'
+        };
+      } catch (error) {
+        console.error('Error getting settings (inlined from scheduler):', error);
+        return null;
+      }
+    };
+
+    const getUpcomingAppointments = async (minutesBefore) => {
+      const now = dayjs().tz(APP_TZ);
+      try {
+        const appointments = await databaseService.getAllAppointments();
+        // console.log(`Loaded ${appointments?.length || 0} appointments for reminder check at`, now.toISOString(), 'TZ:', APP_TZ);
+
+        const upcomingAppointments = [];
+        for (const appointment of appointments) {
+          if (!appointment.start_time) continue;
+
+          const appointmentTime = dayjs(appointment.start_time).tz(APP_TZ);
+          const reminderTime = appointmentTime.subtract(minutesBefore, 'minute');
+
+          if (!reminderTime.isAfter(now) && appointmentTime.isAfter(now)) {
+            upcomingAppointments.push({
+              id: appointment.id,
+              patient_id: appointment.patient_id,
+              start_time: appointment.start_time,
+              title: (appointment).title || 'موعد',
+              patient_name: (appointment).patient_name || 'المريض',
+              phone: (appointment).phone || ''
+            });
+          }
+        }
+        return upcomingAppointments;
+      } catch (error) {
+        console.error('Error getting upcoming appointments (inlined from scheduler):', error);
+        return [];
+      }
+    };
+
+    const isReminderAlreadySent = async (appointmentId) => {
+      try {
+        const stmt = databaseService.db.prepare(`
+          SELECT id FROM whatsapp_reminders
+          WHERE appointment_id = ? AND status = 'sent'
+        `);
+        const existing = stmt.get(appointmentId);
+        return !!existing;
+      } catch (error) {
+        console.error('Error checking if reminder already sent (inlined from scheduler):', error);
+        return false;
+      }
+    };
+
+    const getPatientPhone = async (patientId) => {
+      try {
+        const stmt = databaseService.db.prepare(`
+          SELECT phone FROM patients WHERE id = ?
+        `);
+        const patient = stmt.get(patientId);
+        return patient?.phone || null;
+      } catch (error) {
+        console.error('Error getting patient phone (inlined from scheduler):', error);
+        return null;
+      }
+    };
+
+    const normalizePhone = (raw) => {
+      if (!raw) return null;
+      let digits = String(raw).replace(/[^0-9]/g, '');
+      if (!digits) return null;
+      if (digits.startsWith('00')) digits = digits.slice(2);
+      if (digits.length === 10 && digits.startsWith('09')) {
+        digits = '963' + digits.slice(1);
+      }
+      if (digits.length === 9 && digits.startsWith('9')) {
+        digits = '963' + digits;
+      }
+      return digits;
+    };
+
+    const replaceMessageVariables = (message, appointment) => {
+      try {
+        const appointmentDate = dayjs(appointment.start_time).format('YYYY-MM-DD');
+        const appointmentTime = dayjs(appointment.start_time).format('HH:mm');
+        return message
+          .replace(/\{\{patient_name\}\}/g, appointment.patient_name)
+          .replace(/\{\{appointment_date\}\}/g, appointmentDate)
+          .replace(/\{\{appointment_time\}\}/g, appointmentTime);
+      } catch (error) {
+        console.error('Error replacing message variables (inlined from scheduler):', error);
+        return message;
+      }
+    };
+
+    const recordReminderSent = async (appointmentId, patientId) => {
+      try {
+        const stmt = databaseService.db.prepare(`
+          INSERT INTO whatsapp_reminders (
+            id, appointment_id, patient_id, sent_at, status, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        `);
+        const id = Date.now().toString();
+        const now = new Date().toISOString();
+        stmt.run(id, appointmentId, patientId, now, 'sent', now, now);
+      } catch (error) {
+        console.error('Error recording reminder sent (inlined from scheduler):', error);
+        throw error;
+      }
+    };
+
+    const checkAndSendReminders = async () => {
+      try {
+        // Ensure minutes column exists to avoid failures on fresh DBs
+        try {
+          const cols = databaseService.db.prepare('PRAGMA table_info(settings)').all();
+          const hasMinutes = cols && cols.some(c => c.name === 'whatsapp_reminder_minutes_before');
+          if (!hasMinutes) {
+            databaseService.db.prepare('ALTER TABLE settings ADD COLUMN whatsapp_reminder_minutes_before INTEGER DEFAULT 0').run();
+          }
+        } catch (e) {
+          console.error('Error ensuring minutes column for scheduler (inlined):', e);
+        }
+
+        const settings = await getSettings();
+        if (!settings || settings.whatsapp_reminder_enabled !== 1) {
+          return;
+        }
+
+        console.log('Checking for upcoming appointments to send reminders (inlined from scheduler)...');
+        const minutes = settings.whatsapp_reminder_minutes_before ?? (settings.whatsapp_reminder_hours_before * 60);
+        const upcomingAppointments = await getUpcomingAppointments(minutes);
+        console.log('Eligible appointments count (inlined from scheduler):', upcomingAppointments.length, 'minutesBefore:', minutes);
+
+        for (const appointment of upcomingAppointments) {
+          try {
+            const alreadySent = await isReminderAlreadySent(appointment.id);
+            if (alreadySent) {
+              console.log(`Reminder for appointment ${appointment.id} already sent. Skipping.`);
+              continue;
+            }
+
+            const patientPhone = await getPatientPhone(appointment.patient_id);
+            console.log(`Raw patient phone for ${appointment.patient_id}: ${patientPhone}`);
+
+            const normalizedPhone = normalizePhone(patientPhone || '');
+            console.log(`Normalized patient phone for ${appointment.patient_id}: ${normalizedPhone}`);
+
+            if (!normalizedPhone) {
+              console.warn(`No valid international phone for patient ${appointment.patient_name} (${appointment.patient_id}). Raw: ${patientPhone}`);
+              continue;
+            }
+
+            const message = replaceMessageVariables(settings.whatsapp_reminder_message, appointment);
+            console.log(`Generated message for ${appointment.id}: ${message.substring(0, 50)}...`);
+
+            console.log('Sending WhatsApp reminder to (inlined from scheduler):', normalizedPhone, 'appointmentId:', appointment.id);
+            await sendMessage(normalizedPhone, message);
+            await recordReminderSent(appointment.id, appointment.patient_id);
+            console.log(`Reminder sent to ${appointment.patient_name} for appointment ${appointment.id} (inlined from scheduler)`);
+          } catch (appointmentError) {
+            console.error(`Error processing reminder for appointment ${appointment.id} (inlined from scheduler):`, appointmentError);
+          }
+        }
+      } catch (error) {
+        console.error('Error in checkAndSendReminders (inlined from scheduler):', error);
+        throw error;
+      }
+    };
+
+    // Start the cron job that runs every minute
+    cronJob = cron.schedule('* * * * *', async () => {
+      try {
+        await checkAndSendReminders();
+      } catch (error) {
+        console.error('Error in reminder scheduler (inlined cron job):', error);
+      }
+    });
+
+    console.log('✅ WhatsApp client initialized and reminder scheduler started (inlined)');
+  } catch (e) {
+    console.error('❌ Failed to initialize WhatsApp services (inlined):', e);
+  }
+
+  // Optional: log WhatsApp status shortly after startup
+  setTimeout(() => {
+    try {
+      const status = getWhatsAppStatus ? getWhatsAppStatus() : { isReady: false }
+      console.log('ℹ️ WhatsApp status after init (inlined):', status)
+    } catch (_) {}
+  }, 3000)
+
   // Hide default menu bar
   Menu.setApplicationMenu(null)
+
+  // Initialize dayjs and its plugins globally within app.whenReady
+  const dayjs = require('dayjs');
+  const utc = require('dayjs/plugin/utc');
+  const timezone = require('dayjs/plugin/timezone');
+  dayjs.extend(utc);
+  dayjs.extend(timezone);
+  const APP_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
 
   // Initialize database service with migration support
   try {
@@ -2907,6 +3128,349 @@ ipcMain.handle('db:clinicNeeds:getStatistics', async () => {
 })
 
 // Reports IPC Handlers
+// WhatsApp reminders aliases for renderer API
+try {
+  const { ipcMain } = require('electron')
+  ipcMain.handle('whatsapp-reminders:get-settings', async () => {
+    try {
+      const stmt = databaseService.db.prepare(
+        'SELECT whatsapp_reminder_enabled AS whatsapp_reminder_enabled, whatsapp_reminder_hours_before AS hours_before, whatsapp_reminder_message AS message, whatsapp_reminder_custom_enabled AS custom_enabled FROM settings WHERE id = ?'
+      )
+      const row = stmt.get('clinic_settings')
+      if (!row) {
+        return {
+          whatsapp_reminder_enabled: 0,
+          hours_before: 3,
+          message:
+            'مرحبًا {{patient_name}}، تذكير بموعدك في عيادة الأسنان بتاريخ {{appointment_date}} الساعة {{appointment_time}}. نشكرك على التزامك.',
+          custom_enabled: 0
+        }
+      }
+      return row
+    } catch (error) {
+      console.error('Error getting WhatsApp settings (alias, js):', error)
+      throw error
+    }
+  })
+
+  ipcMain.handle('whatsapp-reminders:set-settings', async (_, payload) => {
+    try {
+      const now = new Date().toISOString()
+      const stmt = databaseService.db.prepare(
+        'UPDATE settings SET whatsapp_reminder_enabled = ?, whatsapp_reminder_hours_before = ?, whatsapp_reminder_message = ?, whatsapp_reminder_custom_enabled = ?, updated_at = ? WHERE id = ?'
+      )
+      const result = stmt.run(
+        payload.whatsapp_reminder_enabled,
+        payload.hours_before,
+        payload.message,
+        payload.custom_enabled,
+        now,
+        'clinic_settings'
+      )
+      return result.changes > 0
+    } catch (error) {
+      console.error('Error updating WhatsApp settings (alias, js):', error)
+      throw error
+    }
+  })
+
+  ipcMain.handle('whatsapp-reminders:reset-session', async () => {
+    try {
+      const { resetWhatsAppSession } = require('./services/whatsapp')
+      await resetWhatsAppSession()
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: error && error.message ? error.message : 'Failed to reset session' }
+    }
+  })
+
+  ipcMain.handle('whatsapp-reminders:get-status', async () => {
+    try {
+      const { getWhatsAppStatus } = require('./services/whatsapp')
+      return getWhatsAppStatus()
+    } catch (error) {
+      return { isReady: false, hasQr: false }
+    }
+  })
+
+  ipcMain.handle('whatsapp-reminders:run-diagnostic', async () => {
+    try {
+      // Removed dayjs imports/extends, now global in app.whenReady
+
+      // Ensure minutes column exists to avoid failures on fresh DBs
+      try {
+        const cols = databaseService.db.prepare('PRAGMA table_info(settings)').all();
+        const hasMinutes = cols && cols.some(c => c.name === 'whatsapp_reminder_minutes_before');
+        if (!hasMinutes) {
+          databaseService.db.prepare('ALTER TABLE settings ADD COLUMN whatsapp_reminder_minutes_before INTEGER DEFAULT 0').run();
+        }
+      } catch (e) {
+        console.error('Error ensuring minutes column for diagnostic:', e);
+      }
+
+      const settings = databaseService.getSettings ? await databaseService.getSettings() : null;
+      const enabled = !!settings && settings.whatsapp_reminder_enabled === 1;
+      const hoursRaw = settings && settings.whatsapp_reminder_hours_before;
+      const minutesRaw = settings && settings.whatsapp_reminder_minutes_before;
+      const hours = Number(typeof hoursRaw === 'string' ? hoursRaw.trim() : hoursRaw || 0);
+      const minutesCandidate = Number(typeof minutesRaw === 'string' ? minutesRaw.trim() : minutesRaw || 0);
+      const minutes = minutesCandidate > 0 ? minutesCandidate : (hours > 0 ? hours * 60 : 0);
+      const now = dayjs().tz(APP_TZ);
+
+      const appts = await databaseService.getAllAppointments();
+      const out = [];
+      for (const a of appts) {
+        if (!a.start_time) continue;
+        const appointmentTime = dayjs(a.start_time).tz(APP_TZ);
+        const reminderTime = appointmentTime.subtract(minutes, 'minute');
+        const eligible = !reminderTime.isAfter(now) && appointmentTime.isAfter(now);
+        out.push({
+          id: a.id,
+          patient_id: a.patient_id,
+          start_time: a.start_time,
+          appointmentTime: appointmentTime.toISOString(),
+          reminderTime: reminderTime.toISOString(),
+          eligible
+        });
+      }
+
+      return {
+        now: now.toISOString(),
+        timezone: APP_TZ,
+        minutesBefore: minutes,
+        settingsEnabled: enabled,
+        candidates: out
+      };
+    } catch (error) {
+      return { error: error && error.message ? error.message : 'diagnostic failed' };
+    }
+  });
+
+  // Handle manual trigger for WhatsApp reminder scheduler
+  ipcMain.handle('whatsapp-reminders:run-scheduler-once', async () => {
+    try {
+      // Removed dayjs imports/extends, now global in app.whenReady
+
+      // Ensure minutes column exists to avoid failures on fresh DBs
+      try {
+        const cols = databaseService.db.prepare('PRAGMA table_info(settings)').all();
+        const hasMinutes = cols && cols.some(c => c.name === 'whatsapp_reminder_minutes_before');
+        if (!hasMinutes) {
+          databaseService.db.prepare('ALTER TABLE settings ADD COLUMN whatsapp_reminder_minutes_before INTEGER DEFAULT 0').run();
+        }
+      } catch (e) {
+        console.error('Error ensuring minutes column for scheduler:', e);
+      }
+
+      // Inlined logic from whatsappReminderScheduler.ts
+
+      // Helper functions (inlined)
+      const getSettings = async () => {
+        try {
+          const settings = await databaseService.getSettings();
+          const hours = settings.whatsapp_reminder_hours_before || 3;
+          const minutesRaw = settings.whatsapp_reminder_minutes_before;
+          const minutesResolved = (typeof minutesRaw === 'number' && minutesRaw > 0) ? minutesRaw : (hours * 60);
+          return {
+            whatsapp_reminder_enabled: settings.whatsapp_reminder_enabled || 0,
+            whatsapp_reminder_hours_before: hours,
+            whatsapp_reminder_minutes_before: minutesResolved,
+            whatsapp_reminder_message: settings.whatsapp_reminder_message || 'مرحبًا {{patient_name}}، تذكير بموعدك في عيادة الأسنان بتاريخ {{appointment_date}} الساعة {{appointment_time}}. نشكرك على التزامك.'
+          };
+        } catch (error) {
+          console.error('Error getting settings (inlined):', error);
+          return null;
+        }
+      };
+
+      const getUpcomingAppointments = async (minutesBefore) => {
+        const now = dayjs().tz(APP_TZ);
+        try {
+          const appointments = await databaseService.getAllAppointments();
+          console.log(`Loaded ${appointments?.length || 0} appointments for reminder check at`, now.toISOString(), 'TZ:', APP_TZ);
+
+          const upcomingAppointments = [];
+          for (const appointment of appointments) {
+            if (!appointment.start_time) continue;
+
+            const appointmentTime = dayjs(appointment.start_time).tz(APP_TZ);
+            const reminderTime = appointmentTime.subtract(minutesBefore, 'minute');
+
+            if (!reminderTime.isAfter(now) && appointmentTime.isAfter(now)) {
+              upcomingAppointments.push({
+                id: appointment.id,
+                patient_id: appointment.patient_id,
+                start_time: appointment.start_time,
+                title: (appointment).title || 'موعد',
+                patient_name: (appointment).patient_name || 'المريض',
+                phone: (appointment).phone || ''
+              });
+            }
+          }
+          return upcomingAppointments;
+        } catch (error) {
+          console.error('Error getting upcoming appointments (inlined):', error);
+          return [];
+        }
+      };
+
+      const isReminderAlreadySent = async (appointmentId) => {
+        try {
+          const stmt = databaseService.db.prepare(`
+            SELECT id FROM whatsapp_reminders
+            WHERE appointment_id = ? AND status = 'sent'
+          `);
+          const existing = stmt.get(appointmentId);
+          return !!existing;
+        } catch (error) {
+          console.error('Error checking if reminder already sent (inlined):', error);
+          return false;
+        }
+      };
+
+      const getPatientPhone = async (patientId) => {
+        try {
+          const stmt = databaseService.db.prepare(`
+            SELECT phone FROM patients WHERE id = ?
+          `);
+          const patient = stmt.get(patientId);
+          return patient?.phone || null;
+        } catch (error) {
+          console.error('Error getting patient phone (inlined):', error);
+          return null;
+        }
+      };
+
+      const normalizePhone = (raw) => {
+        if (!raw) return null;
+        let digits = String(raw).replace(/[^0-9]/g, '');
+        if (!digits) return null;
+        if (digits.startsWith('00')) digits = digits.slice(2);
+        if (digits.length === 10 && digits.startsWith('09')) {
+          digits = '963' + digits.slice(1);
+        }
+        if (digits.length === 9 && digits.startsWith('9')) {
+          digits = '963' + digits;
+        }
+        return digits;
+      };
+
+      const replaceMessageVariables = (message, appointment) => {
+        try {
+          const appointmentDate = dayjs(appointment.start_time).format('YYYY-MM-DD');
+          const appointmentTime = dayjs(appointment.start_time).format('HH:mm');
+          return message
+            .replace(/\{\{patient_name\}\}/g, appointment.patient_name)
+            .replace(/\{\{appointment_date\}\}/g, appointmentDate)
+            .replace(/\{\{appointment_time\}\}/g, appointmentTime);
+        } catch (error) {
+          console.error('Error replacing message variables (inlined):', error);
+          return message;
+        }
+      };
+
+      const recordReminderSent = async (appointmentId, patientId) => {
+        try {
+          const stmt = databaseService.db.prepare(`
+            INSERT INTO whatsapp_reminders (
+              id, appointment_id, patient_id, sent_at, status, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+          `);
+          const id = Date.now().toString();
+          const now = new Date().toISOString();
+          stmt.run(id, appointmentId, patientId, now, 'sent', now, now);
+        } catch (error) {
+          console.error('Error recording reminder sent (inlined):', error);
+          throw error;
+        }
+      };
+
+      // Import sendMessage and initializeClient from whatsapp service
+      const { sendMessage, initializeClient } = require('./services/whatsapp');
+      await initializeClient(); // Ensure WhatsApp client is initialized
+
+      const checkAndSendReminders = async () => {
+        try {
+          // Ensure minutes column exists to avoid failures on fresh DBs
+          try {
+            const cols = databaseService.db.prepare('PRAGMA table_info(settings)').all();
+            const hasMinutes = cols && cols.some(c => c.name === 'whatsapp_reminder_minutes_before');
+            if (!hasMinutes) {
+              databaseService.db.prepare('ALTER TABLE settings ADD COLUMN whatsapp_reminder_minutes_before INTEGER DEFAULT 0').run();
+            }
+          } catch (e) {
+            console.error('Error ensuring minutes column for scheduler (inlined):', e);
+          }
+
+          const settings = await getSettings();
+          if (!settings || settings.whatsapp_reminder_enabled !== 1) {
+            return;
+          }
+
+          console.log('Checking for upcoming appointments to send reminders (inlined from scheduler)...');
+          const minutes = settings.whatsapp_reminder_minutes_before ?? (settings.whatsapp_reminder_hours_before * 60);
+          const upcomingAppointments = await getUpcomingAppointments(minutes);
+          console.log('Eligible appointments count (inlined from scheduler):', upcomingAppointments.length, 'minutesBefore:', minutes);
+
+          for (const appointment of upcomingAppointments) {
+            try {
+              const alreadySent = await isReminderAlreadySent(appointment.id);
+              if (alreadySent) {
+                console.log(`Reminder for appointment ${appointment.id} already sent. Skipping.`);
+                continue;
+              }
+
+              const patientPhone = await getPatientPhone(appointment.patient_id);
+              console.log(`Raw patient phone for ${appointment.patient_id}: ${patientPhone}`);
+
+              const normalizedPhone = normalizePhone(patientPhone || '');
+              console.log(`Normalized patient phone for ${appointment.patient_id}: ${normalizedPhone}`);
+
+              if (!normalizedPhone) {
+                console.warn(`No valid international phone for patient ${appointment.patient_name} (${appointment.patient_id}). Raw: ${patientPhone}`);
+                continue;
+              }
+
+              const message = replaceMessageVariables(settings.whatsapp_reminder_message, appointment);
+              console.log(`Generated message for ${appointment.id}: ${message.substring(0, 50)}...`);
+
+              console.log('Sending WhatsApp reminder to (inlined from scheduler):', normalizedPhone, 'appointmentId:', appointment.id);
+              await sendMessage(normalizedPhone, message);
+              await recordReminderSent(appointment.id, appointment.patient_id);
+              console.log(`Reminder sent to ${appointment.patient_name} for appointment ${appointment.id} (inlined from scheduler)`);
+            } catch (appointmentError) {
+              console.error(`Error processing reminder for appointment ${appointment.id} (inlined from scheduler):`, appointmentError);
+            }
+          }
+        } catch (error) {
+          console.error('Error in checkAndSendReminders (inlined from scheduler):', error);
+          throw error;
+        }
+      };
+
+      // Now run the check
+      await checkAndSendReminders();
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error && error.message ? error.message : 'failed' };
+    }
+  });
+
+  // Test send message directly
+  ipcMain.handle('whatsapp-reminders:test-send', async (_event, phoneNumber, message) => {
+    try {
+      const { sendMessage } = require('./services/whatsapp')
+      await sendMessage(String(phoneNumber || ''), String(message || ''))
+      return { success: true }
+    } catch (error) {
+      const msg = error && error.message ? error.message : 'Failed to send test message'
+      console.error('Test send failed:', error)
+      return { success: false, error: msg }
+    }
+  })
+} catch (e) {
+  // ignore boot-time errors; main pieces may not be ready yet
+}
 ipcMain.handle('reports:generatePatientReport', async (_, filter) => {
   try {
     if (databaseService && reportsService) {

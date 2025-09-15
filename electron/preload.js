@@ -68,6 +68,26 @@ contextBridge.exposeInMainWorld('electronAPI', {
     update: (settings) => ipcRenderer.invoke('settings:update', settings)
   },
 
+  // WhatsApp reminders operations
+  whatsappReminders: {
+    getSettings: () => ipcRenderer.invoke('whatsapp-reminders:get-settings'),
+    setSettings: (settings) => ipcRenderer.invoke('whatsapp-reminders:set-settings', settings),
+    testSendReminder: (phoneNumber, message) => ipcRenderer.invoke('whatsapp-reminders:test-send', phoneNumber, message),
+    resetSession: () => ipcRenderer.invoke('whatsapp-reminders:reset-session'),
+    getStatus: () => ipcRenderer.invoke('whatsapp-reminders:get-status')
+  },
+
+  // Temporary diagnostic runner
+  runWhatsAppReminderDiagnostic: () => ipcRenderer.invoke('whatsapp-reminders:run-diagnostic'),
+  runWhatsAppSchedulerOnce: () => ipcRenderer.invoke('whatsapp-reminders:run-scheduler-once'),
+
+  // WhatsApp QR events
+  onWhatsAppQR: (callback) => {
+    const listener = (_event, qr) => callback(qr)
+    ipcRenderer.on('whatsapp:qr', listener)
+    return () => ipcRenderer.removeListener('whatsapp:qr', listener)
+  },
+
   // Lab operations
   labs: {
     getAll: () => ipcRenderer.invoke('db:labs:getAll'),
@@ -288,4 +308,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     clearDismissed: () => ipcRenderer.invoke('db:smartAlerts:clearDismissed'),
     clearExpiredSnoozed: () => ipcRenderer.invoke('db:smartAlerts:clearExpiredSnoozed')
   }
+})
+
+// Legacy simple electron API for WhatsApp settings
+contextBridge.exposeInMainWorld('electron', {
+  getWhatsAppSettings: () => ipcRenderer.invoke('get-whatsapp-settings'),
+  setWhatsAppSettings: (settings) => ipcRenderer.invoke('set-whatsapp-settings', settings)
 })

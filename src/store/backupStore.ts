@@ -8,6 +8,9 @@ interface BackupInfo {
   created_at: string
   version?: string
   platform?: string
+  isSqliteOnly?: boolean
+  includesImages?: boolean
+  isLegacy?: boolean
 }
 
 interface BackupState {
