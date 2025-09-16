@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useBackupStore } from '@/store/backupStore'
 import { useSettingsStore } from '@/store/settingsStore'
 import { useTheme } from '@/contexts/ThemeContext'
@@ -56,6 +56,7 @@ export default function Settings() {
   const [allowCustomMessage, setAllowCustomMessage] = useState(false)
   const [showQRModal, setShowQRModal] = useState(false)
   const [qrData, setQrData] = useState<string>('')
+  const messageTextareaRef = useRef<HTMLTextAreaElement | null>(null)
 
   const {
     backups,
@@ -232,6 +233,30 @@ export default function Settings() {
       console.error('Error saving WhatsApp settings:', error)
       showNotification('فشل في حفظ إعدادات تذكير واتساب', 'error')
     }
+  }
+
+  // Insert token at current caret position in textarea
+  const insertTokenAtCursor = (token: string) => {
+    const textarea = messageTextareaRef.current
+    if (!textarea) {
+      // Fallback: append at end
+      setMessageText(prev => (prev || '') + token)
+      return
+    }
+    const start = textarea.selectionStart ?? textarea.value.length
+    const end = textarea.selectionEnd ?? textarea.value.length
+    const before = messageText.slice(0, start)
+    const after = messageText.slice(end)
+    const next = `${before}${token}${after}`
+    setMessageText(next)
+    // Restore focus and set caret after inserted token
+    requestAnimationFrame(() => {
+      textarea.focus()
+      const caretPos = start + token.length
+      try {
+        textarea.setSelectionRange(caretPos, caretPos)
+      } catch {}
+    })
   }
 
   // Handle logo upload with validation
@@ -983,10 +1008,37 @@ export default function Settings() {
                     onChange={(e) => setMessageText(e.target.value)}
                     placeholder="مرحبًا {{patient_name}}، تذكير بموعدك في عيادة الأسنان بتاريخ {{appointment_date}} الساعة {{appointment_time}}. نشكرك على التزامك."
                     className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                    ref={messageTextareaRef}
                   />
                   <p className="text-xs text-muted-foreground">
                     يمكنك استخدام متغيرات مثل {'{{patient_name}}'}، {'{{appointment_date}}'}، {'{{appointment_time}}'}
                   </p>
+                  <div className="flex flex-wrap gap-2 justify-start">
+                    <button
+                      type="button"
+                      onClick={() => insertTokenAtCursor('{{patient_name}}')}
+                      className="px-2 py-1 text-xs border border-input rounded-md hover:bg-accent"
+                      title="إدراج اسم المريض"
+                    >
+                      {'{{patient_name}}'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertTokenAtCursor('{{appointment_date}}')}
+                      className="px-2 py-1 text-xs border border-input rounded-md hover:bg-accent"
+                      title="إدراج تاريخ الموعد"
+                    >
+                      {'{{appointment_date}}'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertTokenAtCursor('{{appointment_time}}')}
+                      className="px-2 py-1 text-xs border border-input rounded-md hover:bg-accent"
+                      title="إدراج وقت الموعد"
+                    >
+                      {'{{appointment_time}}'}
+                    </button>
+                  </div>
                 </div>
               )}
 
