@@ -33,8 +33,8 @@ export class QuickAccessService {
         this.getRecentActivities()
       ])
 
-      // حساب الإحصائيات السريعة
-      const quickStats = await this.getQuickStats()
+      // حساب الإحصائيات السريعة مع العلاجات العاجلة
+      const quickStats = await this.getQuickStats(urgentTreatments)
 
       return {
         recentPatients,
@@ -244,9 +244,9 @@ export class QuickAccessService {
   }
 
   /**
-   * جلب الإحصائيات السريعة
+   * جلب الإحصائيات السريعة لليوم الحالي فقط
    */
-  private static async getQuickStats(): Promise<QuickAccessData['quickStats']> {
+  private static async getQuickStats(urgentTreatments: ToothTreatment[] = []): Promise<QuickAccessData['quickStats']> {
     try {
       const [patients, appointments, payments] = await Promise.all([
         window.electronAPI?.patients?.getAll?.() || [],
@@ -255,9 +255,14 @@ export class QuickAccessService {
       ])
 
       const today = new Date()
+      const todayString = today.toISOString().split('T')[0]
 
-      // عدد المرضى الإجمالي
-      const totalPatients = patients.length
+      // مرضى جدد اليوم (الذين تم تسجيلهم اليوم)
+      const newPatientsToday = patients.filter((patient: Patient) => {
+        if (!patient.created_at) return false
+        const patientDate = new Date(patient.created_at).toISOString().split('T')[0]
+        return patientDate === todayString
+      }).length
 
       // مواعيد اليوم
       const todayAppointments = appointments.filter((appointment: Appointment) => {
@@ -265,25 +270,25 @@ export class QuickAccessService {
         return this.isSameDay(appointmentDate, today)
       }).length
 
-      // الدفعات المعلقة
-      const pendingPayments = payments.filter((payment: Payment) =>
-        payment.status === 'pending' &&
-        payment.remaining_balance &&
-        payment.remaining_balance > 0
-      ).length
+      // دفعات اليوم (المكتملة اليوم)
+      const todayPayments = payments.filter((payment: Payment) => {
+        if (!payment.payment_date) return false
+        const paymentDate = new Date(payment.payment_date).toISOString().split('T')[0]
+        return paymentDate === todayString && payment.status === 'completed'
+      }).length
 
-      // التنبيهات العاجلة - مؤقتاً نضع 0 حتى يتم تطبيق نظام التنبيهات
-      const urgentAlerts = 0
+      // تنبيهات اليوم العاجلة (علاجات عاجلة + دفعات معلقة + مواعيد اليوم)
+      const todayUrgentAlerts = (Array.isArray(urgentTreatments) ? urgentTreatments.length : 0) + (todayPayments > 0 ? 1 : 0) + (todayAppointments > 0 ? 1 : 0)
 
       return {
-        totalPatients,
-        todayAppointments,
-        pendingPayments,
-        urgentAlerts
+        totalPatients: newPatientsToday, // مرضى جدد اليوم
+        todayAppointments, // مواعيد اليوم
+        pendingPayments: todayPayments, // دفعات مكتملة اليوم
+        urgentAlerts: todayUrgentAlerts // تنبيهات عاجلة اليوم
       }
 
     } catch (error) {
-      console.error('Error getting quick stats:', error)
+      console.error('Error getting today quick stats:', error)
       return {
         totalPatients: 0,
         todayAppointments: 0,

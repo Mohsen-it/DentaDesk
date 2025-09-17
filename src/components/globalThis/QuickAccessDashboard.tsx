@@ -127,11 +127,11 @@ export default function QuickAccessDashboard({
       {/* Quick Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 lg:gap-6">
         {/* Total Patients */}
-        <Card className="hover:shadow-lg dark:hover:shadow-xl transition-all duration-200 cursor-pointer bg-card border-border" onClick={onNavigateToPatients} role="button" tabIndex={0} aria-label={`عرض إجمالي المرضى: ${quickAccessData.quickStats.totalPatients} مريض`}>
+        <Card className="hover:shadow-lg dark:hover:shadow-xl transition-all duration-200 cursor-pointer bg-card border-border" onClick={onNavigateToPatients} role="button" tabIndex={0} aria-label={`عرض مرضى جدد اليوم: ${quickAccessData.quickStats.totalPatients} مريض`}>
           <CardContent className="p-4 md:p-5 lg:p-6">
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <p className="text-xs md:text-sm font-medium text-muted-foreground font-tajawal">إجمالي المرضى</p>
+                <p className="text-xs md:text-sm font-medium text-muted-foreground font-tajawal">مرضى جدد اليوم</p>
                 <p className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground mt-1">{quickAccessData.quickStats.totalPatients}</p>
               </div>
               <div className="p-2 md:p-3 bg-primary/10 dark:bg-primary/20 rounded-lg ml-3 md:ml-4">
@@ -157,11 +157,11 @@ export default function QuickAccessDashboard({
         </Card>
 
         {/* Pending Payments */}
-        <Card className="hover:shadow-lg dark:hover:shadow-xl transition-all duration-200 cursor-pointer bg-card border-border" onClick={onNavigateToPayments} role="button" tabIndex={0} aria-label={`عرض الدفعات المعلقة: ${quickAccessData.quickStats.pendingPayments} دفعة`}>
+        <Card className="hover:shadow-lg dark:hover:shadow-xl transition-all duration-200 cursor-pointer bg-card border-border" onClick={onNavigateToPayments} role="button" tabIndex={0} aria-label={`عرض دفعات اليوم: ${quickAccessData.quickStats.pendingPayments} دفعة`}>
           <CardContent className="p-4 md:p-5 lg:p-6">
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <p className="text-xs md:text-sm font-medium text-muted-foreground font-tajawal">دفعات معلقة</p>
+                <p className="text-xs md:text-sm font-medium text-muted-foreground font-tajawal">دفعات اليوم</p>
                 <p className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground mt-1">{quickAccessData.quickStats.pendingPayments}</p>
               </div>
               <div className="p-2 md:p-3 bg-accent/10 dark:bg-accent/20 rounded-lg ml-3 md:ml-4">
@@ -172,11 +172,11 @@ export default function QuickAccessDashboard({
         </Card>
 
         {/* Urgent Alerts */}
-        <Card className="hover:shadow-lg dark:hover:shadow-xl transition-all duration-200 bg-card border-border">
+        <Card className="hover:shadow-lg dark:hover:shadow-xl transition-all duration-200 bg-card border-border" role="region" aria-label={`تنبيهات اليوم: ${quickAccessData.quickStats.urgentAlerts} تنبيه`}>
           <CardContent className="p-4 md:p-5 lg:p-6">
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <p className="text-xs md:text-sm font-medium text-muted-foreground font-tajawal">تنبيهات عاجلة</p>
+                <p className="text-xs md:text-sm font-medium text-muted-foreground font-tajawal">تنبيهات اليوم</p>
                 <p className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground mt-1">{quickAccessData.quickStats.urgentAlerts}</p>
                 {quickAccessData.quickStats.urgentAlerts > 0 && (
                   <div className="absolute inset-0 bg-destructive/5 dark:bg-destructive/10 animate-pulse rounded-lg pointer-events-none" aria-hidden="true" />

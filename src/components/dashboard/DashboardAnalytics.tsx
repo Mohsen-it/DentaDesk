@@ -50,7 +50,7 @@ interface AnalyticsData {
   }
   distributions: {
     appointmentStatus: Array<{ name: string; value: number; color: string }>
-    paymentMethods: Array<{ name: string; value: number; color: string }>
+    gender: Array<{ name: string; value: number; color: string }>
     ageGroups: Array<{ name: string; value: number; color: string }>
   }
   kpis: {
@@ -71,6 +71,7 @@ export default function DashboardAnalytics({
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
   const [timeRange, setTimeRange] = useState('30d')
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
 
   const { patients } = usePatientStore()
   const { appointments } = useAppointmentStore()
@@ -80,34 +81,112 @@ export default function DashboardAnalytics({
   const { isDarkMode } = useTheme()
   const { formatAmount, useArabicNumerals } = useCurrency()
 
+  // Validate data integrity
+  const validateDataIntegrity = () => {
+    const issues = []
+
+    if (!patients || patients.length === 0) {
+      issues.push('لا توجد بيانات مرضى')
+    }
+
+    if (!appointments || appointments.length === 0) {
+      issues.push('لا توجد بيانات مواعيد')
+    }
+
+    if (!payments || payments.length === 0) {
+      issues.push('لا توجد بيانات مدفوعات')
+    }
+
+    // Check for invalid data
+    const invalidPatients = patients.filter(p => !p.id || !p.full_name)
+    if (invalidPatients.length > 0) {
+      issues.push(`${invalidPatients.length} مريض بدون بيانات صحيحة`)
+    }
+
+    const invalidAppointments = appointments.filter(a => !a.id || !a.start_time)
+    if (invalidAppointments.length > 0) {
+      issues.push(`${invalidAppointments.length} موعد بدون بيانات صحيحة`)
+    }
+
+    const invalidPayments = payments.filter(p => !p.id || typeof p.amount !== 'number')
+    if (invalidPayments.length > 0) {
+      issues.push(`${invalidPayments.length} دفعة بدون بيانات صحيحة`)
+    }
+
+    if (issues.length > 0) {
+      console.warn('⚠️ Data Integrity Issues:', issues)
+    }
+
+    return issues.length === 0
+  }
+
   // Calculate analytics data
   useEffect(() => {
     calculateAnalytics()
   }, [patients, appointments, payments, timeRange, formatAmount])
 
+  // Force data refresh when component mounts
+  useEffect(() => {
+    const refreshData = () => {
+      calculateAnalytics()
+    }
+    refreshData()
+    setLastUpdate(new Date())
+  }, [])
+
   const calculateAnalytics = () => {
     setIsLoading(true)
 
     try {
+      // Validate data integrity first
+      const isDataValid = validateDataIntegrity()
+      if (!isDataValid) {
+        console.warn('⚠️ Data integrity issues detected. Analytics may not be accurate.')
+      }
+
+      // Log data availability for debugging
+      console.log('📊 Analytics Data Check:', {
+        patientsCount: patients.length,
+        appointmentsCount: appointments.length,
+        paymentsCount: payments.length,
+        patientsSample: patients.length > 0 ? patients.slice(0, 2) : [],
+        appointmentsSample: appointments.length > 0 ? appointments.slice(0, 2) : [],
+        paymentsSample: payments.length > 0 ? payments.slice(0, 2) : []
+      })
+
       // Calculate date range
       const endDate = new Date()
       const startDate = subDays(endDate, timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90)
 
       // Filter data by time range
       const filteredAppointments = appointments.filter(apt =>
-        isWithinInterval(new Date(apt.date), { start: startDate, end: endDate })
+        isWithinInterval(new Date(apt.start_time), { start: startDate, end: endDate })
       )
       const filteredPayments = payments.filter(payment =>
         isWithinInterval(new Date(payment.payment_date), { start: startDate, end: endDate })
       )
 
+      console.log('📊 Filtered Data:', {
+        filteredAppointmentsCount: filteredAppointments.length,
+        filteredPaymentsCount: filteredPayments.length,
+        dateRange: { start: startDate.toISOString(), end: endDate.toISOString() }
+      })
+
       // Calculate overview metrics
+      const totalRevenue = filteredPayments.reduce((sum, p) => sum + (p.amount || 0), 0)
       const overview = {
         totalPatients: patients.length,
         totalAppointments: filteredAppointments.length,
-        totalRevenue: filteredPayments.reduce((sum, p) => sum + (p.amount || 0), 0),
+        totalRevenue: totalRevenue,
         growthRate: calculateGrowthRate()
       }
+
+      console.log('📊 Overview Metrics:', {
+        totalPatients: overview.totalPatients,
+        totalAppointments: overview.totalAppointments,
+        totalRevenue: totalRevenue,
+        growthRate: overview.growthRate
+      })
 
       // Calculate trends
       const trends = {
@@ -119,24 +198,43 @@ export default function DashboardAnalytics({
       // Calculate distributions
       const distributions = {
         appointmentStatus: calculateAppointmentStatusDistribution(filteredAppointments),
-        paymentMethods: calculatePaymentMethodDistribution(filteredPayments),
+        gender: calculateGenderDistribution(),
         ageGroups: calculateAgeGroupDistribution()
       }
 
+      console.log('📊 Calculated Distributions:', {
+        appointmentStatus: distributions.appointmentStatus,
+        gender: distributions.gender,
+        ageGroups: distributions.ageGroups
+      })
+
       // Calculate KPIs
+      const averageRevenue = overview.totalPatients > 0 ? overview.totalRevenue / overview.totalPatients : 0
       const kpis = {
         patientRetention: calculatePatientRetention(),
         appointmentUtilization: calculateAppointmentUtilization(filteredAppointments),
-        averageRevenue: overview.totalRevenue / Math.max(overview.totalPatients, 1),
+        averageRevenue: averageRevenue,
         noShowRate: calculateNoShowRate(filteredAppointments)
       }
 
-      setAnalyticsData({
+      console.log('📊 KPIs:', {
+        patientRetention: kpis.patientRetention,
+        appointmentUtilization: kpis.appointmentUtilization,
+        averageRevenue: averageRevenue,
+        noShowRate: kpis.noShowRate
+      })
+
+      const finalData = {
         overview,
         trends,
         distributions,
         kpis
-      })
+      }
+
+      console.log('📊 Final Analytics Data:', finalData)
+
+      setAnalyticsData(finalData)
+      setLastUpdate(new Date())
     } catch (error) {
       console.error('Error calculating analytics:', error)
     } finally {
@@ -149,7 +247,7 @@ export default function DashboardAnalytics({
     const lastMonth = subDays(currentMonth, 30)
 
     const currentMonthPatients = patients.filter(p =>
-      new Date(p.created_at || p.registration_date) >= lastMonth
+      new Date(p.date_added) >= lastMonth
     ).length
 
     const previousMonthPatients = patients.length - currentMonthPatients
@@ -164,7 +262,7 @@ export default function DashboardAnalytics({
 
     while (current <= endDate) {
       const dayPatients = patients.filter(p => {
-        const patientDate = new Date(p.created_at || p.registration_date)
+        const patientDate = new Date(p.date_added)
         return patientDate.toDateString() === current.toDateString()
       }).length
 
@@ -206,7 +304,7 @@ export default function DashboardAnalytics({
 
     while (current <= endDate) {
       const dayAppointments = appointments.filter(apt => {
-        const aptDate = new Date(apt.date)
+        const aptDate = new Date(apt.start_time)
         return aptDate.toDateString() === current.toDateString()
       }).length
 
@@ -222,7 +320,7 @@ export default function DashboardAnalytics({
   }
 
   const calculateAppointmentStatusDistribution = (filteredAppointments: any[]) => {
-    const statusCounts = filteredAppointments.reduce((acc, apt) => {
+    const statusCounts = filteredAppointments.reduce((acc: Record<string, number>, apt) => {
       acc[apt.status] = (acc[apt.status] || 0) + 1
       return acc
     }, {} as Record<string, number>)
@@ -248,29 +346,48 @@ export default function DashboardAnalytics({
     }))
   }
 
-  const calculatePaymentMethodDistribution = (filteredPayments: any[]) => {
-    const methodCounts = filteredPayments.reduce((acc, payment) => {
-      const method = payment.payment_method || 'نقدي'
-      acc[method] = (acc[method] || 0) + (payment.amount || 0)
+  const calculateGenderDistribution = () => {
+    console.log('📊 Calculating Gender Distribution:', {
+      patientsCount: patients.length,
+      patientsSample: patients.slice(0, 5).map(p => ({ id: p.id, gender: p.gender }))
+    })
+
+    const genderCounts = patients.reduce((acc, patient) => {
+      // Validate gender data
+      if (!patient.gender || typeof patient.gender !== 'string') {
+        console.warn('Invalid gender data for patient:', patient.id, patient.gender)
+        return acc
+      }
+
+      const gender = patient.gender.toLowerCase() === 'male' ? 'ذكر' :
+                    patient.gender.toLowerCase() === 'female' ? 'أنثى' :
+                    'غير محدد'
+
+      acc[gender] = (acc[gender] || 0) + 1
       return acc
     }, {} as Record<string, number>)
+
+    console.log('📊 Gender Counts:', genderCounts)
 
     const colors = [
       'hsl(var(--primary))',
       'hsl(var(--medical-500))',
-      'hsl(var(--dental-500))',
-      'hsl(var(--destructive))',
       'hsl(var(--accent))'
     ]
 
-    return Object.entries(methodCounts).map(([method, amount], index) => ({
-      name: method,
-      value: amount,
+    return Object.entries(genderCounts).map(([gender, count], index) => ({
+      name: gender,
+      value: count,
       color: colors[index % colors.length]
     }))
   }
 
   const calculateAgeGroupDistribution = () => {
+    console.log('📊 Calculating Age Group Distribution:', {
+      patientsCount: patients.length,
+      ageSample: patients.slice(0, 5).map(p => ({ id: p.id, age: p.age }))
+    })
+
     const ageGroups = {
       '0-18': 0,
       '19-35': 0,
@@ -280,15 +397,15 @@ export default function DashboardAnalytics({
     }
 
     patients.forEach(patient => {
-      if (patient.date_of_birth) {
-        const age = new Date().getFullYear() - new Date(patient.date_of_birth).getFullYear()
-        if (age <= 18) ageGroups['0-18']++
-        else if (age <= 35) ageGroups['19-35']++
-        else if (age <= 50) ageGroups['36-50']++
-        else if (age <= 65) ageGroups['51-65']++
-        else ageGroups['65+']++
-      }
+      const age = patient.age || 0
+      if (age <= 18) ageGroups['0-18']++
+      else if (age <= 35) ageGroups['19-35']++
+      else if (age <= 50) ageGroups['36-50']++
+      else if (age <= 65) ageGroups['51-65']++
+      else ageGroups['65+']++
     })
+
+    console.log('📊 Age Groups:', ageGroups)
 
     const colors = [
       'hsl(var(--primary))',
@@ -308,11 +425,11 @@ export default function DashboardAnalytics({
   const calculatePatientRetention = (): number => {
     const threeMonthsAgo = subDays(new Date(), 90)
     const oldPatients = patients.filter(p =>
-      new Date(p.created_at || p.registration_date) < threeMonthsAgo
+      new Date(p.date_added) < threeMonthsAgo
     )
 
     const recentAppointments = appointments.filter(apt =>
-      new Date(apt.date) >= threeMonthsAgo
+      new Date(apt.start_time) >= threeMonthsAgo
     )
 
     const activeOldPatients = oldPatients.filter(patient =>
@@ -349,6 +466,11 @@ export default function DashboardAnalytics({
         <div>
           <h2 className="text-2xl font-bold text-foreground dark:text-slate-200">التحليلات والإحصائيات</h2>
           <p className="text-muted-foreground dark:text-slate-400">تحليل شامل لأداء العيادة والاتجاهات</p>
+          {lastUpdate && (
+            <p className="text-sm text-muted-foreground dark:text-slate-500 mt-1">
+              آخر تحديث: {format(lastUpdate, 'HH:mm:ss dd/MM/yyyy', { locale: ar })}
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
@@ -380,9 +502,17 @@ export default function DashboardAnalytics({
               90 يوم
             </Button>
           </div>
-          <Button variant="outline" size="sm" onClick={calculateAnalytics} aria-label="تحديث التحليلات">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              console.log('🔄 Manual refresh triggered')
+              calculateAnalytics()
+            }}
+            aria-label="تحديث التحليلات"
+          >
             <RefreshCw className="w-4 h-4 mr-2" />
-            تحديث
+            تحديث البيانات
           </Button>
         </div>
       </div>
@@ -576,30 +706,30 @@ export default function DashboardAnalytics({
               </CardContent>
             </Card>
 
-            {/* Payment Methods Distribution */}
+            {/* Gender Distribution */}
             <Card className="bg-white dark:bg-card border-slate-200 dark:border-slate-700">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="w-5 h-5" />
-                  طرق الدفع
+                  <Users className="w-5 h-5" />
+                  توزيع الجنس
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={250}>
                   <RechartsPieChart>
                     <Pie
-                      data={analyticsData.distributions.paymentMethods}
+                      data={analyticsData.distributions.gender}
                       cx="50%"
                       cy="50%"
                       outerRadius={80}
                       dataKey="value"
                       label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                     >
-                      {analyticsData.distributions.paymentMethods.map((entry, index) => (
+                      {analyticsData.distributions.gender.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value) => [formatAmount(Number(value)), 'المبلغ']} />
+                    <Tooltip />
                   </RechartsPieChart>
                 </ResponsiveContainer>
               </CardContent>
