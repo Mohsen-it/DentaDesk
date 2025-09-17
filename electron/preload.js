@@ -89,6 +89,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('whatsapp:qr', listener)
   },
 
+  // WhatsApp session events
+  on: (event, callback) => {
+    const listener = (_event, data) => callback(_event, data)
+    ipcRenderer.on(event, listener)
+    return () => ipcRenderer.removeListener(event, listener)
+  },
+  removeListener: (event, callback) => {
+    ipcRenderer.removeListener(event, callback)
+  },
+
   // Lab operations
   labs: {
     getAll: () => ipcRenderer.invoke('db:labs:getAll'),

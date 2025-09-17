@@ -64,6 +64,19 @@ export default function Settings() {
   const [qrSvg, setQrSvg] = useState<string>('')
   const messageTextareaRef = useRef<HTMLTextAreaElement | null>(null)
 
+  // WhatsApp Session Status State
+  const [sessionStatus, setSessionStatus] = useState<{
+    isConnected: boolean
+    isConnecting: boolean
+    lastActivity: string | null
+    qrAvailable: boolean
+  }>({
+    isConnected: false,
+    isConnecting: false,
+    lastActivity: null,
+    qrAvailable: false
+  })
+
   const {
     backups,
     isLoading,
@@ -101,7 +114,76 @@ export default function Settings() {
   useEffect(() => {
     loadBackups()
     loadSettings()
+    // Load initial WhatsApp session status
+    updateSessionStatus()
   }, [loadBackups, loadSettings])
+
+  // Function to update WhatsApp session status
+  const updateSessionStatus = async () => {
+    try {
+      // @ts-ignore
+      if (window.electronAPI?.whatsappReminders?.getStatus) {
+        // @ts-ignore
+        const status = await window.electronAPI.whatsappReminders.getStatus()
+        const isConnected = status.isReady && (status.state === 'connected' || status.state === 'authenticated')
+        const isConnecting = status.hasQr || status.qr
+
+        setSessionStatus({
+          isConnected,
+          isConnecting: isConnecting && !isConnected,
+          lastActivity: status.lastQrTimestamp ? new Date(status.lastQrTimestamp).toLocaleString('ar-SY') : null,
+          qrAvailable: status.hasQr || !!status.qr
+        })
+      }
+    } catch (error) {
+      console.warn('Failed to get WhatsApp status:', error)
+      setSessionStatus({
+        isConnected: false,
+        isConnecting: false,
+        lastActivity: null,
+        qrAvailable: false
+      })
+    }
+  }
+
+  // Auto-update session status every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(updateSessionStatus, 30000)
+    return () => clearInterval(interval)
+  }, [])
+
+  // Listen for WhatsApp session notifications
+  useEffect(() => {
+    // @ts-ignore
+    if (window.electronAPI) {
+      // @ts-ignore
+      const handleConnected = (_event, data) => {
+        showNotification(data.message, 'success')
+        updateSessionStatus() // Update status immediately
+      }
+
+      // @ts-ignore
+      const handleDeleted = (_event, data) => {
+        showNotification(data.message, 'success')
+        updateSessionStatus() // Update status immediately
+      }
+
+      // @ts-ignore
+      window.electronAPI.on('whatsapp:session:connected', handleConnected)
+      // @ts-ignore
+      window.electronAPI.on('whatsapp:session:deleted', handleDeleted)
+
+      return () => {
+        // @ts-ignore
+        if (window.electronAPI.removeListener) {
+          // @ts-ignore
+          window.electronAPI.removeListener('whatsapp:session:connected', handleConnected)
+          // @ts-ignore
+          window.electronAPI.removeListener('whatsapp:session:deleted', handleDeleted)
+        }
+      }
+    }
+  }, [])
 
   // تحديث الشعار المحلي عند تغيير الشعار المستقر
   useEffect(() => {
@@ -1081,6 +1163,9 @@ export default function Settings() {
                   حفظ إعدادات واتساب
                 </button>
               </div>
+
+              {/* WhatsApp Session Status */}
+          
 
               {/* WhatsApp Connection Management (simplified) */}
               <div className="bg-card rounded-lg shadow border border-border mt-6">

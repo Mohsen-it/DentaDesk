@@ -90,6 +90,20 @@ async function initializeClient() {
   client.on('ready', () => {
     console.log('WhatsApp client is ready!')
     isReady = true
+
+    // Send success notification to renderer
+    try {
+      const { BrowserWindow } = require('electron')
+      const windows = BrowserWindow.getAllWindows()
+      for (const win of windows) {
+        win.webContents.send('whatsapp:session:connected', {
+          message: 'تم ربط حساب واتساب بنجاح!',
+          timestamp: Date.now()
+        })
+      }
+    } catch (err) {
+      console.warn('Failed to send connection notification:', err.message)
+    }
   })
 
   client.on('authenticated', () => {
@@ -364,6 +378,21 @@ async function resetWhatsAppSession() {
 
     lastQr = null
     isReady = false
+
+    // Send session deleted notification
+    try {
+      const { BrowserWindow } = require('electron')
+      const windows = BrowserWindow.getAllWindows()
+      for (const win of windows) {
+        win.webContents.send('whatsapp:session:deleted', {
+          message: 'تم حذف جلسة واتساب بنجاح',
+          timestamp: Date.now()
+        })
+      }
+    } catch (err) {
+      console.warn('Failed to send deletion notification:', err.message)
+    }
+
     await sleep(300)
     try {
       await initializeClient()

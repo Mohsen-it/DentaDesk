@@ -162,7 +162,7 @@ export default function SessionCard({
                 />
               </div>
 
-              <div>
+              {/* <div>
                 <Label htmlFor="edit_session_status">حالة الجلسة</Label>
                 <Select
                   value={editData.session_status || ''}
@@ -177,7 +177,7 @@ export default function SessionCard({
                     <SelectItem value="cancelled">ملغية</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
+              </div> */}
 
               <div>
                 <Label htmlFor="edit_duration">مدة الجلسة (دقيقة)</Label>
