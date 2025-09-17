@@ -1011,7 +1011,7 @@ export default function Settings() {
                     ref={messageTextareaRef}
                   />
                   <p className="text-xs text-muted-foreground">
-                    يمكنك استخدام متغيرات مثل {'{{patient_name}}'}، {'{{appointment_date}}'}، {'{{appointment_time}}'}
+                    يمكنك استخدام متغيرات مثل: اسم المريض ({'{{patient_name}}'})، تاريخ الموعد ({'{{appointment_date}}'})، وقت الموعد ({'{{appointment_time}}'})
                   </p>
                   <div className="flex flex-wrap gap-2 justify-start">
                     <button
@@ -1020,7 +1020,7 @@ export default function Settings() {
                       className="px-2 py-1 text-xs border border-input rounded-md hover:bg-accent"
                       title="إدراج اسم المريض"
                     >
-                      {'{{patient_name}}'}
+                      اسم المريض
                     </button>
                     <button
                       type="button"
@@ -1028,7 +1028,7 @@ export default function Settings() {
                       className="px-2 py-1 text-xs border border-input rounded-md hover:bg-accent"
                       title="إدراج تاريخ الموعد"
                     >
-                      {'{{appointment_date}}'}
+                      تاريخ الموعد
                     </button>
                     <button
                       type="button"
@@ -1036,7 +1036,7 @@ export default function Settings() {
                       className="px-2 py-1 text-xs border border-input rounded-md hover:bg-accent"
                       title="إدراج وقت الموعد"
                     >
-                      {'{{appointment_time}}'}
+                      وقت الموعد
                     </button>
                   </div>
                 </div>

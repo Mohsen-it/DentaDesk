@@ -143,6 +143,7 @@ export const useSettingsStore = create<SettingsStore>()(
               settings: updatedSettings,
               language: updatedSettings.language,
               currency: updatedSettings.currency,
+              useArabicNumerals: updatedSettings.use_arabic_numerals || false,
               isLoading: false
             })
 

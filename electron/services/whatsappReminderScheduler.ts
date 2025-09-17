@@ -22,6 +22,7 @@ export interface Settings {
   whatsapp_reminder_hours_before: number;
   whatsapp_reminder_message: string;
   whatsapp_reminder_minutes_before?: number;
+  whatsapp_reminder_custom_enabled: number;
 }
 
 let cronJob: cron.ScheduledTask | null = null;
@@ -183,15 +184,16 @@ async function checkAndSendReminders(): Promise<void> {
 
 async function getSettings(): Promise<Settings | null> {
   try {
-    const settings = await dbService.getSettings() as any;
-    const hours = settings.whatsapp_reminder_hours_before || 3;
-    const minutesRaw = settings.whatsapp_reminder_minutes_before;
+    const dbSettings = await dbService.getSettings() as any;
+    const hours = dbSettings.whatsapp_reminder_hours_before || 3;
+    const minutesRaw = dbSettings.whatsapp_reminder_minutes_before;
     const minutesResolved = (typeof minutesRaw === 'number' && minutesRaw > 0) ? minutesRaw : (hours * 60);
     return {
-      whatsapp_reminder_enabled: settings.whatsapp_reminder_enabled || 0,
+      whatsapp_reminder_enabled: dbSettings.whatsapp_reminder_enabled || 0,
       whatsapp_reminder_hours_before: hours,
       whatsapp_reminder_minutes_before: minutesResolved,
-      whatsapp_reminder_message: settings.whatsapp_reminder_message || 'مرحبًا {{patient_name}}، تذكير بموعدك في عيادة الأسنان بتاريخ {{appointment_date}} الساعة {{appointment_time}}. نشكرك على التزامك.'
+      whatsapp_reminder_message: dbSettings.whatsapp_reminder_message || 'مرحبًا {{patient_name}}، تذكير بموعدك في عيادة الأسنان بتاريخ {{appointment_date}} الساعة {{appointment_time}}. نشكرك على التزامك.',
+      whatsapp_reminder_custom_enabled: dbSettings.whatsapp_reminder_custom_enabled || 0,
     };
   } catch (error) {
     console.error('Error getting settings:', error);
