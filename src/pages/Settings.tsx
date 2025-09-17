@@ -998,14 +998,14 @@ export default function Settings() {
                   className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                 />
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {[15, 30, 60, 120, 180].map((m) => (
+                  {[15, 30, 60, 120, 180, 720, 1440].map((m) => (
                     <button
                       key={m}
                       type="button"
                       onClick={() => setMinutesBefore(m)}
                       className="px-2 py-1 text-xs border border-input rounded-md hover:bg-accent"
                     >
-                      {m} دقيقة
+                      {m >= 60 ? `${m / 60} ساعة` : `${m} دقيقة`}
                     </button>
                   ))}
                 </div>

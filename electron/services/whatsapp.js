@@ -14,6 +14,35 @@ const sessionPath = app.getPath('userData') + '/whatsapp-session'
 
 async function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
 
+// Health check function to verify client status
+async function performHealthCheck() {
+  if (!client) return false
+
+  try {
+    const state = await client.getState().catch(() => null)
+    const stateStr = String(state || '').toLowerCase()
+    return stateStr === 'connected' || stateStr === 'authenticated'
+  } catch (err) {
+    console.warn('Health check failed:', err.message)
+    return false
+  }
+}
+
+// Periodic health monitoring
+setInterval(async () => {
+  if (!isReady && !isInitializing && !isResetting) {
+    const isHealthy = await performHealthCheck()
+    if (!isHealthy) {
+      console.log('Client appears unhealthy, attempting recovery...')
+      try {
+        await initializeClient()
+      } catch (err) {
+        console.warn('Automatic recovery failed:', err.message)
+      }
+    }
+  }
+}, 30000) // فحص كل 30 ثانية
+
 async function initializeClient() {
   if (isInitializing) return
   if (client) {
@@ -84,29 +113,92 @@ async function initializeClient() {
   client.on('disconnected', (reason) => {
     console.log('Client was disconnected:', reason)
     isReady = false
+
+    // محاولة إعادة الاتصال تلقائياً في حالة انقطاع الاتصال
+    if (reason !== 'LOGOUT' && !isResetting) {
+      console.log('Attempting automatic reconnection...')
+      setTimeout(() => {
+        initializeClient().catch(err => {
+          console.error('Failed to reconnect automatically:', err.message)
+        })
+      }, 5000)
+    }
+  })
+
+  client.on('auth_failure', (msg) => {
+    console.error('Authentication failed:', msg)
+    isReady = false
+    lastQr = null
+
+    // في حالة فشل المصادقة، قد نحتاج لإعادة توليد QR
+    if (!isResetting) {
+      console.log('Authentication failed, clearing session for fresh start...')
+      setTimeout(() => {
+        resetWhatsAppSession().catch(err => {
+          console.error('Failed to reset session after auth failure:', err.message)
+        })
+      }, 3000)
+    }
   })
 
   client.on('loading_screen', (percent, message) => {
     console.log('WhatsApp loading:', percent, message)
   })
 
-  // Initialize with retry to avoid transient "Target closed" during boot/reset
+  // Initialize with enhanced retry logic and better error handling
   try {
     let attempts = 0
-    const maxInitAttempts = 3
+    const maxInitAttempts = 5
+    let lastError = null
+
     while (attempts < maxInitAttempts) {
       try {
+        console.log(`Initializing WhatsApp client (attempt ${attempts + 1}/${maxInitAttempts})...`)
         await client.initialize()
+        console.log('WhatsApp client initialized successfully')
         break
       } catch (err) {
         attempts += 1
+        lastError = err
         const msg = String(err && err.message ? err.message : err || '')
-        const isTargetClosed = msg.includes('Target closed')
-        if (!isTargetClosed || attempts >= maxInitAttempts) {
+
+        console.warn(`WhatsApp initialization attempt ${attempts} failed:`, msg)
+
+        // أنواع الأخطاء الشائعة وكيفية التعامل معها
+        const isRetryableError = (
+          msg.includes('Target closed') ||
+          msg.includes('Session closed') ||
+          msg.includes('Protocol error') ||
+          msg.includes('WebSocket') ||
+          msg.includes('net::ERR') ||
+          msg.includes('timeout') ||
+          msg.includes('ECONNRESET') ||
+          msg.includes('ENOTFOUND')
+        )
+
+        if (!isRetryableError || attempts >= maxInitAttempts) {
+          console.error('Non-retryable error or max attempts reached:', msg)
           throw err
         }
-        await sleep(500 * attempts)
+
+        // زيادة وقت الانتظار تدريجياً
+        const waitTime = Math.min(1000 * Math.pow(2, attempts), 10000)
+        console.log(`Waiting ${waitTime}ms before retry...`)
+        await sleep(waitTime)
+
+        // إعادة إنشاء الـ client في بعض الحالات
+        if (msg.includes('Target closed') && attempts > 2) {
+          console.log('Recreating WhatsApp client instance...')
+          try {
+            await client.destroy().catch(() => {})
+          } catch (_) {}
+          await sleep(1000)
+        }
       }
+    }
+
+    if (attempts >= maxInitAttempts) {
+      throw lastError || new Error('Failed to initialize WhatsApp client after maximum attempts')
     }
   } finally {
     isInitializing = false
@@ -118,18 +210,55 @@ async function sendMessage(phoneNumber, message) {
     await initializeClient()
   }
 
-  // Wait until client is ready
-  const waitUntilReady = async (timeoutMs = 15000) => {
-    const start = Date.now()
-    while (Date.now() - start < timeoutMs) {
-      if (isReady) return
-      try {
-        const state = await client.getState().catch(() => null)
-        if (state && String(state).toLowerCase() !== 'disconnected') return
-      } catch (_) {}
-      await new Promise(r => setTimeout(r, 250))
+  // Wait until client is ready with better error handling and retry logic
+  const waitUntilReady = async (timeoutMs = 30000, maxRetries = 3) => {
+    let attempts = 0
+
+    while (attempts < maxRetries) {
+      const start = Date.now()
+
+      // انتظار جاهزية الـ client
+      while (Date.now() - start < timeoutMs) {
+        if (isReady) return
+
+        try {
+          const state = await client.getState().catch(() => null)
+          const stateStr = String(state || '').toLowerCase()
+
+          // إذا كان الـ client جاهز أو متصل
+          if (state && (stateStr === 'connected' || stateStr === 'authenticated')) {
+            return
+          }
+
+          // إذا كان منفصل، سنحاول إعادة التهيئة
+          if (stateStr === 'disconnected') {
+            console.log('Client is disconnected, attempting to reconnect...')
+            break
+          }
+        } catch (err) {
+          console.warn('Error checking client state:', err.message)
+        }
+
+        await sleep(500) // انتظر نصف ثانية قبل المحاولة التالية
+      }
+
+      attempts++
+      console.log(`WhatsApp client not ready (attempt ${attempts}/${maxRetries})`)
+
+      // إذا لم ننجح في المحاولة الأولى، حاول إعادة تهيئة الـ client
+      if (attempts < maxRetries) {
+        try {
+          console.log('Attempting to reinitialize WhatsApp client...')
+          isReady = false
+          await initializeClient()
+          await sleep(2000) // انتظر 2 ثانية بعد إعادة التهيئة
+        } catch (err) {
+          console.warn('Failed to reinitialize client:', err.message)
+        }
+      }
     }
-    throw new Error('WhatsApp client not ready')
+
+    throw new Error(`WhatsApp client not ready after ${maxRetries} attempts within ${timeoutMs}ms`)
   }
   await waitUntilReady()
 
@@ -144,18 +273,54 @@ async function sendMessage(phoneNumber, message) {
   }
   const wid = numberInfo._serialized
 
-  const maxRetries = 3
+  const maxRetries = 5
   let attempts = 0
+  let lastError = null
+
   while (attempts < maxRetries) {
     try {
+      console.log(`Sending WhatsApp message (attempt ${attempts + 1}/${maxRetries}) to ${sanitized}...`)
       await client.sendMessage(wid, message)
+      console.log('WhatsApp message sent successfully')
       return
     } catch (err) {
       attempts += 1
-      if (attempts >= maxRetries) throw err
-      await new Promise((r) => setTimeout(r, 1000 * attempts))
+      lastError = err
+      const msg = String(err && err.message ? err.message : err || '')
+
+      console.warn(`Send message attempt ${attempts} failed:`, msg)
+
+      // أنواع الأخطاء التي يمكن إعادة المحاولة فيها
+      const isRetryableError = (
+        msg.includes('timeout') ||
+        msg.includes('ECONNRESET') ||
+        msg.includes('ENOTFOUND') ||
+        msg.includes('Network') ||
+        msg.includes('connection') ||
+        msg.includes('busy') ||
+        msg.includes('rate limit')
+      )
+
+      if (!isRetryableError || attempts >= maxRetries) {
+        console.error('Non-retryable error or max attempts reached:', msg)
+        break
+      }
+
+      // زيادة وقت الانتظار بين المحاولات
+      const waitTime = Math.min(2000 * attempts, 10000)
+      console.log(`Waiting ${waitTime}ms before retry...`)
+      await sleep(waitTime)
+
+      // التأكد من أن الـ client ما زال جاهز بعد الانتظار
+      try {
+        await waitUntilReady(5000, 1)
+      } catch (readyErr) {
+        console.warn('Client not ready after wait:', readyErr.message)
+      }
     }
   }
+
+  throw lastError || new Error('Failed to send WhatsApp message after maximum attempts')
 }
 
 async function resetWhatsAppSession() {
@@ -219,11 +384,27 @@ async function resetWhatsAppSession() {
   }
 }
 
-function getWhatsAppStatus() {
+async function getWhatsAppStatus() {
+  let currentState = null
+  let isClientHealthy = false
+
+  try {
+    if (client) {
+      currentState = await client.getState().catch(() => null)
+      const stateStr = String(currentState || '').toLowerCase()
+      isClientHealthy = stateStr === 'connected' || stateStr === 'authenticated'
+    }
+  } catch (err) {
+    console.warn('Error getting client status:', err.message)
+  }
+
   return {
-    isReady,
+    isReady: isReady && isClientHealthy,
     hasQr: !!lastQr,
     qr: lastQr || undefined,
+    state: currentState,
+    isClientHealthy,
+    lastQrTimestamp: lastQr ? Date.now() : null,
   }
 }
 
@@ -232,6 +413,7 @@ module.exports = {
   sendMessage,
   resetWhatsAppSession,
   getWhatsAppStatus,
+  performHealthCheck,
 }
 
 
