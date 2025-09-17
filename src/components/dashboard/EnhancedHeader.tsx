@@ -34,7 +34,7 @@ const EnhancedHeader = memo(function EnhancedHeader({
   }, [syncAllData, onRefresh])
 
   return (
-    <header className="h-16 md:h-18 lg:h-20 bg-card border-b border-border shadow-lg dark:shadow-xl rtl backdrop-blur-sm" dir="rtl">
+    <header className="h-16 md:h-18 lg:h-20 bg-card border-b border-border shadow-lg dark:shadow-xl rtl backdrop-blur-sm animate-fade-in" dir="rtl">
       <div className="h-full px-4 md:px-6 lg:px-8 flex items-center justify-between">
         {/* Right side - Actions (in RTL) */}
         <div className="flex items-center gap-2 md:gap-3">
@@ -95,7 +95,7 @@ const EnhancedHeader = memo(function EnhancedHeader({
         <div className="flex-1 flex items-center justify-center px-4">
           {clinicName && (
             <div className="text-center space-y-1">
-              <h1 className="text-base md:text-lg lg:text-xl font-bold text-foreground">
+              <h1 className="text-base md:text-lg lg:text-xl font-bold text-foreground font-tajawal">
                 {clinicName}
               </h1>
               {clinicLogo && (
@@ -116,7 +116,7 @@ const EnhancedHeader = memo(function EnhancedHeader({
       </div>
 
       {/* Enhanced gradient line */}
-      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-blue-500/20 dark:via-blue-400/20 to-transparent" />
+      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-primary/20 dark:via-primary/30 to-transparent" />
     </header>
   )
 })

@@ -40,8 +40,8 @@ const LeftSidebarStatistics = memo(function LeftSidebarStatistics() {
       title: 'إجمالي المرضى',
       value: patients.length,
       icon: Users,
-      color: 'text-blue-600 dark:text-blue-400',
-      bgColor: 'bg-blue-100 dark:bg-slate-900',
+      color: 'text-primary dark:text-primary-foreground',
+      bgColor: 'bg-primary/10 dark:bg-primary/20',
       trend: '+2 هذا الأسبوع'
     },
 
@@ -49,17 +49,17 @@ const LeftSidebarStatistics = memo(function LeftSidebarStatistics() {
       title: 'التنبيهات العاجلة',
       value: urgentAlerts,
       icon: AlertTriangle,
-      color: 'text-red-600 dark:text-red-400',
-      bgColor: 'bg-red-100 dark:bg-red-900',
+      color: 'text-destructive dark:text-destructive-foreground',
+      bgColor: 'bg-destructive/10 dark:bg-destructive/20',
       trend: urgentAlerts > 0 ? 'يتطلب اهتمام' : 'كل شيء على ما يرام'
     }
   ], [patients.length, pendingAmount, urgentAlerts, formatAmount])
 
   return (
-    <div className="h-full p-4 md:p-5 lg:p-6 bg-sidebar" role="region" aria-label="إحصائيات العيادة">
+    <div className="h-full p-4 md:p-5 lg:p-6 bg-sidebar animate-fade-in" role="region" aria-label="إحصائيات العيادة">
       <div className="space-y-5 md:space-y-6 lg:space-y-7">
         <div className="text-center space-y-2">
-          <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-sidebar-foreground mb-1 md:mb-2">
+          <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-sidebar-foreground mb-1 md:mb-2 font-tajawal">
             إحصائيات سريعة
           </h2>
           <p className="text-xs md:text-sm text-sidebar-foreground/70">
@@ -109,7 +109,7 @@ const LeftSidebarStatistics = memo(function LeftSidebarStatistics() {
               <div className="text-xs md:text-sm text-foreground font-medium">
                 مواعيد اليوم
               </div>
-              <div className="text-xl md:text-2xl font-bold text-green-600 dark:text-green-400">
+              <div className="text-xl md:text-2xl font-bold text-medical dark:text-medical-foreground">
                 {todayAppointments}
               </div>
               <div className="text-xs text-muted-foreground">

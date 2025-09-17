@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -51,34 +51,53 @@ export default function QuickAccessDashboard({
     loadQuickAccessData()
   }, [loadQuickAccessData])
 
-  // Handle refresh
-  const handleRefresh = async () => {
+  // Handle refresh - optimized with useCallback
+  const handleRefresh = useCallback(async () => {
     await refreshQuickAccessData()
-  }
+  }, [refreshQuickAccessData])
+
+  // Memoized navigation handlers for performance
+  const handleNavigateToPatients = useCallback(() => {
+    console.log('👥 Navigate to Patients clicked!')
+    onNavigateToPatients?.()
+  }, [onNavigateToPatients])
+
+  const handleNavigateToAppointments = useCallback(() => {
+    console.log('📅 Navigate to Appointments clicked!')
+    onNavigateToAppointments?.()
+  }, [onNavigateToAppointments])
+
+  const handleNavigateToPayments = useCallback(() => {
+    console.log('💰 Navigate to Payments clicked!')
+    onNavigateToPayments?.()
+  }, [onNavigateToPayments])
+
+  const handleNavigateToTreatments = useCallback(() => {
+    onNavigateToTreatments?.()
+  }, [onNavigateToTreatments])
 
   // Format currency - now using centralized currency management
   const { formatAmount } = useCurrency()
 
-  // Format date
-  const formatDate = (dateString: string) => {
+  // Memoized format functions for performance
+  const formatDate = useCallback((dateString: string) => {
     return new Date(dateString).toLocaleDateString('ar-EG')
-  }
+  }, [])
 
-  // Format time
-  const formatTime = (dateString: string) => {
+  const formatTime = useCallback((dateString: string) => {
     return new Date(dateString).toLocaleTimeString('ar-EG', {
       hour: '2-digit',
       minute: '2-digit'
     })
-  }
+  }, [])
 
   if (isLoadingQuickAccess) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 lg:gap-6">
         {[...Array(4)].map((_, i) => (
           <Card key={i} className="animate-pulse">
-            <CardContent className="pt-6">
-              <div className="h-20 bg-muted rounded"></div>
+            <CardContent className="p-4 md:p-5 lg:p-6">
+              <div className="h-16 md:h-20 lg:h-24 bg-muted rounded"></div>
             </CardContent>
           </Card>
         ))}
@@ -88,12 +107,12 @@ export default function QuickAccessDashboard({
 
   if (!quickAccessData) {
     return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="text-center py-8 text-muted-foreground">
-            <AlertTriangle className="w-8 h-8 mx-auto mb-2 opacity-50" />
-            <p>فشل في تحميل بيانات الوصول السريع</p>
-            <Button variant="outline" size="sm" className="mt-2" onClick={handleRefresh}>
+      <Card className="bg-card border-border">
+        <CardContent className="p-4 md:p-5 lg:p-6">
+          <div className="text-center py-8 md:py-12 text-muted-foreground">
+            <AlertTriangle className="w-8 h-8 md:w-12 md:h-12 mx-auto mb-2 md:mb-4 opacity-50" />
+            <p className="text-sm md:text-base font-tajawal mb-4">فشل في تحميل بيانات الوصول السريع</p>
+            <Button variant="outline" size="sm" className="mt-2 hover:bg-destructive/10 hover:text-destructive transition-all duration-200" onClick={handleRefresh} aria-label="إعادة تحميل البيانات">
               <RefreshCw className="w-4 h-4 mr-2" />
               إعادة المحاولة
             </Button>
@@ -104,64 +123,67 @@ export default function QuickAccessDashboard({
   }
 
   return (
-    <div className="space-y-6 rtl-layout">
+    <div className="space-y-4 md:space-y-5 lg:space-y-6 animate-fade-in" dir="rtl">
       {/* Quick Stats */}
-      <div className="dashboard-grid-rtl">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 lg:gap-6">
         {/* Total Patients */}
-        <Card className="hover:shadow-md transition-shadow cursor-pointer stats-card-rtl" onClick={onNavigateToPatients}>
-          <CardContent className="pt-6 stats-content">
+        <Card className="hover:shadow-lg dark:hover:shadow-xl transition-all duration-200 cursor-pointer bg-card border-border" onClick={onNavigateToPatients} role="button" tabIndex={0} aria-label={`عرض إجمالي المرضى: ${quickAccessData.quickStats.totalPatients} مريض`}>
+          <CardContent className="p-4 md:p-5 lg:p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">إجمالي المرضى</p>
-                <p className="text-2xl font-bold">{quickAccessData.quickStats.totalPatients}</p>
+              <div className="flex-1">
+                <p className="text-xs md:text-sm font-medium text-muted-foreground font-tajawal">إجمالي المرضى</p>
+                <p className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground mt-1">{quickAccessData.quickStats.totalPatients}</p>
               </div>
-              <div className="p-2 bg-blue-100 rounded-lg stats-icon">
-                <Users className="w-6 h-6 text-blue-600" />
+              <div className="p-2 md:p-3 bg-primary/10 dark:bg-primary/20 rounded-lg ml-3 md:ml-4">
+                <Users className="w-5 h-5 md:w-6 md:h-6 text-primary" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Today Appointments */}
-        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={onNavigateToAppointments}>
-          <CardContent className="pt-6">
+        <Card className="hover:shadow-lg dark:hover:shadow-xl transition-all duration-200 cursor-pointer bg-card border-border" onClick={onNavigateToAppointments} role="button" tabIndex={0} aria-label={`عرض مواعيد اليوم: ${quickAccessData.quickStats.todayAppointments} موعد`}>
+          <CardContent className="p-4 md:p-5 lg:p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">مواعيد اليوم</p>
-                <p className="text-2xl font-bold">{quickAccessData.quickStats.todayAppointments}</p>
+              <div className="flex-1">
+                <p className="text-xs md:text-sm font-medium text-muted-foreground font-tajawal">مواعيد اليوم</p>
+                <p className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground mt-1">{quickAccessData.quickStats.todayAppointments}</p>
               </div>
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Calendar className="w-6 h-6 text-purple-600" />
+              <div className="p-2 md:p-3 bg-medical/10 dark:bg-medical/20 rounded-lg ml-3 md:ml-4">
+                <Calendar className="w-5 h-5 md:w-6 md:h-6 text-medical" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Pending Payments */}
-        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={onNavigateToPayments}>
-          <CardContent className="pt-6">
+        <Card className="hover:shadow-lg dark:hover:shadow-xl transition-all duration-200 cursor-pointer bg-card border-border" onClick={onNavigateToPayments} role="button" tabIndex={0} aria-label={`عرض الدفعات المعلقة: ${quickAccessData.quickStats.pendingPayments} دفعة`}>
+          <CardContent className="p-4 md:p-5 lg:p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">دفعات معلقة</p>
-                <p className="text-2xl font-bold">{quickAccessData.quickStats.pendingPayments}</p>
+              <div className="flex-1">
+                <p className="text-xs md:text-sm font-medium text-muted-foreground font-tajawal">دفعات معلقة</p>
+                <p className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground mt-1">{quickAccessData.quickStats.pendingPayments}</p>
               </div>
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <DollarSign className="w-6 h-6 text-yellow-600" />
+              <div className="p-2 md:p-3 bg-accent/10 dark:bg-accent/20 rounded-lg ml-3 md:ml-4">
+                <DollarSign className="w-5 h-5 md:w-6 md:h-6 text-accent" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Urgent Alerts */}
-        <Card className="hover:shadow-md transition-shadow">
-          <CardContent className="pt-6">
+        <Card className="hover:shadow-lg dark:hover:shadow-xl transition-all duration-200 bg-card border-border">
+          <CardContent className="p-4 md:p-5 lg:p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">تنبيهات عاجلة</p>
-                <p className="text-2xl font-bold">{quickAccessData.quickStats.urgentAlerts}</p>
+              <div className="flex-1">
+                <p className="text-xs md:text-sm font-medium text-muted-foreground font-tajawal">تنبيهات عاجلة</p>
+                <p className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground mt-1">{quickAccessData.quickStats.urgentAlerts}</p>
+                {quickAccessData.quickStats.urgentAlerts > 0 && (
+                  <div className="absolute inset-0 bg-destructive/5 dark:bg-destructive/10 animate-pulse rounded-lg pointer-events-none" aria-hidden="true" />
+                )}
               </div>
-              <div className="p-2 bg-red-100 rounded-lg">
-                <AlertTriangle className="w-6 h-6 text-red-600" />
+              <div className="p-2 md:p-3 bg-destructive/10 dark:bg-destructive/20 rounded-lg ml-3 md:ml-4">
+                <AlertTriangle className="w-5 h-5 md:w-6 md:h-6 text-destructive" />
               </div>
             </div>
           </CardContent>
@@ -231,57 +253,54 @@ export default function QuickAccessDashboard({
         </CardContent>
       </Card> */}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4 md:gap-5 lg:gap-6">
         {/* Recent Patients */}
-        <Card>
-          <CardHeader>
+        <Card className="bg-card border-border hover:shadow-lg dark:hover:shadow-xl transition-all duration-200">
+          <CardHeader className="p-4 md:p-5 lg:p-6">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
+              <CardTitle className="flex items-center gap-2 font-tajawal text-lg md:text-xl lg:text-2xl">
+                <Users className="w-5 h-5 md:w-6 md:h-6" />
                 المرضى الأخيرون
               </CardTitle>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => {
-                  console.log('👥 Navigate to Patients clicked!')
-                  // showButtonFeedback('الانتقال للمرضى', 'سيتم الانتقال لصفحة المرضى')
-                  onNavigateToPatients?.()
-                }}
-                className="hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                onClick={handleNavigateToPatients}
+                className="hover:bg-primary/10 hover:text-primary transition-all duration-200 text-sm md:text-base"
+                aria-label="عرض جميع المرضى"
               >
-                <Eye className="w-4 h-4 mr-1" />
+                <Eye className="w-4 h-4 mr-1 md:mr-2" />
                 عرض الكل
               </Button>
             </div>
           </CardHeader>
           <CardContent>
             {quickAccessData.recentPatients.length === 0 ? (
-              <div className="text-center py-4 text-muted-foreground">
-                <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">لا توجد مرضى حديثون</p>
+              <div className="text-center py-6 md:py-8 text-muted-foreground">
+                <Users className="w-8 h-8 md:w-12 md:h-12 mx-auto mb-2 md:mb-4 opacity-50" />
+                <p className="text-sm md:text-base font-tajawal">لا توجد مرضى حديثون</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {quickAccessData.recentPatients.map((patient: Patient) => (
                   <div key={patient.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                        <Users className="w-4 h-4 text-blue-600" />
+                      <div className="w-8 h-8 md:w-10 md:h-10 bg-primary/10 dark:bg-primary/20 rounded-full flex items-center justify-center">
+                        <Users className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                       </div>
-                      <div>
-                        <p className="font-medium text-sm">{patient.full_name}</p>
-                        <p className="text-xs text-muted-foreground">
+                      <div className="flex-1">
+                        <p className="font-medium text-sm md:text-base font-tajawal">{patient.full_name}</p>
+                        <p className="text-xs md:text-sm text-muted-foreground">
                           #{patient.serial_number} | {patient.age} سنة
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline" className="text-xs px-2 py-1 border-primary/20 text-primary">
                         {patient.gender === 'male' ? 'ذكر' : 'أنثى'}
                       </Badge>
-                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                        <Eye className="w-3 h-3" />
+                      <Button variant="ghost" size="sm" className="h-6 w-6 md:h-7 md:w-7 p-0 hover:bg-primary/10" aria-label={`عرض تفاصيل المريض ${patient.full_name}`}>
+                        <Eye className="w-3 h-3 md:w-4 md:h-4" />
                       </Button>
                     </div>
                   </div>
@@ -292,55 +311,52 @@ export default function QuickAccessDashboard({
         </Card>
 
         {/* Today's Appointments */}
-        <Card>
-          <CardHeader>
+        <Card className="bg-card border-border hover:shadow-lg dark:hover:shadow-xl transition-all duration-200">
+          <CardHeader className="p-4 md:p-5 lg:p-6">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
+              <CardTitle className="flex items-center gap-2 font-tajawal text-lg md:text-xl lg:text-2xl">
+                <Calendar className="w-5 h-5 md:w-6 md:h-6" />
                 مواعيد اليوم
               </CardTitle>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => {
-                  console.log('📅 Navigate to Appointments clicked!')
-                  // showButtonFeedback('الانتقال للمواعيد', 'سيتم الانتقال لصفحة المواعيد')
-                  onNavigateToAppointments?.()
-                }}
-                className="hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                onClick={handleNavigateToAppointments}
+                className="hover:bg-medical/10 hover:text-medical transition-all duration-200 text-sm md:text-base"
+                aria-label="عرض جميع مواعيد اليوم"
               >
-                <Eye className="w-4 h-4 mr-1" />
+                <Eye className="w-4 h-4 mr-1 md:mr-2" />
                 عرض الكل
               </Button>
             </div>
           </CardHeader>
           <CardContent>
             {quickAccessData.todayAppointments.length === 0 ? (
-              <div className="text-center py-4 text-muted-foreground">
-                <Calendar className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">لا توجد مواعيد اليوم</p>
+              <div className="text-center py-6 md:py-8 text-muted-foreground">
+                <Calendar className="w-8 h-8 md:w-12 md:h-12 mx-auto mb-2 md:mb-4 opacity-50" />
+                <p className="text-sm md:text-base font-tajawal">لا توجد مواعيد اليوم</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {quickAccessData.todayAppointments.slice(0, 5).map((appointment: Appointment) => (
                   <div key={appointment.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                        <Calendar className="w-4 h-4 text-purple-600" />
+                      <div className="w-8 h-8 md:w-10 md:h-10 bg-medical/10 dark:bg-medical/20 rounded-full flex items-center justify-center">
+                        <Calendar className="w-4 h-4 md:w-5 md:h-5 text-medical" />
                       </div>
-                      <div>
-                        <p className="font-medium text-sm">{appointment.title}</p>
-                        <p className="text-xs text-muted-foreground">
+                      <div className="flex-1">
+                        <p className="font-medium text-sm md:text-base font-tajawal">{appointment.title}</p>
+                        <p className="text-xs md:text-sm text-muted-foreground">
                           {appointment.patient?.full_name || 'مريض غير محدد'}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline" className="text-xs px-2 py-1 border-medical/20 text-medical">
                         {formatTime(appointment.start_time)}
                       </Badge>
-                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                        <Eye className="w-3 h-3" />
+                      <Button variant="ghost" size="sm" className="h-6 w-6 md:h-7 md:w-7 p-0 hover:bg-medical/10" aria-label={`عرض تفاصيل الموعد ${appointment.title}`}>
+                        <Eye className="w-3 h-3 md:w-4 md:h-4" />
                       </Button>
                     </div>
                   </div>
@@ -351,55 +367,52 @@ export default function QuickAccessDashboard({
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4 md:gap-5 lg:gap-6">
         {/* Pending Payments */}
-        <Card>
-          <CardHeader>
+        <Card className="bg-card border-border hover:shadow-lg dark:hover:shadow-xl transition-all duration-200">
+          <CardHeader className="p-4 md:p-5 lg:p-6">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <DollarSign className="w-5 h-5" />
+              <CardTitle className="flex items-center gap-2 font-tajawal text-lg md:text-xl lg:text-2xl">
+                <DollarSign className="w-5 h-5 md:w-6 md:h-6" />
                 الدفعات المعلقة
               </CardTitle>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => {
-                  console.log('💰 Navigate to Payments clicked!')
-                  // showButtonFeedback('الانتقال للمدفوعات', 'سيتم الانتقال لصفحة المدفوعات')
-                  onNavigateToPayments?.()
-                }}
-                className="hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                onClick={handleNavigateToPayments}
+                className="hover:bg-accent/10 hover:text-accent transition-all duration-200 text-sm md:text-base"
+                aria-label="عرض جميع الدفعات المعلقة"
               >
-                <Eye className="w-4 h-4 mr-1" />
+                <Eye className="w-4 h-4 mr-1 md:mr-2" />
                 عرض الكل
               </Button>
             </div>
           </CardHeader>
           <CardContent>
             {quickAccessData.pendingPayments.length === 0 ? (
-              <div className="text-center py-4 text-muted-foreground">
-                <DollarSign className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">لا توجد دفعات معلقة</p>
+              <div className="text-center py-6 md:py-8 text-muted-foreground">
+                <DollarSign className="w-8 h-8 md:w-12 md:h-12 mx-auto mb-2 md:mb-4 opacity-50" />
+                <p className="text-sm md:text-base font-tajawal">لا توجد دفعات معلقة</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {quickAccessData.pendingPayments.slice(0, 5).map((payment: Payment) => (
                   <div key={payment.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                        <DollarSign className="w-4 h-4 text-yellow-600" />
+                      <div className="w-8 h-8 md:w-10 md:h-10 bg-accent/10 dark:bg-accent/20 rounded-full flex items-center justify-center">
+                        <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-accent" />
                       </div>
-                      <div>
-                        <p className="font-medium text-sm">
+                      <div className="flex-1">
+                        <p className="font-medium text-sm md:text-base font-tajawal">
                           {payment.patient?.full_name || 'مريض غير محدد'}
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs md:text-sm text-muted-foreground">
                           {formatDate(payment.payment_date)}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="destructive" className="text-xs">
+                      <Badge variant="destructive" className="text-xs px-2 py-1 bg-destructive/10 text-destructive border-destructive/20">
                         {formatAmount(
                           payment.total_amount_due ||
                           payment.remaining_balance ||
@@ -407,8 +420,8 @@ export default function QuickAccessDashboard({
                           0
                         )}
                       </Badge>
-                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                        <Eye className="w-3 h-3" />
+                      <Button variant="ghost" size="sm" className="h-6 w-6 md:h-7 md:w-7 p-0 hover:bg-destructive/10" aria-label={`عرض تفاصيل الدفعة للمريض ${payment.patient?.full_name || 'غير محدد'}`}>
+                        <Eye className="w-3 h-3 md:w-4 md:h-4" />
                       </Button>
                     </div>
                   </div>
@@ -419,47 +432,48 @@ export default function QuickAccessDashboard({
         </Card>
 
         {/* Urgent Treatments */}
-        <Card>
-          <CardHeader>
+        <Card className="bg-card border-border hover:shadow-lg dark:hover:shadow-xl transition-all duration-200">
+          <CardHeader className="p-4 md:p-5 lg:p-6">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="w-5 h-5" />
+              <CardTitle className="flex items-center gap-2 font-tajawal text-lg md:text-xl lg:text-2xl">
+                <Activity className="w-5 h-5 md:w-6 md:h-6" />
                 العلاجات العاجلة
               </CardTitle>
-              <Button variant="ghost" size="sm" onClick={onNavigateToTreatments}>
+              <Button variant="ghost" size="sm" onClick={handleNavigateToTreatments} className="hover:bg-destructive/10 hover:text-destructive transition-all duration-200 text-sm md:text-base" aria-label="عرض جميع العلاجات العاجلة">
+                <Eye className="w-4 h-4 mr-1 md:mr-2" />
                 عرض الكل
               </Button>
             </div>
           </CardHeader>
           <CardContent>
             {quickAccessData.urgentTreatments.length === 0 ? (
-              <div className="text-center py-4 text-muted-foreground">
-                <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">لا توجد علاجات عاجلة</p>
+              <div className="text-center py-6 md:py-8 text-muted-foreground">
+                <Activity className="w-8 h-8 md:w-12 md:h-12 mx-auto mb-2 md:mb-4 opacity-50" />
+                <p className="text-sm md:text-base font-tajawal">لا توجد علاجات عاجلة</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {quickAccessData.urgentTreatments.slice(0, 5).map((treatment: ToothTreatment) => (
                   <div key={treatment.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                        <Activity className="w-4 h-4 text-red-600" />
+                      <div className="w-8 h-8 md:w-10 md:h-10 bg-destructive/10 dark:bg-destructive/20 rounded-full flex items-center justify-center">
+                        <Activity className="w-4 h-4 md:w-5 md:h-5 text-destructive" />
                       </div>
-                      <div>
-                        <p className="font-medium text-sm">
+                      <div className="flex-1">
+                        <p className="font-medium text-sm md:text-base font-tajawal">
                           {treatment.treatment_type} - السن {treatment.tooth_number}
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs md:text-sm text-muted-foreground">
                           {treatment.patient?.full_name || 'مريض غير محدد'}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline" className="text-xs px-2 py-1 border-destructive/20 text-destructive">
                         {treatment.treatment_status === 'planned' ? 'مخطط' : 'قيد التنفيذ'}
                       </Badge>
-                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                        <Eye className="w-3 h-3" />
+                      <Button variant="ghost" size="sm" className="h-6 w-6 md:h-7 md:w-7 p-0 hover:bg-destructive/10" aria-label={`عرض تفاصيل العلاج ${treatment.treatment_type} للسن ${treatment.tooth_number}`}>
+                        <Eye className="w-3 h-3 md:w-4 md:h-4" />
                       </Button>
                     </div>
                   </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+ import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -228,10 +228,10 @@ export default function DashboardAnalytics({
     }, {} as Record<string, number>)
 
     const colors = {
-      'scheduled': '#3b82f6',
-      'completed': '#10b981',
-      'cancelled': '#ef4444',
-      'no-show': '#f59e0b'
+      'scheduled': 'hsl(var(--primary))',
+      'completed': 'hsl(var(--medical-500))',
+      'cancelled': 'hsl(var(--destructive))',
+      'no-show': 'hsl(var(--accent))'
     }
 
     const statusNames = {
@@ -244,7 +244,7 @@ export default function DashboardAnalytics({
     return Object.entries(statusCounts).map(([status, count]) => ({
       name: statusNames[status as keyof typeof statusNames] || status,
       value: count,
-      color: colors[status as keyof typeof colors] || '#6b7280'
+      color: colors[status as keyof typeof colors] || 'hsl(var(--muted-foreground))'
     }))
   }
 
@@ -255,7 +255,13 @@ export default function DashboardAnalytics({
       return acc
     }, {} as Record<string, number>)
 
-    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
+    const colors = [
+      'hsl(var(--primary))',
+      'hsl(var(--medical-500))',
+      'hsl(var(--dental-500))',
+      'hsl(var(--destructive))',
+      'hsl(var(--accent))'
+    ]
 
     return Object.entries(methodCounts).map(([method, amount], index) => ({
       name: method,
@@ -284,7 +290,13 @@ export default function DashboardAnalytics({
       }
     })
 
-    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
+    const colors = [
+      'hsl(var(--primary))',
+      'hsl(var(--medical-500))',
+      'hsl(var(--dental-500))',
+      'hsl(var(--destructive))',
+      'hsl(var(--accent))'
+    ]
 
     return Object.entries(ageGroups).map(([group, count], index) => ({
       name: group,
@@ -331,7 +343,7 @@ export default function DashboardAnalytics({
   }
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <div className="space-y-6 animate-fade-in" dir="rtl">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -344,6 +356,8 @@ export default function DashboardAnalytics({
               variant={timeRange === '7d' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setTimeRange('7d')}
+              aria-label="عرض التحليلات لآخر 7 أيام"
+              aria-pressed={timeRange === '7d'}
             >
               7 أيام
             </Button>
@@ -351,6 +365,8 @@ export default function DashboardAnalytics({
               variant={timeRange === '30d' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setTimeRange('30d')}
+              aria-label="عرض التحليلات لآخر 30 يوم"
+              aria-pressed={timeRange === '30d'}
             >
               30 يوم
             </Button>
@@ -358,11 +374,13 @@ export default function DashboardAnalytics({
               variant={timeRange === '90d' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setTimeRange('90d')}
+              aria-label="عرض التحليلات لآخر 90 يوم"
+              aria-pressed={timeRange === '90d'}
             >
               90 يوم
             </Button>
           </div>
-          <Button variant="outline" size="sm" onClick={calculateAnalytics}>
+          <Button variant="outline" size="sm" onClick={calculateAnalytics} aria-label="تحديث التحليلات">
             <RefreshCw className="w-4 h-4 mr-2" />
             تحديث
           </Button>
@@ -382,22 +400,22 @@ export default function DashboardAnalytics({
         <TabsContent value="overview" className="space-y-6">
           {/* Overview Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-shadow bg-white dark:bg-card border-slate-200 dark:border-slate-700" onClick={onNavigateToPatients}>
+            <Card className="cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-all duration-200 bg-white dark:bg-card border-slate-200 dark:border-slate-700" onClick={onNavigateToPatients} role="button" tabIndex={0} aria-label="عرض إدارة المرضى">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground dark:text-slate-400">إجمالي المرضى</p>
                     <p className="text-2xl font-bold">{analyticsData.overview.totalPatients}</p>
                   </div>
-                  <Users className="w-8 h-8 text-blue-500 dark:text-slate-200" />
+                  <Users className="w-8 h-8 text-primary dark:text-slate-200" />
                 </div>
                 <div className="flex items-center mt-2">
                   {analyticsData.overview.growthRate >= 0 ? (
-                    <ArrowUpRight className="w-4 h-4 text-green-500 dark:text-slate-200 mr-1" />
+                    <ArrowUpRight className="w-4 h-4 text-medical dark:text-slate-200 mr-1" />
                   ) : (
-                    <ArrowDownRight className="w-4 h-4 text-red-500 dark:text-slate-200 mr-1" />
+                    <ArrowDownRight className="w-4 h-4 text-destructive dark:text-slate-200 mr-1" />
                   )}
-                  <span className={`text-sm ${analyticsData.overview.growthRate >= 0 ? 'text-green-500 dark:text-slate-200' : 'text-red-500 dark:text-slate-200'}`}>
+                  <span className={`text-sm ${analyticsData.overview.growthRate >= 0 ? 'text-medical dark:text-slate-200' : 'text-destructive dark:text-slate-200'}`}>
                     {Math.abs(analyticsData.overview.growthRate).toFixed(1)}%
                   </span>
                   <span className="text-sm text-muted-foreground dark:text-slate-400 mr-1">من الشهر الماضي</span>
@@ -405,14 +423,14 @@ export default function DashboardAnalytics({
               </CardContent>
             </Card>
 
-            <Card className="cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-shadow bg-white dark:bg-card border-slate-200 dark:border-slate-700" onClick={onNavigateToAppointments}>
+            <Card className="cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-all duration-200 bg-white dark:bg-card border-slate-200 dark:border-slate-700" onClick={onNavigateToAppointments} role="button" tabIndex={0} aria-label="عرض إدارة المواعيد">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground dark:text-slate-400">المواعيد</p>
                     <p className="text-2xl font-bold">{analyticsData.overview.totalAppointments}</p>
                   </div>
-                  <Calendar className="w-8 h-8 text-green-500 dark:text-slate-200" />
+                  <Calendar className="w-8 h-8 text-medical dark:text-slate-200" />
                 </div>
                 <div className="flex items-center mt-2">
                   <Badge variant="secondary" className="text-xs">
@@ -422,14 +440,14 @@ export default function DashboardAnalytics({
               </CardContent>
             </Card>
 
-            <Card className="cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-shadow bg-white dark:bg-card border-slate-200 dark:border-slate-700" onClick={onNavigateToPayments}>
+            <Card className="cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-all duration-200 bg-white dark:bg-card border-slate-200 dark:border-slate-700" onClick={onNavigateToPayments} role="button" tabIndex={0} aria-label="عرض إدارة المدفوعات">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground dark:text-slate-400">الإيرادات</p>
                     <p className="text-2xl font-bold">{formatAmount(analyticsData.overview.totalRevenue)}</p>
                   </div>
-                  <DollarSign className="w-8 h-8 text-yellow-500 dark:text-slate-200" />
+                  <DollarSign className="w-8 h-8 text-accent dark:text-slate-200" />
                 </div>
                 <div className="flex items-center mt-2">
                   <span className="text-sm text-muted-foreground dark:text-slate-400">
@@ -439,14 +457,14 @@ export default function DashboardAnalytics({
               </CardContent>
             </Card>
 
-            <Card className="bg-white dark:bg-card border-slate-200 dark:border-slate-700">
+            <Card className="bg-white dark:bg-card border-slate-200 dark:border-slate-700 transition-all duration-200 hover:shadow-md dark:hover:shadow-lg">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground dark:text-slate-400">معدل الاستفادة</p>
                     <p className="text-2xl font-bold">{analyticsData.kpis.appointmentUtilization.toFixed(1)}%</p>
                   </div>
-                  <Activity className="w-8 h-8 text-purple-500 dark:text-slate-200" />
+                  <Activity className="w-8 h-8 text-muted-foreground dark:text-slate-200" />
                 </div>
                 <div className="flex items-center mt-2">
                   <span className="text-sm text-muted-foreground dark:text-slate-400">
@@ -476,7 +494,7 @@ export default function DashboardAnalytics({
                     <XAxis dataKey="date" />
                     <YAxis />
                     <Tooltip />
-                    <Area type="monotone" dataKey="count" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.3} />
+                    <Area type="monotone" dataKey="count" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} />
                   </AreaChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -497,7 +515,7 @@ export default function DashboardAnalytics({
                     <XAxis dataKey="date" />
                     <YAxis />
                     <Tooltip formatter={(value) => [formatAmount(Number(value)), 'الإيرادات']} />
-                    <Line type="monotone" dataKey="amount" stroke="#10b981" strokeWidth={2} />
+                    <Line type="monotone" dataKey="amount" stroke="hsl(var(--medical-500))" strokeWidth={2} />
                   </RechartsLineChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -518,7 +536,7 @@ export default function DashboardAnalytics({
                     <XAxis dataKey="date" />
                     <YAxis />
                     <Tooltip />
-                    <Bar dataKey="count" fill="#f59e0b" />
+                    <Bar dataKey="count" fill="hsl(var(--accent))" />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -626,9 +644,9 @@ export default function DashboardAnalytics({
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground dark:text-slate-400">معدل الاحتفاظ بالمرضى</p>
-                    <p className="text-3xl font-bold text-green-600 dark:text-slate-200">{analyticsData.kpis.patientRetention.toFixed(1)}%</p>
+                    <p className="text-3xl font-bold text-medical dark:text-slate-200">{analyticsData.kpis.patientRetention.toFixed(1)}%</p>
                   </div>
-                  <Users className="w-8 h-8 text-green-500 dark:text-slate-200" />
+                  <Users className="w-8 h-8 text-medical dark:text-slate-200" />
                 </div>
                 <p className="text-xs text-muted-foreground dark:text-slate-400 mt-2">
                   المرضى النشطين من إجمالي المرضى القدامى
@@ -641,9 +659,9 @@ export default function DashboardAnalytics({
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground dark:text-slate-400">معدل استغلال المواعيد</p>
-                    <p className="text-3xl font-bold text-blue-600 dark:text-slate-200">{analyticsData.kpis.appointmentUtilization.toFixed(1)}%</p>
+                    <p className="text-3xl font-bold text-primary dark:text-slate-200">{analyticsData.kpis.appointmentUtilization.toFixed(1)}%</p>
                   </div>
-                  <Calendar className="w-8 h-8 text-blue-500 dark:text-slate-200" />
+                  <Calendar className="w-8 h-8 text-primary dark:text-slate-200" />
                 </div>
                 <p className="text-xs text-muted-foreground dark:text-slate-400 mt-2">
                   المواعيد المكتملة من إجمالي المواعيد
@@ -656,9 +674,9 @@ export default function DashboardAnalytics({
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground dark:text-slate-400">متوسط الإيرادات لكل مريض</p>
-                    <p className="text-3xl font-bold text-yellow-600 dark:text-slate-200">{formatAmount(analyticsData.kpis.averageRevenue)}</p>
+                    <p className="text-3xl font-bold text-accent dark:text-slate-200">{formatAmount(analyticsData.kpis.averageRevenue)}</p>
                   </div>
-                  <DollarSign className="w-8 h-8 text-yellow-500 dark:text-slate-200" />
+                  <DollarSign className="w-8 h-8 text-accent dark:text-slate-200" />
                 </div>
                 <p className="text-xs text-muted-foreground dark:text-slate-400 mt-2">
                   إجمالي الإيرادات ÷ عدد المرضى
@@ -671,9 +689,9 @@ export default function DashboardAnalytics({
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground dark:text-slate-400">معدل عدم الحضور</p>
-                    <p className="text-3xl font-bold text-red-600 dark:text-slate-200">{analyticsData.kpis.noShowRate.toFixed(1)}%</p>
+                    <p className="text-3xl font-bold text-destructive dark:text-slate-200">{analyticsData.kpis.noShowRate.toFixed(1)}%</p>
                   </div>
-                  <Activity className="w-8 h-8 text-red-500 dark:text-slate-200" />
+                  <Activity className="w-8 h-8 text-destructive dark:text-slate-200" />
                 </div>
                 <p className="text-xs text-muted-foreground dark:text-slate-400 mt-2">
                   المواعيد التي لم يحضر إليها المرضى
@@ -689,19 +707,19 @@ export default function DashboardAnalytics({
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Button onClick={onNavigateToPatients} className="h-12 justify-start">
+                <Button onClick={onNavigateToPatients} className="h-12 justify-start" aria-label="الانتقال إلى إدارة المرضى">
                   <Users className="w-4 h-4 mr-2" />
                   إدارة المرضى
                 </Button>
-                <Button onClick={onNavigateToAppointments} variant="outline" className="h-12 justify-start">
+                <Button onClick={onNavigateToAppointments} variant="outline" className="h-12 justify-start" aria-label="الانتقال إلى إدارة المواعيد">
                   <Calendar className="w-4 h-4 mr-2" />
                   إدارة المواعيد
                 </Button>
-                <Button onClick={onNavigateToPayments} variant="outline" className="h-12 justify-start">
+                <Button onClick={onNavigateToPayments} variant="outline" className="h-12 justify-start" aria-label="الانتقال إلى إدارة المدفوعات">
                   <DollarSign className="w-4 h-4 mr-2" />
                   إدارة المدفوعات
                 </Button>
-                <Button onClick={onNavigateToTreatments} variant="outline" className="h-12 justify-start">
+                <Button onClick={onNavigateToTreatments} variant="outline" className="h-12 justify-start" aria-label="الانتقال إلى إدارة العلاجات">
                   <Activity className="w-4 h-4 mr-2" />
                   إدارة العلاجات
                 </Button>

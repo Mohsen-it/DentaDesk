@@ -26,19 +26,19 @@ const FloatingQuickActions = memo(function FloatingQuickActions({
     {
       label: 'إضافة مريض',
       icon: UserPlus,
-      color: 'bg-blue-500 hover:bg-blue-600',
+      color: 'bg-primary hover:bg-primary/90',
       onClick: onAddPatient
     },
     {
       label: 'حجز موعد',
       icon: Calendar,
-      color: 'bg-green-500 hover:bg-green-600',
+      color: 'bg-medical hover:bg-medical/90',
       onClick: onAddAppointment
     },
     {
       label: 'تسجيل دفعة',
       icon: CreditCard,
-      color: 'bg-purple-500 hover:bg-purple-600',
+      color: 'bg-accent hover:bg-accent/90',
       onClick: onAddPayment
     }
   ], [onAddPatient, onAddAppointment, onAddPayment])
@@ -75,7 +75,7 @@ const FloatingQuickActions = memo(function FloatingQuickActions({
   }, [isExpanded])
 
   return (
-    <div className="floating-actions fixed bottom-24 right-4 z-50" dir="rtl">
+    <div className="floating-actions fixed bottom-24 right-4 z-50 animate-fade-in" dir="rtl">
       {/* FAB Menu */}
       <div className={`flex flex-col-reverse items-end gap-2 sm:gap-3 mb-3 sm:mb-4 transition-all duration-300 ${isExpanded ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
         {actions.map((action, index) => {

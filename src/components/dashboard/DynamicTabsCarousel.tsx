@@ -53,22 +53,22 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
       id: 'today',
       title: 'اليوم',
       icon: Calendar,
-      color: 'text-blue-600 dark:text-blue-400',
-      bgColor: 'bg-blue-50 dark:bg-blue-900/20'
+      color: 'text-primary dark:text-primary-foreground',
+      bgColor: 'bg-primary/10 dark:bg-primary/20'
     },
     {
       id: 'statistics',
       title: 'إحصائيات',
       icon: BarChart3,
-      color: 'text-purple-600 dark:text-purple-400',
-      bgColor: 'bg-purple-50 dark:bg-purple-900/20'
+      color: 'text-accent dark:text-accent-foreground',
+      bgColor: 'bg-accent/10 dark:bg-accent/20'
     },
     {
       id: 'alerts',
       title: 'تنبيهات',
       icon: Bell,
-      color: 'text-red-600 dark:text-red-400',
-      bgColor: 'bg-red-50 dark:bg-red-900/20'
+      color: 'text-destructive dark:text-destructive-foreground',
+      bgColor: 'bg-destructive/10 dark:bg-destructive/20'
     }
   ], [])
 
@@ -186,7 +186,7 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
       case 'today':
         return (
           <div className={`h-full transition-all duration-300 ${isTransitioning ? 'opacity-0 transform translate-x-4' : 'opacity-100 transform translate-x-0'}`}>
-            <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 dark:border-blue-400"></div></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
               <QuickAccessDashboard
                 onNavigateToPatients={onNavigateToPatients}
                 onNavigateToAppointments={onNavigateToAppointments}
@@ -202,7 +202,7 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
       case 'statistics':
         return (
           <div className={`h-full transition-all duration-300 ${isTransitioning ? 'opacity-0 transform scale-95' : 'opacity-100 transform scale-100'}`}>
-            <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 dark:border-purple-400"></div></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div></div>}>
               <DashboardAnalytics />
             </Suspense>
           </div>
@@ -210,7 +210,7 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
       case 'alerts':
         return (
           <div className={`h-full transition-all duration-300 ${isTransitioning ? 'opacity-0 transform translate-y-4' : 'opacity-100 transform translate-y-0'}`}>
-            <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500 dark:border-red-400"></div></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-destructive"></div></div>}>
               <SmartAlerts
                 maxVisible={25}
                 showHeader={true}
@@ -230,7 +230,7 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
   return (
     <div
       ref={containerRef}
-      className="h-full flex flex-col bg-card rounded-xl shadow-xl dark:shadow-2xl overflow-hidden backdrop-blur-sm"
+      className="h-full flex flex-col bg-card rounded-xl shadow-xl dark:shadow-2xl overflow-hidden backdrop-blur-sm animate-fade-in"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
@@ -245,7 +245,7 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
               </div>
             )}
             <div className="space-y-1">
-              <h2 className="text-xl md:text-2xl font-bold text-foreground">
+              <h2 className="text-xl md:text-2xl font-bold text-foreground font-tajawal">
                 {activeTabData?.title}
               </h2>
               <p className="text-xs md:text-sm text-muted-foreground">
@@ -264,6 +264,7 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
               onClick={() => navigateTab('prev')}
               disabled={isTransitioning}
               className="bg-background hover:bg-accent border-border shadow-sm backdrop-blur-sm"
+              aria-label="التبويب السابق"
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
@@ -273,6 +274,7 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
               onClick={() => navigateTab('next')}
               disabled={isTransitioning}
               className="bg-background hover:bg-accent border-border shadow-sm backdrop-blur-sm"
+              aria-label="التبويب التالي"
             >
               <ChevronRight className="w-4 h-4" />
             </Button>
