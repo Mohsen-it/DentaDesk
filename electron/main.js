@@ -3276,6 +3276,16 @@ try {
     }
   })
 
+  ipcMain.handle('whatsapp-reminders:logout-other-devices', async () => {
+    try {
+      const { resetWhatsAppSession } = require('./services/whatsapp')
+      await resetWhatsAppSession()
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: (error && error.message) ? error.message : 'failed' }
+    }
+  })
+
   ipcMain.handle('whatsapp-reminders:run-diagnostic', async () => {
     try {
       // Removed dayjs imports/extends, now global in app.whenReady

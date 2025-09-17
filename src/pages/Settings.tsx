@@ -13,6 +13,7 @@ import { DatabaseDiagnostics } from '@/components/DatabaseDiagnostics'
 import { ExportService } from '@/services/exportService'
 import { useDentalTreatmentStore } from '@/store/dentalTreatmentStore'
 import { Switch } from '@/components/ui/switch'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import {
   Download,
   Upload,
@@ -58,6 +59,8 @@ export default function Settings() {
   const [showQRModal, setShowQRModal] = useState(false)
   const [qrData, setQrData] = useState<string>('')
   const [qrImageUrl, setQrImageUrl] = useState<string>('')
+  const [confirmResetOpen, setConfirmResetOpen] = useState(false)
+  const [confirmDeleteQROpen, setConfirmDeleteQROpen] = useState(false)
   const [qrSvg, setQrSvg] = useState<string>('')
   const messageTextareaRef = useRef<HTMLTextAreaElement | null>(null)
 
@@ -834,21 +837,7 @@ export default function Settings() {
                   <p className="text-xs text-muted-foreground mt-1">حذف الجلسة الحالية لإظهار رمز QR من جديد وإعادة الربط.</p>
                 </div>
                 <button
-                  onClick={async () => {
-                    const confirmed = window.confirm('سيتم حذف جلسة واتساب الحالية. هل تريد المتابعة؟')
-                    if (!confirmed) return
-                    try {
-                      const res = await window.electronAPI?.whatsappReminders?.resetSession?.()
-                      if (res?.success) {
-                        showNotification('تمت إعادة تهيئة جلسة واتساب. راقب وحدة التحكم لرمز QR', 'success')
-                      } else {
-                        showNotification(res?.error || 'فشل في إعادة تهيئة الجلسة', 'error')
-                      }
-                    } catch (error) {
-                      console.error('Failed to reset WhatsApp session:', error)
-                      showNotification('حدث خطأ أثناء إعادة التهيئة', 'error')
-                    }
-                  }}
+                  onClick={() => setConfirmResetOpen(true)}
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                 >
                   حذف جلسة الربط (QR)
@@ -964,7 +953,7 @@ export default function Settings() {
       {/* WhatsApp Reminder Settings Tab */}
       {activeTab === 'whatsapp' && (
         <div className="space-y-6">
-          {/* Debug: Rendering WhatsApp reminders tab */}
+          
           <div className="bg-card rounded-lg shadow border border-border">
             <div className="p-6 border-b border-border">
               <h3 className="text-lg font-medium text-foreground">إعدادات تذكير واتساب</h3>
@@ -992,25 +981,7 @@ export default function Settings() {
                 />
               </div>
 
-              {/* Hours Before Input */}
-              <div className="space-y-2">
-                <label htmlFor="hoursBefore" className="text-sm font-medium text-foreground">
-                  عدد الساعات قبل الموعد
-                </label>
-                <input
-                  type="number"
-                  id="hoursBefore"
-                  min="0"
-                  max="168"
-                  step="0.01"
-                  value={hoursBefore}
-                  onChange={(e) => setHoursBefore(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                <p className="text-xs text-muted-foreground">
-                  عدد الساعات لإرسال التذكير قبل الموعد (0 - 168 ساعة، يدعم الكسور مثل 0.01)
-                </p>
-              </div>
+              
 
               {/* Minutes Before Input */}
               <div className="space-y-2">
@@ -1026,9 +997,18 @@ export default function Settings() {
                   onChange={(e) => setMinutesBefore(Number(e.target.value))}
                   className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                 />
-                <p className="text-xs text-muted-foreground">
-                  عدد الدقائق لإرسال التذكير قبل الموعد (يمكن استخدامه بدلاً من الساعات)
-                </p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {[15, 30, 60, 120, 180].map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setMinutesBefore(m)}
+                      className="px-2 py-1 text-xs border border-input rounded-md hover:bg-accent"
+                    >
+                      {m} دقيقة
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Allow Custom Message Toggle */}
@@ -1102,7 +1082,7 @@ export default function Settings() {
                 </button>
               </div>
 
-              {/* WhatsApp Connection Management */}
+              {/* WhatsApp Connection Management (simplified) */}
               <div className="bg-card rounded-lg shadow border border-border mt-6">
                 <div className="p-6 border-b border-border">
                   <h3 className="text-lg font-medium text-foreground">إدارة اتصال واتساب</h3>
@@ -1127,8 +1107,8 @@ export default function Settings() {
                         onClick={async () => {
                           console.log('🔗 QR button clicked in WhatsApp reminders tab')
                           try {
-                        setQrData('')
-                        setShowQRModal(true)
+                            setQrData('')
+                            setShowQRModal(true)
                         console.log('📱 QR modal opened, checking existing QR...')
                         // First try to reuse any existing QR
                         const st = await window.electronAPI?.whatsappReminders?.getStatus?.()
@@ -1136,8 +1116,8 @@ export default function Settings() {
                           setQrData(st.qr)
                         } else {
                           // Request a new QR only if none exists
-                          const result = await window.electronAPI?.whatsappReminders?.resetSession?.()
-                          console.log('🔄 Reset session result:', result)
+                            const result = await window.electronAPI?.whatsappReminders?.resetSession?.()
+                            console.log('🔄 Reset session result:', result)
                         }
                             showNotification('تم طلب رمز QR جديد. امسح الرمز على هاتفك.', 'info')
                           } catch (error) {
@@ -1160,42 +1140,17 @@ export default function Settings() {
                       <p className="text-xs text-muted-foreground mt-1">حذف الجلسة الحالية لإظهار رمز QR من جديد وإعادة الربط.</p>
                     </div>
                     <button
-                      onClick={async () => {
-                        const confirmed = window.confirm('سيتم حذف جلسة واتساب الحالية. هل تريد المتابعة؟')
-                        if (!confirmed) return
-                        try {
-                          const res = await window.electronAPI?.whatsappReminders?.resetSession?.()
-                          if (res?.success) {
-                            showNotification('تمت إعادة تهيئة جلسة واتساب بنجاح. قد تحتاج لإعادة ربط الحساب.', 'success')
-                          } else {
-                            showNotification(res?.error || 'فشل في إعادة تهيئة الجلسة', 'error')
-                          }
-                        } catch (error) {
-                          console.error('Failed to reset WhatsApp session:', error)
-                          showNotification('حدث خطأ أثناء إعادة التهيئة', 'error')
-                        }
-                      }}
+                      onClick={() => setConfirmDeleteQROpen(true)}
                       className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                     >
                       حذف جلسة الربط (QR)
                     </button>
                   </div>
+
+             
                 </div>
               </div>
 
-              {/* Warning about WhatsApp compatibility */}
-              <div className="p-4 border border-yellow-200 dark:border-yellow-800 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 mt-6">
-                <div className="flex items-start space-x-3 space-x-reverse">
-                  <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">ملاحظة هامة</h4>
-                    <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
-                      نظام تذكيرات واتساب يعتمد على تقنية WhatsApp Web. قد تواجه بعض المشاكل في الاتصال أو استقرار الخدمة في بعض الأحيان.
-                      إذا واجهت مشكلة، حاول إعادة ربط حسابك أو إعادة تشغيل التطبيق.
-                    </p>
-                  </div>
-                </div>
-              </div>
 
             </div>
           </div>
@@ -1253,6 +1208,89 @@ export default function Settings() {
           </div>
         </div>
       )}
+
+      {/* Confirm Reset WhatsApp Session */}
+      <AlertDialog open={confirmResetOpen} onOpenChange={setConfirmResetOpen}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="w-5 h-5 text-destructive" />
+              تأكيد حذف جلسة واتساب
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              هل أنت متأكد من حذف جلسة الربط الحالية؟ سيتم عرض رمز QR من جديد لإعادة الربط.
+              <br />
+              <strong className="text-destructive">تحذير: لا يمكن التراجع عن هذا الإجراء!</strong>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row-reverse">
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90"
+              onClick={async () => {
+                try {
+                  const res = await window.electronAPI?.whatsappReminders?.resetSession?.()
+                  if (res?.success) {
+                    showNotification('تم حذف الجلسة بنجاح. سيظهر رمز QR لإعادة الربط.', 'success')
+                  } else {
+                    showNotification(res?.error || 'فشل في حذف الجلسة', 'error')
+                  }
+                } catch (error) {
+                  showNotification('حدث خطأ أثناء حذف الجلسة', 'error')
+                }
+              }}
+            >
+              <Trash2 className="w-4 h-4 ml-2" />
+              تأكيد الحذف
+            </AlertDialogAction>
+            <AlertDialogCancel>
+              إلغاء
+            </AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Confirm Delete WhatsApp QR Session */}
+      <AlertDialog open={confirmDeleteQROpen} onOpenChange={setConfirmDeleteQROpen}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="w-5 h-5 text-destructive" />
+              تأكيد حذف جلسة واتساب
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              هل أنت متأكد من حذف جلسة الربط الحالية؟ سيتم عرض رمز QR من جديد لإعادة الربط.
+              <br />
+              <strong className="text-destructive">تحذير: لا يمكن التراجع عن هذا الإجراء!</strong>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row-reverse">
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90"
+              onClick={async () => {
+                try {
+                  const res = await window.electronAPI?.whatsappReminders?.resetSession?.()
+                  if (res?.success) {
+                    showNotification('تمت إعادة تهيئة جلسة واتساب بنجاح. قد تحتاج لإعادة ربط الحساب.', 'success')
+                  } else {
+                    showNotification(res?.error || 'فشل في إعادة تهيئة الجلسة', 'error')
+                  }
+                } catch (error) {
+                  console.error('Failed to reset WhatsApp session:', error)
+                  showNotification('حدث خطأ أثناء إعادة التهيئة', 'error')
+                } finally {
+                  setConfirmDeleteQROpen(false)
+                }
+              }}
+            >
+              <Trash2 className="w-4 h-4 ml-2" />
+              تأكيد الحذف
+            </AlertDialogAction>
+            <AlertDialogCancel>
+              إلغاء
+            </AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Security Settings Tab */}
       {activeTab === 'security' && (
@@ -1321,8 +1359,9 @@ export default function Settings() {
                       type="tel"
                       id="clinic_phone"
                       name="clinic_phone"
+                      placeholder="96395 XXX XXXX"
+
                       defaultValue={settings?.clinic_phone || ''}
-                      placeholder="+963 95 966 9628"
                       className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>

@@ -1,4 +1,5 @@
 import { Client, LocalAuth } from 'whatsapp-web.js';
+import * as os from 'os';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const qrcode = require('qrcode-terminal');
 import { app, BrowserWindow } from 'electron';
@@ -8,6 +9,7 @@ import * as path from 'path';
 let client: Client;
 let lastQr: string | null = null;
 let isReady = false;
+let lastReadyAt: number | null = null;
 
 const sessionPath = app.getPath('userData') + '/whatsapp-session';
 
@@ -48,6 +50,7 @@ export async function initializeClient(): Promise<void> {
   client.on('ready', () => {
     console.log('WhatsApp client is ready!');
     isReady = true;
+    lastReadyAt = Date.now();
   });
 
   client.on('auth_failure', (msg: string) => {
@@ -122,6 +125,17 @@ export function getWhatsAppStatus() {
   return {
     isReady,
     hasQr: !!lastQr,
-    qr: lastQr || undefined
+    qr: lastQr || undefined,
+    device: {
+      hostname: os.hostname(),
+      platform: os.platform(),
+      arch: os.arch(),
+    },
+    account: {
+      wid: (client as any)?.info?.wid?._serialized || (client as any)?.info?.wid?.user || undefined,
+      pushname: (client as any)?.info?.pushname || undefined,
+      platform: (client as any)?.info?.platform || undefined,
+    },
+    lastReadyAt
   };
 }

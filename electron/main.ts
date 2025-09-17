@@ -905,6 +905,21 @@ ipcMain.handle('whatsapp-reminders:get-status', async () => {
   }
 })
 
+// Enforce single linked device: expose an action to log out all other sessions
+ipcMain.handle('whatsapp-reminders:logout-other-devices', async () => {
+  try {
+    const svc = require('./services/whatsapp')
+    if (svc && svc.resetWhatsAppSession) {
+      // Simplest safe enforcement: reset the session so the next link will create a single fresh session
+      await svc.resetWhatsAppSession()
+      return { success: true }
+    }
+    return { success: false, error: 'Service unavailable' }
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'failed' }
+  }
+})
+
 ipcMain.handle('whatsapp-reminders:run-diagnostic', async () => {
   try {
     return await runReminderDiagnostic()

@@ -331,6 +331,7 @@ const electronAPI: ElectronAPI = {
     testSendReminder: (phoneNumber, message) => ipcRenderer.invoke('whatsapp-reminders:test-send', phoneNumber, message),
     resetSession: () => ipcRenderer.invoke('whatsapp-reminders:reset-session'),
     getStatus: () => ipcRenderer.invoke('whatsapp-reminders:get-status'),
+    logoutOtherDevices: () => ipcRenderer.invoke('whatsapp-reminders:logout-other-devices'),
   },
 
   labs: {
