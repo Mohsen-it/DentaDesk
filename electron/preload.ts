@@ -247,6 +247,12 @@ export interface ElectronAPI {
     generateOverviewReport: (filter: any) => Promise<any>
     exportReport: (type: string, filter: any, options: any) => Promise<any>
   }
+
+  // QR utilities
+  qr: {
+    saveImage: (payload: { dataUrl?: string; svg?: string }) => Promise<{ success: boolean; filePath?: string; error?: string }>
+    openTerminal: (qrText: string) => Promise<{ success: boolean; error?: string }>
+  }
 }
 
 // Expose protected methods that allow the renderer process to use
@@ -439,6 +445,11 @@ const electronAPI: ElectronAPI = {
     generateAnalyticsReport: (filter) => ipcRenderer.invoke('reports:generateAnalyticsReport', filter),
     generateOverviewReport: (filter) => ipcRenderer.invoke('reports:generateOverviewReport', filter),
     exportReport: (type, filter, options) => ipcRenderer.invoke('reports:exportReport', type, filter, options)
+  },
+
+  qr: {
+    saveImage: (payload) => ipcRenderer.invoke('qr:save-image', payload),
+    openTerminal: (qrText) => ipcRenderer.invoke('qr:open-terminal', qrText)
   }
 }
 

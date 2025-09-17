@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import QRCode from 'qrcode'
 import { useBackupStore } from '@/store/backupStore'
 import { useSettingsStore } from '@/store/settingsStore'
 import { useTheme } from '@/contexts/ThemeContext'
@@ -56,6 +57,8 @@ export default function Settings() {
   const [allowCustomMessage, setAllowCustomMessage] = useState(false)
   const [showQRModal, setShowQRModal] = useState(false)
   const [qrData, setQrData] = useState<string>('')
+  const [qrImageUrl, setQrImageUrl] = useState<string>('')
+  const [qrSvg, setQrSvg] = useState<string>('')
   const messageTextareaRef = useRef<HTMLTextAreaElement | null>(null)
 
   const {
@@ -150,6 +153,51 @@ export default function Settings() {
       if (typeof unsubscribe === 'function') unsubscribe()
     }
   }, [showQRModal])
+
+  // Generate a high-quality QR (SVG preferred) whenever qrData changes
+  useEffect(() => {
+    let isCancelled = false
+    const generate = async () => {
+      if (!qrData) {
+        setQrImageUrl('')
+        setQrSvg('')
+        return
+      }
+      try {
+        // Prefer SVG for perfect sharpness (no resampling)
+        const svg = await QRCode.toString(qrData, {
+          type: 'svg',
+          errorCorrectionLevel: 'M',
+          margin: 2,
+          color: {
+            dark: '#000000',
+            light: '#e5e7eb' // light gray like terminal background
+          },
+        })
+        if (!isCancelled) setQrSvg(svg)
+
+        // Also prepare a PNG fallback of exact 512px (no CSS scaling)
+        const url = await QRCode.toDataURL(qrData, {
+          errorCorrectionLevel: 'M',
+          margin: 2,
+          width: 512,
+          color: {
+            dark: '#000000',
+            light: '#e5e7eb'
+          }
+        })
+        if (!isCancelled) setQrImageUrl(url)
+      } catch (e) {
+        console.warn('Failed to generate local QR image:', e)
+        if (!isCancelled) {
+          setQrImageUrl('')
+          setQrSvg('')
+        }
+      }
+    }
+    generate()
+    return () => { isCancelled = true }
+  }, [qrData])
 
   // Handle keyboard events for modal
   useEffect(() => {
@@ -821,9 +869,11 @@ export default function Settings() {
                       // Try to get current status first
                       const status = await window.electronAPI?.whatsappReminders?.getStatus?.()
                       if (status?.qr) {
+                        // Use the latest QR already held by the main process and DO NOT reset
                         setQrData(status.qr)
+                        return
                       }
-                      // Ensure client emits QR; resetting session guarantees QR if not authenticated
+                      // If no QR available, request a new one
                       await window.electronAPI?.whatsappReminders?.resetSession?.()
                     } catch (error) {
                       console.error('Failed to start QR flow:', error)
@@ -1077,12 +1127,18 @@ export default function Settings() {
                         onClick={async () => {
                           console.log('🔗 QR button clicked in WhatsApp reminders tab')
                           try {
-                            setQrData('')
-                            setShowQRModal(true)
-                            console.log('📱 QR modal opened, resetting session...')
-                            // Reset session to trigger QR generation
-                            const result = await window.electronAPI?.whatsappReminders?.resetSession?.()
-                            console.log('🔄 Reset session result:', result)
+                        setQrData('')
+                        setShowQRModal(true)
+                        console.log('📱 QR modal opened, checking existing QR...')
+                        // First try to reuse any existing QR
+                        const st = await window.electronAPI?.whatsappReminders?.getStatus?.()
+                        if (st?.qr) {
+                          setQrData(st.qr)
+                        } else {
+                          // Request a new QR only if none exists
+                          const result = await window.electronAPI?.whatsappReminders?.resetSession?.()
+                          console.log('🔄 Reset session result:', result)
+                        }
                             showNotification('تم طلب رمز QR جديد. امسح الرمز على هاتفك.', 'info')
                           } catch (error) {
                             console.error('❌ Failed to start QR flow:', error)
@@ -1687,23 +1743,45 @@ export default function Settings() {
       {/* WhatsApp QR Modal */}
       {showQRModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowQRModal(false)} />
-          <div className="relative bg-card border border-border rounded-lg shadow-2xl max-w-md w-full mx-4" dir="rtl">
-            <div className="p-6 space-y-4">
-              <h3 className="text-lg font-semibold text-foreground">ربط واتساب عبر رمز QR</h3>
-              <p className="text-sm text-muted-foreground">افتح تطبيق واتساب على هاتفك، ثم: الإعدادات &gt; الأجهزة المرتبطة &gt; ربط جهاز.</p>
-              <div className="flex items-center justify-center p-4 bg-background border border-border rounded-lg min-h-[220px]">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowQRModal(false)} />
+          <div className="relative bg-card/95 border border-border rounded-2xl shadow-2xl max-w-2xl w-full mx-4" dir="rtl">
+            <div className="p-6 sm:p-8 space-y-5">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="text-xl font-semibold text-foreground">ربط واتساب عبر رمز QR</h3>
+                  <p className="text-sm text-muted-foreground mt-1">افتح واتساب على هاتفك → الإعدادات → الأجهزة المرتبطة → ربط جهاز.</p>
+                </div>
+                <button onClick={() => setShowQRModal(false)} className="px-2 py-1 text-sm text-muted-foreground hover:text-foreground">✕</button>
+              </div>
+              <div className="flex items-center justify-center p-4 bg-white border border-border rounded-xl min-h-[512px]">
                 {qrData ? (
-                  (() => {
-                    console.log('🖼️ Displaying QR with data:', qrData.substring(0, 30) + '...')
-                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrData)}`
-                    console.log('🔗 QR URL:', qrUrl)
-                    return <img alt="WhatsApp QR" src={qrUrl} />
-                  })()
+                  qrSvg ? (
+                    <div
+                      aria-label="WhatsApp QR"
+                      style={{ width: 512, height: 512, lineHeight: 0, shapeRendering: 'crispEdges' as any }}
+                      className="block rounded-md shadow-xl select-none"
+                      dangerouslySetInnerHTML={{ __html: qrSvg }}
+                    />
+                  ) : qrImageUrl ? (
+                    <img
+                      alt="WhatsApp QR"
+                      src={qrImageUrl}
+                      width={512}
+                      height={512}
+                      style={{ imageRendering: 'pixelated' as any }}
+                      className="block w-[512px] h-[512px] rounded-md shadow-xl select-none"
+                    />
+                  ) : (
+                    <div className="text-sm text-muted-foreground">جاري انتظار رمز QR...</div>
+                  )
                 ) : (
                   <div className="text-sm text-muted-foreground">جاري انتظار رمز QR...</div>
                 )}
               </div>
+              <ul className="text-xs text-muted-foreground list-disc pr-5 space-y-1">
+                <li>إذا لم يتعرف واتساب على الرمز، اضبط سطوع الشاشة وتجنب الانعكاسات.</li>
+                <li>إن لم يظهر الرمز خلال ثوانٍ، اضغط إعادة توليد.</li>
+              </ul>
               <div className="flex justify-end gap-2">
                 <button onClick={() => setShowQRModal(false)} className="px-4 py-2 border border-input rounded-lg">إغلاق</button>
                 <button
@@ -1715,7 +1793,7 @@ export default function Settings() {
                       await window.electronAPI?.whatsappReminders?.resetSession?.()
                     } catch {}
                   }}
-                  className="px-4 py-2 bg-primary text-white rounded-lg"
+                  className="px-4 py-2 bg-primary text-white rounded-lg shadow-sm hover:bg-primary/90"
                 >
                   إعادة توليد QR
                 </button>

@@ -380,6 +380,68 @@ ipcMain.handle('backup:delete', async (_, backupName) => {
   return await backupService.deleteBackup(backupName)
 })
 
+// QR utilities: save image to temp and open
+ipcMain.handle('qr:save-image', async (_ , payload: { dataUrl?: string, svg?: string }) => {
+  try {
+    const fs = require('fs')
+    const path = require('path')
+    const { shell } = require('electron')
+
+    const tempDir = app.getPath('temp')
+    const stamp = Date.now()
+
+    let filePath: string
+    if (payload?.svg) {
+      filePath = path.join(tempDir, `whatsapp-qr-${stamp}.svg`)
+      fs.writeFileSync(filePath, payload.svg, 'utf8')
+    } else if (payload?.dataUrl) {
+      const base64 = String(payload.dataUrl).replace(/^data:image\/png;base64,/, '')
+      filePath = path.join(tempDir, `whatsapp-qr-${stamp}.png`)
+      fs.writeFileSync(filePath, base64, 'base64')
+    } else {
+      throw new Error('No image data provided')
+    }
+
+    await shell.openPath(filePath)
+    return { success: true, filePath }
+  } catch (error) {
+    console.error('qr:save-image failed:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'failed' }
+  }
+})
+
+// QR utilities: open a small terminal-like window with ASCII QR
+ipcMain.handle('qr:open-terminal', async (_ , qrText: string) => {
+  try {
+    const qrcodeTerminal = require('qrcode-terminal')
+    const ascii = qrcodeTerminal.generate(qrText, { small: false, return: 'string' })
+
+    const win = new BrowserWindow({
+      width: 720,
+      height: 720,
+      resizable: false,
+      minimizable: false,
+      maximizable: false,
+      title: 'WhatsApp QR - Terminal View',
+      backgroundColor: '#000000',
+      webPreferences: { contextIsolation: true }
+    })
+
+    const html = `<!DOCTYPE html>
+    <html><head><meta charset="utf-8"><title>QR</title>
+    <style>
+      html,body{margin:0;height:100%;background:#000;color:#0f0}
+      pre{white-space:pre;line-height:1;font-family:Consolas, 'Courier New', monospace;font-size:10px;margin:16px}
+    </style></head>
+    <body><pre>${ascii.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre></body></html>`
+    win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html))
+    return { success: true }
+  } catch (error) {
+    console.error('qr:open-terminal failed:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'failed' }
+  }
+})
+
 // File Dialog Handlers
 ipcMain.handle('dialog:showOpenDialog', async (_, options) => {
   const result = await dialog.showOpenDialog(mainWindow!, options)

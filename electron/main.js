@@ -1551,6 +1551,72 @@ ipcMain.handle('dialog:showSaveDialog', async (_, options) => {
   return result
 })
 
+// QR utilities: save image to a temp file and open it
+ipcMain.handle('qr:save-image', async (_event, payload) => {
+  try {
+    const fs = require('fs')
+    const path = require('path')
+    const tempDir = app.getPath('temp')
+    const stamp = Date.now()
+    let filePath
+    if (payload && payload.svg) {
+      filePath = path.join(tempDir, `whatsapp-qr-${stamp}.svg`)
+      fs.writeFileSync(filePath, payload.svg, 'utf8')
+    } else if (payload && payload.dataUrl) {
+      const base64 = String(payload.dataUrl).replace(/^data:image\/png;base64,/, '')
+      filePath = path.join(tempDir, `whatsapp-qr-${stamp}.png`)
+      fs.writeFileSync(filePath, base64, 'base64')
+    } else {
+      throw new Error('No image data provided')
+    }
+    await shell.openPath(filePath)
+    return { success: true, filePath }
+  } catch (error) {
+    console.error('qr:save-image failed:', error)
+    return { success: false, error: error.message || 'failed' }
+  }
+})
+
+// QR utilities: open a small window to display QR (SVG/PNG or ASCII fallback)
+ipcMain.handle('qr:open-terminal', async (_event, payload) => {
+  try {
+    const win = new BrowserWindow({
+      width: 720,
+      height: 720,
+      resizable: false,
+      minimizable: false,
+      maximizable: false,
+      title: 'WhatsApp QR - Terminal View',
+      backgroundColor: '#000000',
+      webPreferences: { contextIsolation: true }
+    })
+    let html
+    if (payload && payload.svg) {
+      // Embed SVG directly with terminal-like light gray background
+      const svg = String(payload.svg)
+      html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>QR</title><style>html,body{margin:0;height:100%;background:#e5e7eb;display:flex;align-items:center;justify-content:center}</style></head><body>${svg}</body></html>`
+    } else if (payload && payload.dataUrl) {
+      const src = String(payload.dataUrl)
+      html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>QR</title><style>html,body{margin:0;height:100%;background:#e5e7eb;display:flex;align-items:center;justify-content:center}</style></head><body><img src="${src}" width="640" height="640" /></body></html>`
+    } else {
+      // Fallback to ASCII
+      const qrcodeTerminal = require('qrcode-terminal')
+      let ascii = ''
+      qrcodeTerminal.generate(String(payload || ''), { small: false }, (q) => {
+        ascii = q || ''
+      })
+      ascii = ascii.replace(/\u001b\[[0-9;]*m/g, '')
+      const safe = (ascii || 'No QR content').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>QR</title><style>html,body{margin:0;height:100%;background:#000;color:#0f0} pre{white-space:pre;line-height:1;font-family:Consolas,'Courier New',monospace;font-size:10px;margin:16px}</style></head><body><pre>${safe}</pre></body></html>`
+    }
+    win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html))
+    return { success: true }
+  } catch (error) {
+    console.error('qr:open-terminal failed:', error)
+    return { success: false, error: error.message || 'failed' }
+  }
+})
+
 // System IPC Handlers
 ipcMain.handle('system:openExternal', async (_, url) => {
   try {

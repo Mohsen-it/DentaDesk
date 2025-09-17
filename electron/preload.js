@@ -298,6 +298,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     exportReport: (type, filter, options) => ipcRenderer.invoke('reports:exportReport', type, filter, options)
   },
 
+  // QR utilities
+  qr: {
+    saveImage: (payload) => ipcRenderer.invoke('qr:save-image', payload),
+    openTerminal: (qrText) => ipcRenderer.invoke('qr:open-terminal', qrText)
+  },
+
   // Smart Alerts operations
   smartAlerts: {
     getAll: () => ipcRenderer.invoke('db:smartAlerts:getAll'),
