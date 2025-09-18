@@ -232,7 +232,7 @@ export const useGlobalStore = create<GlobalStore>()(
           const currentAlert = get().alerts.find(alert => alert.id === alertId)
           if (!currentAlert) {
             console.warn('⚠️ Alert not found in store:', alertId)
-            return
+            throw new Error(`Alert with ID ${alertId} not found`)
           }
 
           console.log('📋 Current alert state:', {
@@ -245,7 +245,11 @@ export const useGlobalStore = create<GlobalStore>()(
           await SmartAlertsService.updateAlert(alertId, { isRead: true })
           console.log('✅ SmartAlertsService.updateAlert completed')
 
-          // التحديث سيتم تلقائياً عبر نظام الأحداث
+          // Force immediate reload to ensure UI updates
+          console.log('🔄 Reloading alerts after mark as read...')
+          await get().loadAlerts()
+          console.log('✅ Alerts reloaded after marking as read')
+
         } catch (error) {
           console.error('❌ Mark alert as read error:', error)
           throw error

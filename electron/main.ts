@@ -50,7 +50,24 @@ function createWindow(): void {
   })
 }
 
-app.whenReady().then(async () => {
+// Enforce single instance to avoid double-open behavior
+const gotTheLock = app.requestSingleInstanceLock()
+
+if (!gotTheLock) {
+  app.quit()
+} else {
+  app.on('second-instance', (_event, _argv, _workingDirectory) => {
+    // Someone tried to run a second instance, we should focus our window.
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.show()
+      mainWindow.focus()
+    } else {
+      createWindow()
+    }
+  })
+
+  app.whenReady().then(async () => {
   try {
     // Check if migration is needed and perform it
     const migrationService = new DataMigrationService()
@@ -122,7 +139,8 @@ app.whenReady().then(async () => {
   } catch (e) {
     console.error('Failed to start WhatsApp reminder scheduler:', e)
   }
-})
+  })
+}
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

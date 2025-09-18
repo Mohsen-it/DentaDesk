@@ -12,11 +12,12 @@
     "electron": "electron .",
     "electron:build": "npm run build && electron .",
     "rebuild": "npx @electron/rebuild -f -w",
-    "postinstall": "electron-builder install-app-deps",
+    "postinstall": "electron-builder install-app-deps && npx puppeteer browsers install chrome",
     "test": "echo \"No tests specified\"",
     "install-deps": "npm install vite @vitejs/plugin-react react react-dom typescript",
-    "dist": "npm run build && electron-builder",
-    "dist:win": "npm run build && electron-builder --win",
+    "install-chrome": "node scripts/install-chrome.js",
+    "dist": "npm run install-chrome && npm run build && electron-builder",
+    "dist:win": "npm run install-chrome && npm run build && electron-builder --win",
     "dist:mac": "npm run build && electron-builder --mac",
     "dist:linux": "npm run build && electron-builder --linux"
   },
@@ -58,6 +59,7 @@
     "node-machine-id": "^1.1.12",
     "pdfkit": "^0.17.1",
     "pdfmake": "^0.2.20",
+    "puppeteer-core": "^24.22.0",
     "qrcode": "^1.5.4",
     "qrcode-terminal": "^0.12.0",
     "react": "^18.2.0",
@@ -116,6 +118,13 @@
       {
         "from": "src/database",
         "to": "database"
+      },
+      {
+        "from": "node_modules/puppeteer-core/.local-chromium",
+        "to": "chrome-win",
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "win": {

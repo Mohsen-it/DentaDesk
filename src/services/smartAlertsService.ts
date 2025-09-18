@@ -348,7 +348,7 @@ export class SmartAlertsService {
   /**
    * توليد تنبيهات المواعيد
    */
-  private static async generateAppointmentAlerts(): Promise<SmartAlert[]> {
+   private static async generateAppointmentAlerts(): Promise<SmartAlert[]> {
     const alerts: SmartAlert[] = []
 
     try {
@@ -453,8 +453,8 @@ export class SmartAlertsService {
           })
         }
 
-        // تنبيه للمواعيد المؤكدة التي تحتاج تذكير (2-6 ساعات قبل الموعد)
-        if ((appointment.status === 'confirmed' || appointment.status === 'scheduled') && this.isSameDay(appointmentDate, today)) {
+        // تنبيه للمواعيد المجدولة التي تحتاج تذكير (2-6 ساعات قبل الموعد)
+        if (appointment.status === 'scheduled' && this.isSameDay(appointmentDate, today)) {
           const appointmentTime = new Date(appointment.start_time)
           const currentTime = new Date()
           const hoursUntilAppointment = (appointmentTime.getTime() - currentTime.getTime()) / (1000 * 60 * 60)

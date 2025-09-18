@@ -50,12 +50,44 @@ async function initializeClient() {
   }
   isInitializing = true
 
+  // تحديد مسار Chrome للتطبيق المصدر
+  let executablePath = null
+  if (process.env.NODE_ENV === 'production' || !process.env.IS_DEV) {
+    // في التطبيق المصدر، نحتاج للبحث عن Chrome في المسارات المحتملة
+    const possiblePaths = [
+      path.join(process.resourcesPath, 'chrome-win', 'chrome.exe'),
+      path.join(process.resourcesPath, 'chrome', 'chrome.exe'),
+      path.join(__dirname, '..', '..', 'chrome-win', 'chrome.exe'),
+      path.join(__dirname, '..', '..', 'chrome', 'chrome.exe'),
+      'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Users\\' + require('os').userInfo().username + '\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe'
+    ]
+    
+    for (const chromePath of possiblePaths) {
+      try {
+        if (fs.existsSync(chromePath)) {
+          executablePath = chromePath
+          console.log('✅ تم العثور على Chrome في:', chromePath)
+          break
+        }
+      } catch (err) {
+        // تجاهل الأخطاء والاستمرار
+      }
+    }
+    
+    if (!executablePath) {
+      console.warn('⚠️ لم يتم العثور على Chrome، سيتم استخدام المتصفح الافتراضي')
+    }
+  }
+
   client = new Client({
     authStrategy: new LocalAuth({
       dataPath: sessionPath,
     }),
     puppeteer: {
       headless: true,
+      executablePath: executablePath,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -63,6 +95,24 @@ async function initializeClient() {
         '--disable-dev-shm-usage',
         '--no-first-run',
         '--no-zygote',
+        '--disable-web-security',
+        '--disable-features=VizDisplayCompositor',
+        '--disable-extensions',
+        '--disable-plugins',
+        '--disable-default-apps',
+        '--disable-sync',
+        '--disable-translate',
+        '--hide-scrollbars',
+        '--mute-audio',
+        '--no-default-browser-check',
+        '--no-pings',
+        '--password-store=basic',
+        '--use-mock-keychain',
+        '--disable-background-timer-throttling',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-renderer-backgrounding',
+        '--disable-features=TranslateUI',
+        '--disable-ipc-flooding-protection',
       ],
     },
     takeoverOnConflict: true,
@@ -122,27 +172,21 @@ async function initializeClient() {
 
   client.on('auth_failure', (msg) => {
     console.error('Authentication failed:', msg)
-  })
-
-  client.on('disconnected', (reason) => {
-    console.log('Client was disconnected:', reason)
-    isReady = false
-
-    // محاولة إعادة الاتصال تلقائياً في حالة انقطاع الاتصال
-    if (reason !== 'LOGOUT' && !isResetting) {
-      console.log('Attempting automatic reconnection...')
-      setTimeout(() => {
-        initializeClient().catch(err => {
-          console.error('Failed to reconnect automatically:', err.message)
-        })
-      }, 5000)
-    }
-  })
-
-  client.on('auth_failure', (msg) => {
-    console.error('Authentication failed:', msg)
     isReady = false
     lastQr = null
+
+    // إرسال إشعار فشل المصادقة للواجهة
+    try {
+      const windows = BrowserWindow.getAllWindows()
+      for (const win of windows) {
+        win.webContents.send('whatsapp:auth_failure', {
+          message: 'فشل في المصادقة: ' + msg,
+          timestamp: Date.now()
+        })
+      }
+    } catch (err) {
+      console.warn('Failed to send auth failure notification:', err.message)
+    }
 
     // في حالة فشل المصادقة، قد نحتاج لإعادة توليد QR
     if (!isResetting) {
@@ -192,7 +236,37 @@ async function initializeClient() {
 
         if (!isRetryableError || attempts >= maxInitAttempts) {
           console.error('Non-retryable error or max attempts reached:', msg)
+          
+          // إرسال إشعار الخطأ للواجهة
+          try {
+            const windows = BrowserWindow.getAllWindows()
+            for (const win of windows) {
+              win.webContents.send('whatsapp:error', {
+                message: 'فشل في تهيئة واتساب: ' + msg,
+                timestamp: Date.now(),
+                retryable: false
+              })
+            }
+          } catch (err) {
+            console.warn('Failed to send error notification:', err.message)
+          }
+          
           throw err
+        }
+
+        // إرسال إشعار إعادة المحاولة للواجهة
+        try {
+          const windows = BrowserWindow.getAllWindows()
+          for (const win of windows) {
+            win.webContents.send('whatsapp:retrying', {
+              message: 'إعادة محاولة الاتصال... (' + (attempts + 1) + '/' + maxInitAttempts + ')',
+              timestamp: Date.now(),
+              attempt: attempts + 1,
+              maxAttempts: maxInitAttempts
+            })
+          }
+        } catch (err) {
+          console.warn('Failed to send retry notification:', err.message)
         }
 
         // زيادة وقت الانتظار تدريجياً

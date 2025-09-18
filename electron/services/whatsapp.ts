@@ -14,12 +14,44 @@ let lastReadyAt: number | null = null;
 const sessionPath = app.getPath('userData') + '/whatsapp-session';
 
 export async function initializeClient(): Promise<void> {
+  // تحديد مسار Chrome للتطبيق المصدر
+  let executablePath: string | undefined = undefined
+  if (process.env.NODE_ENV === 'production' || !process.env.IS_DEV) {
+    // في التطبيق المصدر، نحتاج للبحث عن Chrome في المسارات المحتملة
+    const possiblePaths = [
+      path.join(process.resourcesPath, 'chrome-win', 'chrome.exe'),
+      path.join(process.resourcesPath, 'chrome', 'chrome.exe'),
+      path.join(__dirname, '..', '..', 'chrome-win', 'chrome.exe'),
+      path.join(__dirname, '..', '..', 'chrome', 'chrome.exe'),
+      'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Users\\' + os.userInfo().username + '\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe'
+    ]
+    
+    for (const chromePath of possiblePaths) {
+      try {
+        if (fs.existsSync(chromePath)) {
+          executablePath = chromePath
+          console.log('✅ تم العثور على Chrome في:', chromePath)
+          break
+        }
+      } catch (err) {
+        // تجاهل الأخطاء والاستمرار
+      }
+    }
+    
+    if (!executablePath) {
+      console.warn('⚠️ لم يتم العثور على Chrome، سيتم استخدام المتصفح الافتراضي')
+    }
+  }
+
   client = new Client({
     authStrategy: new LocalAuth({
       dataPath: sessionPath,
     }),
     puppeteer: {
       headless: true,
+      executablePath: executablePath,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -27,7 +59,24 @@ export async function initializeClient(): Promise<void> {
         '--disable-accelerated-2d-canvas',
         '--no-first-run',
         '--no-zygote',
-        '--single-process', // <- this one doesn't work in Windows
+        '--disable-web-security',
+        '--disable-features=VizDisplayCompositor',
+        '--disable-extensions',
+        '--disable-plugins',
+        '--disable-default-apps',
+        '--disable-sync',
+        '--disable-translate',
+        '--hide-scrollbars',
+        '--mute-audio',
+        '--no-default-browser-check',
+        '--no-pings',
+        '--password-store=basic',
+        '--use-mock-keychain',
+        '--disable-background-timer-throttling',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-renderer-backgrounding',
+        '--disable-features=TranslateUI',
+        '--disable-ipc-flooding-protection',
         '--disable-gpu'
       ]
     }

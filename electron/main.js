@@ -310,7 +310,21 @@ function createWindow() {
   })
 }
 
-app.whenReady().then(async () => {
+// Enforce single instance to avoid double-open behavior
+const gotTheLock = app.requestSingleInstanceLock()
+
+if (!gotTheLock) {
+  app.quit()
+} else {
+  app.on('second-instance', (_event, _argv, _workingDirectory) => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.show()
+      mainWindow.focus()
+    }
+  })
+
+  app.whenReady().then(async () => {
   console.log('🚀 Electron app is ready, initializing services...')
 
   // Initialize WhatsApp client and start reminder scheduler
@@ -736,7 +750,8 @@ app.whenReady().then(async () => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
-})
+  })
+}
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

@@ -14,7 +14,8 @@ import {
   FileText,
   Package,
   Pill,
-  UserCheck
+  UserCheck,
+  RefreshCw
 } from 'lucide-react'
 import { useGlobalStore } from '@/store/globalStore'
 import { SmartAlertsService } from '@/services/smartAlertsService'
@@ -123,30 +124,63 @@ export default function SmartAlerts({
   const { toast } = useToast()
 
   const [showRead, setShowRead] = useState(showReadAlerts)
+  const [lastUnreadCount, setLastUnreadCount] = useState(0)
+  const [isAnimating, setIsAnimating] = useState(false)
+  const [showUnreadOnly, setShowUnreadOnly] = useState(true)
 
   useEffect(() => {
     // تحميل الإشعارات عند بدء تشغيل المكون
     console.log('🔔 SmartAlerts: Initial load')
     loadAlerts()
 
-    // تحديث دوري أقل تكراراً (كل دقيقة) لضمان التزامن
-    const interval = setInterval(() => {
-      console.log('🔄 SmartAlerts: Periodic refresh (every minute)')
+    // تحديث دوري محسّن: كل 30 ثانية للتنبيهات العادية وكل 10 ثوانٍ للتنبيهات العاجلة
+    const normalInterval = setInterval(() => {
+      console.log('🔄 SmartAlerts: Normal refresh (every 30s)')
       loadAlerts()
-    }, 60000) // دقيقة واحدة
+    }, 30000) // 30 ثانية
+
+    // تحديث سريع للتنبيهات العاجلة
+    const urgentInterval = setInterval(() => {
+      if (unreadAlertsCount > 0) {
+        console.log('🚨 SmartAlerts: Urgent refresh (every 10s)')
+        loadAlerts()
+      }
+    }, 10000) // 10 ثوانٍ عند وجود تنبيهات غير مقروءة
 
     return () => {
-      clearInterval(interval)
+      clearInterval(normalInterval)
+      clearInterval(urgentInterval)
     }
-  }, [loadAlerts])
+  }, [loadAlerts, unreadAlertsCount])
 
   // تحديث showRead عند تغيير showReadAlerts prop
   useEffect(() => {
     setShowRead(showReadAlerts)
   }, [showReadAlerts])
 
+  // كشف التنبيهات الجديدة وإظهار تنبيهات بصرية
+  useEffect(() => {
+    // الكشف عن زيادة في عدد التنبيهات غير المقروءة
+    if (unreadAlertsCount > lastUnreadCount && lastUnreadCount !== 0) {
+      const newAlertsCount = unreadAlertsCount - lastUnreadCount
+
+      // إظهار تنبيه بصري للتنبيهات الجديدة
+      toast({
+        title: "🔔 تنبيهات جديدة",
+        description: `تم إضافة ${newAlertsCount} تنبيه${newAlertsCount > 1 ? '' : ''} جديد${newAlertsCount > 1 ? 'ة' : ''}`,
+        duration: 4000
+      })
+
+      // تشغيل التأثير البصري
+      setIsAnimating(true)
+      setTimeout(() => setIsAnimating(false), 2000)
+    }
+
+    setLastUnreadCount(unreadAlertsCount)
+  }, [unreadAlertsCount, lastUnreadCount, toast])
+
   // Filter and sort alerts
-  const visibleAlerts = alerts
+  const filteredAlerts = alerts
     .filter(alert => !alert.isDismissed)
     .filter(alert => {
       // Hide snoozed alerts
@@ -157,14 +191,24 @@ export default function SmartAlerts({
       return true
     })
     .filter(alert => {
-      // Show read alerts only if showRead is true
+      // Filter based on showRead state and showUnreadOnly state
       if (showRead) {
-        return true // Show all alerts (read and unread)
+        // Show all alerts when showRead is enabled
+        return true
+      } else if (showUnreadOnly) {
+        // Show only unread alerts
+        return !alert.isRead
       } else {
-        return !alert.isRead // Show only unread alerts
+        // Show all alerts when showUnreadOnly is disabled
+        return true
       }
     })
-    .slice(0, maxVisible)
+
+  // Only apply maxVisible limit when showing unread only or when showRead is false
+  // When showUnreadOnly is false (showing all), don't limit the number
+  const visibleAlerts = showUnreadOnly || !showRead
+    ? filteredAlerts.slice(0, maxVisible)
+    : filteredAlerts
 
   // Count read and unread alerts for display
   const readAlertsCount = alerts.filter(alert => alert.isRead && !alert.isDismissed).length
@@ -264,8 +308,10 @@ export default function SmartAlerts({
       await markAlertAsRead(alertId)
       console.log('✅ markAlertAsRead completed successfully')
 
-      // نظام الأحداث سيتولى التحديث تلقائياً
-      console.log('📡 Real-time system will handle the update automatically')
+      // Force a reload of alerts to ensure UI updates immediately
+      console.log('🔄 Reloading alerts to update UI...')
+      await loadAlerts()
+      console.log('✅ Alerts reloaded successfully')
 
       toast({
         title: "✅ تم التحديث",
@@ -303,40 +349,115 @@ export default function SmartAlerts({
   }
 
   return (
-    <div className="space-y-4 md:space-y-5 lg:space-y-6 animate-fade-in" dir="rtl">
-      <Card className={`${compact ? 'shadow-sm' : ''} bg-card border-border hover:shadow-lg dark:hover:shadow-xl transition-all duration-200`}>
+    <div
+      className={`space-y-4 md:space-y-5 lg:space-y-6 animate-fade-in ${isAnimating ? 'animate-pulse' : ''}`}
+      dir="rtl"
+      data-alerts-component
+    >
+      <Card className={`${compact ? 'shadow-sm' : ''} bg-card border-border hover:shadow-lg dark:hover:shadow-xl transition-all duration-200 ${
+        unreadAlertsCount > 0 ? 'ring-2 ring-primary/20 ring-offset-2' : ''
+      } ${isAnimating ? 'shadow-2xl scale-105' : ''}`}>
         {showHeader && (
           <CardHeader className="p-4 md:p-5 lg:p-6 pb-3 md:pb-4">
-            <CardTitle className="text-lg md:text-xl lg:text-2xl flex items-center gap-2 font-tajawal">
-              <Bell className="w-5 h-5 md:w-6 md:h-6" />
-              التنبيهات الذكية
-              {unreadAlertsCount > 0 && (
-                <Badge variant="destructive" className="text-xs px-2 py-1 bg-destructive/10 text-destructive border-destructive/20">
-                  {unreadAlertsCount}
-                </Badge>
-              )}
-            </CardTitle>
-            {/* إحصائيات التنبيهات */}
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <CardTitle className="text-lg md:text-xl lg:text-2xl flex items-center gap-2 font-tajawal">
+                <Bell className={`w-5 h-5 md:w-6 md:h-6 ${unreadAlertsCount > 0 ? 'animate-bounce' : ''}`} />
+                التنبيهات الذكية
+                {unreadAlertsCount > 0 && (
+                  <Badge variant="destructive" className="text-xs px-2 py-1 bg-destructive/10 text-destructive border-destructive/20 animate-pulse">
+                    {unreadAlertsCount}
+                  </Badge>
+                )}
+              </CardTitle>
+              {/* أزرار التحكم */}
+              <div className="flex gap-2">
+                {/* زر التحديث اليدوي */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    console.log('🔄 Manual refresh triggered')
+                    loadAlerts()
+                  }}
+                  className="h-8 px-3"
+                  disabled={isLoadingAlerts}
+                >
+                  <RefreshCw className={`w-4 h-4 ${isLoadingAlerts ? 'animate-spin' : ''}`} />
+                </Button>
+
+                {/* زر عرض المقروء */}
+                {readAlertsCount > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowRead(!showRead)}
+                    className="h-8 px-3 text-xs"
+                  >
+                    {showRead ? 'إخفاء المقروء' : 'عرض المقروء'}
+                  </Button>
+                )}
+
+                {/* زر عرض الكل/غير المقروء فقط */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowUnreadOnly(!showUnreadOnly)}
+                  className="h-8 px-3 text-xs"
+                >
+                  {showUnreadOnly ? 'عرض الكل' : 'غير المقروء فقط'}
+                </Button>
+              </div>
+            </div>
+
+            {/* إحصائيات التنبيهات المحسّنة */}
             <div className="text-xs md:text-sm text-muted-foreground mt-2 md:mt-3 font-tajawal">
-              المجموع: {totalAlertsCount} | غير مقروءة: {unreadAlertsCount} | مقروءة: {readAlertsCount}
+              <div className="flex flex-wrap gap-4">
+                <span>المجموع: <strong>{totalAlertsCount}</strong></span>
+                <span>غير مقروءة: <strong className="text-primary">{unreadAlertsCount}</strong></span>
+                <span>مقروءة: <strong>{readAlertsCount}</strong></span>
+                {alerts.filter(a => a.priority === 'high' && !a.isRead).length > 0 && (
+                  <span className="text-red-500">عاجلة: <strong>{alerts.filter(a => a.priority === 'high' && !a.isRead).length}</strong></span>
+                )}
+              </div>
             </div>
           </CardHeader>
         )}
 
        <CardContent className={`${showHeader ? '' : 'pt-6'} p-4 md:p-5 lg:p-6`}>
+         {/* ملخص سريع للتنبيهات العاجلة */}
+         {visibleAlerts.filter(a => a.priority === 'high' && !a.isRead).length > 0 && (
+           <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg">
+             <div className="flex items-center gap-2">
+               <AlertTriangle className="w-4 h-4 text-red-500" />
+               <span className="text-sm font-medium text-red-700 dark:text-red-300">
+                 {visibleAlerts.filter(a => a.priority === 'high' && !a.isRead).length} تنبيه عاجل يتطلب انتباهك فوراً
+               </span>
+             </div>
+           </div>
+         )}
+
          {visibleAlerts.length === 0 ? (
            <div className="text-center py-6 md:py-8 text-muted-foreground">
              <CheckCircle className="w-8 h-8 md:w-12 md:h-12 mx-auto mb-2 md:mb-4 opacity-50" />
              <p className="text-sm md:text-base font-tajawal">
                {showRead
                  ? (totalAlertsCount === 0 ? 'لا توجد تنبيهات' : 'لا توجد تنبيهات في هذا العرض')
-                 : 'لا توجد تنبيهات غير مقروءة'
+                 : showUnreadOnly
+                   ? 'لا توجد تنبيهات غير مقروءة'
+                   : 'لا توجد تنبيهات'
                }
              </p>
-             {!showRead && readAlertsCount > 0 && (
-               <p className="text-xs md:text-sm mt-1 font-tajawal">
-                 يوجد {readAlertsCount} تنبيه مقروء - اضغط "عرض المقروءة" لرؤيتها
-               </p>
+             {!showRead && showUnreadOnly && readAlertsCount > 0 && (
+               <div className="mt-3">
+                 <Button
+                   variant="outline"
+                   size="sm"
+                   onClick={() => setShowRead(true)}
+                   className="text-xs"
+                 >
+                   عرض التنبيهات المقروءة ({readAlertsCount})
+                 </Button>
+               </div>
              )}
            </div>
          ) : (
