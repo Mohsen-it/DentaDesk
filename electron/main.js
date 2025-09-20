@@ -178,10 +178,7 @@ function createWindow() {
     }
 
     // ✅ فتح DevTools في الإنتاج للتشخيص (يمكن إزالته لاحقاً)
-    if (!isDev) {
-      console.log('🔧 Opening DevTools for production debugging')
-      mainWindow.webContents.openDevTools()
-    }
+  // تم إزالة فتح DevTools في الإنتاج لتحسين الأداء
   })
 
   // ✅ تعطيل اختصارات DevTools في الإنتاج
@@ -245,7 +242,8 @@ function createWindow() {
 
   // ✅ تسجيل أخطاء وحدة التحكم
   mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
-    if (level >= 2) { // تسجيل التحذيرات والأخطاء فقط
+    // تسجيل الأخطاء فقط في الإنتاج
+    if (isDev || level >= 3) { // تسجيل التحذيرات والأخطاء فقط
       console.log(`🖥️ Console [${level}]:`, message)
       if (line && sourceId) {
         console.log(`   at ${sourceId}:${line}`)
@@ -327,11 +325,16 @@ if (!gotTheLock) {
   app.whenReady().then(async () => {
   console.log('🚀 Electron app is ready, initializing services...')
 
-  // Initialize WhatsApp client and start reminder scheduler
+  // Create window first for faster UI startup
+  createWindow()
+
+  // Initialize WhatsApp client and start reminder scheduler (non-blocking)
+  setTimeout(async () => {
   try {
     const { initializeClient, getWhatsAppStatus, sendMessage } = require('./services/whatsapp')
     const cron = require('node-cron');
 
+      console.log('📱 Starting WhatsApp initialization in background...')
     await initializeClient()
 
     // Inlined logic from whatsappReminderScheduler.ts
@@ -341,6 +344,12 @@ if (!gotTheLock) {
     // Helper functions (inlined)
     const getSettings = async () => {
       try {
+        // Check if database service is available
+        if (!databaseService || !databaseService.db) {
+          console.warn('⚠️ Database service not available for settings')
+          return null
+        }
+        
         const settings = await databaseService.getSettings();
         const hours = settings.whatsapp_reminder_hours_before || 3;
         const minutesRaw = settings.whatsapp_reminder_minutes_before;
@@ -391,6 +400,11 @@ if (!gotTheLock) {
 
     const isReminderAlreadySent = async (appointmentId) => {
       try {
+        if (!databaseService || !databaseService.db) {
+          console.warn('⚠️ Database service not available for reminder check')
+          return false
+        }
+        
         const stmt = databaseService.db.prepare(`
           SELECT id FROM whatsapp_reminders
           WHERE appointment_id = ? AND status = 'sent'
@@ -405,6 +419,11 @@ if (!gotTheLock) {
 
     const getPatientPhone = async (patientId) => {
       try {
+        if (!databaseService || !databaseService.db) {
+          console.warn('⚠️ Database service not available for patient phone lookup')
+          return null
+        }
+        
         const stmt = databaseService.db.prepare(`
           SELECT phone FROM patients WHERE id = ?
         `);
@@ -446,6 +465,11 @@ if (!gotTheLock) {
 
     const recordReminderSent = async (appointmentId, patientId) => {
       try {
+        if (!databaseService || !databaseService.db) {
+          console.warn('⚠️ Database service not available for recording reminder')
+          return
+        }
+        
         const stmt = databaseService.db.prepare(`
           INSERT INTO whatsapp_reminders (
             id, appointment_id, patient_id, sent_at, status, created_at, updated_at
@@ -462,30 +486,21 @@ if (!gotTheLock) {
 
     const checkAndSendReminders = async () => {
       try {
-        // Ensure minutes column exists to avoid failures on fresh DBs
-        try {
-          const cols = databaseService.db.prepare('PRAGMA table_info(settings)').all();
-          const hasMinutes = cols && cols.some(c => c.name === 'whatsapp_reminder_minutes_before');
-          if (!hasMinutes) {
-            databaseService.db.prepare('ALTER TABLE settings ADD COLUMN whatsapp_reminder_minutes_before INTEGER DEFAULT 0').run();
-          }
-          const hasCustomEnabled = cols && cols.some(c => c.name === 'whatsapp_reminder_custom_enabled');
-          if (!hasCustomEnabled) {
-            databaseService.db.prepare('ALTER TABLE settings ADD COLUMN whatsapp_reminder_custom_enabled INTEGER DEFAULT 0').run();
-          }
-        } catch (e) {
-          console.error('Error ensuring minutes/custom_enabled columns for scheduler:', e);
+        // Check if database service is available before proceeding
+        if (!databaseService || !databaseService.db) {
+          console.warn('⚠️ Database service not available, skipping reminder check')
+          return
         }
-
+        
+        // These schema checks should only run once on application startup, not every minute.
+        // They have been moved to the app.whenReady() block.
         const settings = await getSettings();
         if (!settings || settings.whatsapp_reminder_enabled !== 1) {
           return;
         }
 
-        console.log('Checking for upcoming appointments to send reminders (inlined from scheduler)...');
-        const minutes = settings.whatsapp_reminder_minutes_before ?? (settings.whatsapp_reminder_hours_before * 60);
-        const upcomingAppointments = await getUpcomingAppointments(minutes);
-        console.log('Eligible appointments count (inlined from scheduler):', upcomingAppointments.length, 'minutesBefore:', minutes);
+        const upcomingAppointments = await getUpcomingAppointments(settings.whatsapp_reminder_minutes_before);
+        console.log('Eligible appointments count (inlined from scheduler):', upcomingAppointments.length, 'minutesBefore:', settings.whatsapp_reminder_minutes_before);
 
         for (const appointment of upcomingAppointments) {
           try {
@@ -542,6 +557,31 @@ if (!gotTheLock) {
   } catch (e) {
     console.error('❌ Failed to initialize WhatsApp services (inlined):', e);
   }
+  }, 2000) // تأخير 2 ثانية لضمان تحميل التطبيق أولاً
+
+  // --- Moved schema checks to run once on startup ---
+  try {
+    // Check if database service is available before schema checks
+    if (databaseService && databaseService.db) {
+    const cols = databaseService.db.prepare('PRAGMA table_info(settings)').all();
+    const hasMinutes = cols && cols.some(c => c.name === 'whatsapp_reminder_minutes_before');
+    if (!hasMinutes) {
+      databaseService.db.prepare('ALTER TABLE settings ADD COLUMN whatsapp_reminder_minutes_before INTEGER DEFAULT 0').run();
+        console.log('✅ Added whatsapp_reminder_minutes_before column');
+    }
+    const hasCustomEnabled = cols && cols.some(c => c.name === 'whatsapp_reminder_custom_enabled');
+    if (!hasCustomEnabled) {
+      databaseService.db.prepare('ALTER TABLE settings ADD COLUMN whatsapp_reminder_custom_enabled INTEGER DEFAULT 0').run();
+        console.log('✅ Added whatsapp_reminder_custom_enabled column');
+    }
+    console.log('✅ WhatsApp reminder settings table schema checked and updated if necessary.');
+    } else {
+      console.warn('⚠️ Database service not available for schema checks');
+    }
+  } catch (e) {
+    console.error('Error ensuring minutes/custom_enabled columns for scheduler on startup:', e);
+  }
+  // --- End of moved schema checks ---
 
   // Optional: log WhatsApp status shortly after startup
   setTimeout(() => {
@@ -686,8 +726,6 @@ if (!gotTheLock) {
     }
   }
 
-  createWindow()
-
   // تحديث العنوان والأيقونة بعد تحميل التطبيق
   setTimeout(async () => {
     try {
@@ -710,7 +748,7 @@ if (!gotTheLock) {
           if (settings.clinic_logo && settings.clinic_logo.trim() !== '') {
             try {
               const logoData = settings.clinic_logo
-              console.log('🔍 محاولة تحديث الأيقونة عند البدء:', logoData.substring(0, 50) + '...')
+              console.log('🔍 محاولة تحديث الأيقونة:', logoData.substring(0, 50) + '...')
 
               // التحقق من نوع البيانات
               if (logoData.startsWith('data:image/')) {
@@ -719,9 +757,10 @@ if (!gotTheLock) {
                 const image = nativeImage.createFromDataURL(logoData)
                 if (!image.isEmpty()) {
                   mainWindow.setIcon(image)
-                  console.log('✅ تم تحديث أيقونة النافذة بنجاح من base64 عند البدء')
+                  mainWindow['__currentLogo__'] = settings.clinic_logo // Store the current logo
+                  console.log('✅ تم تحديث أيقونة النافذة بنجاح من base64')
                 } else {
-                  console.log('❌ فشل في إنشاء الصورة من base64 عند البدء')
+                  console.log('❌ فشل في إنشاء الصورة من base64')
                 }
               } else {
                 // إذا كانت مسار ملف
@@ -731,14 +770,20 @@ if (!gotTheLock) {
 
                 if (fs.existsSync(absolutePath)) {
                   mainWindow.setIcon(absolutePath)
-                  console.log('✅ تم تحديث أيقونة النافذة بنجاح من ملف عند البدء:', absolutePath)
+                  mainWindow['__currentLogo__'] = settings.clinic_logo // Store the current logo
+                  console.log('✅ تم تحديث أيقونة النافذة بنجاح من ملف:', absolutePath)
                 } else {
-                  console.log('❌ الملف غير موجود عند البدء:', absolutePath)
+                  console.log('❌ الملف غير موجود:', absolutePath)
                 }
               }
             } catch (error) {
-              console.log('⚠️ فشل في تحديث أيقونة النافذة عند البدء:', error.message)
+              console.log('⚠️ فشل في تحديث أيقونة النافذة:', error.message)
             }
+          } else if (mainWindow['__currentLogo__'] !== '') {
+            // Clear the icon if no logo is provided and a logo was previously set
+            mainWindow.setIcon(null);
+            mainWindow['__currentLogo__'] = '';
+            console.log('✅ تم مسح أيقونة النافذة بنجاح');
           }
         }
       }
@@ -2908,7 +2953,16 @@ ipcMain.handle('db:dentalTreatmentImages:delete', async (_, id) => {
 // Settings IPC Handlers
 ipcMain.handle('settings:get', async () => {
   try {
-    if (databaseService) {
+    if (!databaseService) {
+      console.error('❌ Database service not available for settings:get')
+      throw new Error('Database service not initialized')
+    }
+    
+    if (!databaseService.db) {
+      console.error('❌ Database connection not available for settings:get')
+      throw new Error('Database connection not available')
+    }
+    
       const settings = await databaseService.getSettings()
 
       // تحديث عنوان النافذة وأيقونة النافذة بناءً على الإعدادات
@@ -2925,8 +2979,8 @@ ipcMain.handle('settings:get', async () => {
 
         mainWindow.setTitle(windowTitle)
 
-        // تحديث أيقونة النافذة إذا كان هناك شعار مخصص
-        if (settings.clinic_logo && settings.clinic_logo.trim() !== '') {
+      // تحديث أيقونة النافذة إذا كان هناك شعار مخصص وصالح
+      if (settings.clinic_logo && settings.clinic_logo.trim() !== '' && settings.clinic_logo !== 'null' && settings.clinic_logo !== 'undefined') {
           try {
             const logoData = settings.clinic_logo
             console.log('🔍 محاولة تحديث الأيقونة:', logoData.substring(0, 50) + '...')
@@ -2934,42 +2988,57 @@ ipcMain.handle('settings:get', async () => {
             // التحقق من نوع البيانات
             if (logoData.startsWith('data:image/')) {
               // إذا كانت البيانات base64 data URL
+            try {
               const { nativeImage } = require('electron')
               const image = nativeImage.createFromDataURL(logoData)
               if (!image.isEmpty()) {
                 mainWindow.setIcon(image)
+                mainWindow['__currentLogo__'] = settings.clinic_logo // Store the current logo
                 console.log('✅ تم تحديث أيقونة النافذة بنجاح من base64')
               } else {
-                console.log('❌ فشل في إنشاء الصورة من base64')
+                console.log('❌ فشل في إنشاء الصورة من base64 - بيانات غير صالحة')
+              }
+            } catch (imageError) {
+              console.log('❌ خطأ في معالجة صورة base64:', imageError.message)
               }
             } else {
               // إذا كانت مسار ملف
+            try {
               const fs = require('fs')
               const path = require('path')
-              const absolutePath = path.isAbsolute(logoData) ? logoData : path.resolve(logoData)
+              
+              // Check if logoData is a valid path before processing
+              if (logoData && logoData.trim() !== '') {
+                const absolutePath = path.isAbsolute(logoData) ? logoData : path.resolve(logoData)
 
-              if (fs.existsSync(absolutePath)) {
-                mainWindow.setIcon(absolutePath)
-                console.log('✅ تم تحديث أيقونة النافذة بنجاح من ملف:', absolutePath)
+                if (fs.existsSync(absolutePath)) {
+                  mainWindow.setIcon(absolutePath)
+                  mainWindow['__currentLogo__'] = settings.clinic_logo // Store the current logo
+                  console.log('✅ تم تحديث أيقونة النافذة بنجاح من ملف:', absolutePath)
+                } else {
+                  console.log('❌ الملف غير موجود:', absolutePath)
+                }
               } else {
-                console.log('❌ الملف غير موجود:', absolutePath)
+                console.log('⚠️ تم تجاهل مسار الشعار الفارغ')
+              }
+            } catch (fileError) {
+              console.log('❌ خطأ في معالجة ملف الصورة:', fileError.message)
               }
             }
           } catch (error) {
             console.log('⚠️ فشل في تحديث أيقونة النافذة:', error.message)
           }
+        } else {
+          // Clear the icon if no logo is provided and a logo was previously set
+          if (mainWindow['__currentLogo__'] && mainWindow['__currentLogo__'] !== '') {
+            mainWindow.setIcon(null);
+            mainWindow['__currentLogo__'] = '';
+            console.log('✅ تم مسح أيقونة النافذة بنجاح');
+          }
         }
       }
 
       return settings
-    } else {
-      return {
-        id: '1',
-        clinic_name: 'عيادة الأسنان',
-        currency: 'USD',
-        language: 'ar'
-      }
-    }
   } catch (error) {
     console.error('Error getting settings:', error)
     throw error
@@ -2996,7 +3065,7 @@ ipcMain.handle('settings:update', async (_, settings) => {
         mainWindow.setTitle(windowTitle)
 
         // تحديث أيقونة النافذة إذا كان هناك شعار مخصص
-        if (updatedSettings.clinic_logo && updatedSettings.clinic_logo.trim() !== '') {
+        if (updatedSettings.clinic_logo && updatedSettings.clinic_logo.trim() !== '' && updatedSettings.clinic_logo !== 'null' && updatedSettings.clinic_logo !== 'undefined') {
           try {
             const logoData = updatedSettings.clinic_logo
             console.log('🔍 محاولة تحديث الأيقونة عند التحديث:', logoData.substring(0, 50) + '...')
@@ -3008,6 +3077,7 @@ ipcMain.handle('settings:update', async (_, settings) => {
               const image = nativeImage.createFromDataURL(logoData)
               if (!image.isEmpty()) {
                 mainWindow.setIcon(image)
+                mainWindow['__currentLogo__'] = settings.clinic_logo // Store the current logo
                 console.log('✅ تم تحديث أيقونة النافذة بنجاح من base64 عند التحديث')
               } else {
                 console.log('❌ فشل في إنشاء الصورة من base64 عند التحديث')
@@ -3016,17 +3086,31 @@ ipcMain.handle('settings:update', async (_, settings) => {
               // إذا كانت مسار ملف
               const fs = require('fs')
               const path = require('path')
-              const absolutePath = path.isAbsolute(logoData) ? logoData : path.resolve(logoData)
+              
+              // Check if logoData is a valid path before processing
+              if (logoData && logoData.trim() !== '') {
+                const absolutePath = path.isAbsolute(logoData) ? logoData : path.resolve(logoData)
 
-              if (fs.existsSync(absolutePath)) {
-                mainWindow.setIcon(absolutePath)
-                console.log('✅ تم تحديث أيقونة النافذة بنجاح من ملف عند التحديث:', absolutePath)
+                if (fs.existsSync(absolutePath)) {
+                  mainWindow.setIcon(absolutePath)
+                  mainWindow['__currentLogo__'] = settings.clinic_logo // Store the current logo
+                  console.log('✅ تم تحديث أيقونة النافذة بنجاح من ملف عند التحديث:', absolutePath)
+                } else {
+                  console.log('❌ الملف غير موجود عند التحديث:', absolutePath)
+                }
               } else {
-                console.log('❌ الملف غير موجود عند التحديث:', absolutePath)
+                console.log('⚠️ تم تجاهل مسار الشعار الفارغ عند التحديث')
               }
             }
           } catch (error) {
             console.log('⚠️ فشل في تحديث أيقونة النافذة عند التحديث:', error.message)
+          }
+        } else {
+          // Clear the icon if no logo is provided and a logo was previously set
+          if (mainWindow['__currentLogo__'] && mainWindow['__currentLogo__'] !== '') {
+            mainWindow.setIcon(null);
+            mainWindow['__currentLogo__'] = '';
+            console.log('✅ تم مسح أيقونة النافذة بنجاح');
           }
         }
       }
@@ -3229,13 +3313,25 @@ try {
       const hours = settings.whatsapp_reminder_hours_before || 3;
       const minutesRaw = settings.whatsapp_reminder_minutes_before;
       const minutesResolved = (typeof minutesRaw === 'number' && minutesRaw > 0) ? minutesRaw : (hours * 60);
-      return {
+      
+      const result = {
         whatsapp_reminder_enabled: settings.whatsapp_reminder_enabled || 0,
         hours_before: hours,
         minutes_before: minutesResolved,
         message: settings.whatsapp_reminder_message || '',
         custom_enabled: settings.whatsapp_reminder_custom_enabled || 0,
       };
+      
+      console.log('🧪 [DEBUG] Raw settings from database:', {
+        whatsapp_reminder_enabled: settings.whatsapp_reminder_enabled,
+        whatsapp_reminder_hours_before: settings.whatsapp_reminder_hours_before,
+        whatsapp_reminder_minutes_before: settings.whatsapp_reminder_minutes_before,
+        whatsapp_reminder_message: settings.whatsapp_reminder_message,
+        whatsapp_reminder_custom_enabled: settings.whatsapp_reminder_custom_enabled
+      });
+      console.log('🧪 [DEBUG] Processed result for frontend:', result);
+      
+      return result;
     } catch (error) {
       console.error('Error getting WhatsApp settings:', error);
       return null;
@@ -3260,8 +3356,63 @@ try {
           updatedSettings.whatsapp_reminder_minutes_before = updatedSettings.whatsapp_reminder_hours_before * 60;
         }
 
+        console.log('🧪 [DEBUG] About to save to database:', updatedSettings);
+        
+        // Ensure WhatsApp columns exist before saving
+        try {
+          console.log('🧪 [DEBUG] Ensuring WhatsApp columns exist...');
+          const columns = databaseService.db.prepare(`PRAGMA table_info(settings)`).all();
+          const existingColumns = columns.map(c => c.name);
+          
+          const requiredColumns = [
+            'whatsapp_reminder_enabled',
+            'whatsapp_reminder_hours_before', 
+            'whatsapp_reminder_minutes_before',
+            'whatsapp_reminder_message',
+            'whatsapp_reminder_custom_enabled'
+          ];
+          
+          for (const columnName of requiredColumns) {
+            if (!existingColumns.includes(columnName)) {
+              console.log(`🧪 [DEBUG] Adding missing column: ${columnName}`);
+              databaseService.db.prepare(`ALTER TABLE settings ADD COLUMN ${columnName} INTEGER DEFAULT 0`).run();
+            }
+          }
+          
+          console.log('🧪 [DEBUG] WhatsApp columns ensured');
+        } catch (error) {
+          console.error('🧪 [DEBUG] Error ensuring columns:', error);
+        }
+        
         await databaseService.updateSettings(updatedSettings);
         console.log('✅ WhatsApp settings saved:', updatedSettings);
+        
+        // Test: Immediately reload from database to verify save
+        setTimeout(async () => {
+          try {
+            const testReload = await databaseService.getSettings();
+            console.log('🧪 [TEST] Database reload after save:', {
+              whatsapp_reminder_enabled: testReload.whatsapp_reminder_enabled,
+              whatsapp_reminder_hours_before: testReload.whatsapp_reminder_hours_before,
+              whatsapp_reminder_minutes_before: testReload.whatsapp_reminder_minutes_before,
+              whatsapp_reminder_message: testReload.whatsapp_reminder_message,
+              whatsapp_reminder_custom_enabled: testReload.whatsapp_reminder_custom_enabled
+            });
+            
+            // Check if columns exist in database
+            console.log('🧪 [DEBUG] Checking database schema...');
+            const columns = databaseService.db.prepare(`PRAGMA table_info(settings)`).all();
+            console.log('🧪 [DEBUG] Available columns in settings table:', columns.map(c => c.name));
+            
+            // Check if WhatsApp columns exist
+            const whatsappColumns = columns.filter(c => c.name.startsWith('whatsapp_reminder'));
+            console.log('🧪 [DEBUG] WhatsApp columns found:', whatsappColumns.map(c => c.name));
+            
+          } catch (error) {
+            console.error('🧪 [TEST] Failed to reload from database:', error);
+          }
+        }, 500);
+        
         return { success: true };
       } else {
         return { success: false, error: 'Database service not available' };

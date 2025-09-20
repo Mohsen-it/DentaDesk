@@ -62,6 +62,12 @@ class DatabaseService {
     // Run patient schema migration BEFORE executing schema.sql
     this.runPatientSchemaMigration()
 
+    // Add performance optimizations
+    this.db.pragma('journal_mode = WAL')
+    this.db.pragma('synchronous = NORMAL')
+    this.db.pragma('cache_size = 1000')
+    this.db.pragma('temp_store = MEMORY')
+
     // Read and execute schema with error handling
     try {
       // Try multiple possible paths for schema.sql
@@ -94,17 +100,91 @@ class DatabaseService {
         throw new Error('Schema file not found in any expected location')
       }
 
-      // Split schema into individual statements and execute safely
-      const statements = schema.split(';').filter(stmt => stmt.trim().length > 0)
-
-      for (const statement of statements) {
-        try {
-          this.db.exec(statement.trim())
-        } catch (error) {
-          // Log warning for failed statements but continue
-          console.warn('⚠️ Schema statement failed (continuing):', error.message)
+      // Parse schema file properly, handling multi-line statements
+      const lines = schema.split('\n')
+      const statements = []
+      let currentStatement = ''
+      
+      for (const line of lines) {
+        const trimmed = line.trim()
+        
+        // Skip comments and empty lines
+        if (trimmed.startsWith('--') || trimmed.startsWith('/*') || trimmed === '') {
+          continue
+        }
+        
+        currentStatement += line + '\n'
+        
+        // If line ends with semicolon, we have a complete statement
+        if (trimmed.endsWith(';')) {
+          statements.push(currentStatement.trim())
+          currentStatement = ''
         }
       }
+      
+      // Add any remaining statement
+      if (currentStatement.trim()) {
+        statements.push(currentStatement.trim())
+      }
+
+      // Separate table creation statements from index creation statements
+      const tableStatements = statements.filter(stmt => {
+        const trimmed = stmt.trim().toUpperCase()
+        return trimmed.startsWith('CREATE TABLE') || 
+               trimmed.startsWith('INSERT') || 
+               trimmed.startsWith('BEGIN') ||
+               trimmed.startsWith('END')
+      })
+
+      const indexStatements = statements.filter(stmt => {
+        const trimmed = stmt.trim().toUpperCase()
+        return trimmed.startsWith('CREATE INDEX') || 
+               trimmed.startsWith('CREATE TRIGGER')
+      })
+
+      console.log(`📋 Found ${tableStatements.length} table statements and ${indexStatements.length} index statements`)
+
+      console.log(`📋 Executing ${tableStatements.length} table statements first...`)
+      
+      // Execute table creation statements first
+      for (let i = 0; i < tableStatements.length; i++) {
+        const statement = tableStatements[i].trim()
+        try {
+          if (statement) {
+            this.db.exec(statement)
+            if (i % 5 === 0) { // Log progress every 5 statements
+              console.log(`📋 Table progress: ${i + 1}/${tableStatements.length}`)
+            }
+          }
+        } catch (error) {
+          // Log warning for failed statements but continue
+          console.warn(`⚠️ Table statement ${i + 1} failed (continuing):`, error.message)
+          console.warn(`Statement: ${statement.substring(0, 100)}...`)
+          // Don't throw error to prevent startup failure
+        }
+      }
+
+      console.log(`📋 Executing ${indexStatements.length} index statements...`)
+      
+      // Execute index creation statements after tables are created
+      for (let i = 0; i < indexStatements.length; i++) {
+        const statement = indexStatements[i].trim()
+        try {
+          if (statement) {
+            this.db.exec(statement)
+            if (i % 10 === 0) { // Log progress every 10 statements
+              console.log(`📋 Index progress: ${i + 1}/${indexStatements.length}`)
+            }
+          }
+        } catch (error) {
+          // Log warning for failed statements but continue
+          console.warn(`⚠️ Index statement ${i + 1} failed (continuing):`, error.message)
+          console.warn(`Statement: ${statement.substring(0, 100)}...`)
+          // Don't throw error to prevent startup failure
+        }
+      }
+      
+      console.log('✅ Schema execution completed')
     } catch (error) {
       console.warn('⚠️ Schema file execution failed, using fallback initialization')
       this.initializeFallbackSchema()
@@ -116,9 +196,6 @@ class DatabaseService {
     this.db.pragma('synchronous = NORMAL')
     this.db.pragma('cache_size = 1000')
     this.db.pragma('temp_store = MEMORY')
-
-    // Create performance indexes
-    this.createIndexes()
 
     // Run migrations to ensure all fields exist
     this.runMigrations()
@@ -2102,8 +2179,11 @@ class DatabaseService {
   async getSettings() {
     this.ensureConnection()
 
-    // Ensure password columns exist
+    // Only ensure password columns exist once per session to avoid performance issues
+    if (!this._passwordColumnsEnsured) {
     this.ensurePasswordColumns()
+      this._passwordColumnsEnsured = true
+    }
 
     const stmt = this.db.prepare('SELECT * FROM settings LIMIT 1')
     const result = stmt.get()
@@ -2146,8 +2226,11 @@ class DatabaseService {
     const now = new Date().toISOString()
 
     try {
-      // Ensure password columns exist
+      // Only ensure password columns exist once per session to avoid performance issues
+      if (!this._passwordColumnsEnsured) {
       this.ensurePasswordColumns()
+        this._passwordColumnsEnsured = true
+      }
     } catch (error) {
       console.error('Failed to ensure password columns:', error)
       // Continue without password fields if migration fails

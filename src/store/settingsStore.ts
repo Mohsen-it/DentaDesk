@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
 import type { ClinicSettings } from '../types'
+import logger from '../utils/logger'
 
 interface SettingsState {
   settings: ClinicSettings | null
@@ -10,6 +11,10 @@ interface SettingsState {
   language: string
   currency: string
   useArabicNumerals: boolean
+  isLoaded: boolean; // Add a flag to indicate if settings have been loaded
+  lastLoadAttempt?: number; // Track last load attempt to prevent retry loops
+  consecutiveFailures?: number; // Track consecutive failures for circuit breaker
+  lastSuccessfulLoad?: number; // Track last successful load to prevent unnecessary reloads
 }
 
 // Helper function to save clinic settings backup to localStorage
@@ -88,16 +93,76 @@ export const useSettingsStore = create<SettingsStore>()(
         language: 'en',
         currency: 'USD',
         useArabicNumerals: false,
+        isLoaded: false, // Initialize isLoaded to false
 
         // Data operations
         loadSettings: async () => {
           const startTime = performance.now()
-          set({ isLoading: true, error: null })
+          const currentState = get()
+          
+          // Prevent multiple simultaneous loading attempts
+          if (currentState.isLoading) {
+            logger.warn('Settings already loading, skipping duplicate request')
+            return
+          }
+          
+          // If settings are already loaded and recent (within 30 seconds), skip loading
+          if (currentState.isLoaded && currentState.settings && 
+              (Date.now() - (currentState as any).lastSuccessfulLoad || 0) < 30000) {
+            logger.debug('Settings recently loaded, skipping duplicate request')
+            return
+          }
+          
+          // Circuit breaker pattern - prevent excessive retries
+          const consecutiveFailures = currentState.consecutiveFailures || 0
+          if (consecutiveFailures >= 3) {
+            logger.warn(`Settings loading circuit breaker open - ${consecutiveFailures} consecutive failures`)
+            return
+          }
+          
+          // Prevent retry loops - if we've already tried and failed recently, don't retry immediately
+          if (currentState.isLoaded && currentState.error && (Date.now() - (currentState as any).lastLoadAttempt || 0) < 5000) {
+            logger.warn('Settings load failed recently, skipping retry to prevent loop')
+            return
+          }
+          
+          set({ isLoading: true, error: null, lastLoadAttempt: Date.now() })
+          
           try {
             const apiStartTime = performance.now()
-            const settings = await window.electronAPI.settings.get()
+            
+            // Check if electronAPI is available
+            if (!window.electronAPI || !window.electronAPI.settings || !window.electronAPI.settings.get) {
+              throw new Error('electronAPI.settings.get is not available')
+            }
+            
+            // Add timeout to prevent hanging
+            const settingsPromise = window.electronAPI.settings.get()
+            const timeoutPromise = new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Settings loading timeout after 10 seconds')), 10000)
+            )
+
+            logger.debug('Settings Store: About to call window.electronAPI.settings.get()')
+            const settings = await Promise.race([settingsPromise, timeoutPromise])
+            logger.debug('Settings Store: Received settings from electronAPI:', {
+              has_settings: !!settings,
+              clinic_name: settings?.clinic_name,
+              has_clinic_logo: !!settings?.clinic_logo,
+              clinic_logo_length: settings?.clinic_logo?.length || 0
+            })
             const apiEndTime = performance.now()
-            console.log(`📡 Settings API Call: ${(apiEndTime - apiStartTime).toFixed(2)}ms`)
+            logger.debug(`Settings API Call: ${(apiEndTime - apiStartTime).toFixed(2)}ms`)
+            
+            // Validate settings response
+            if (!settings) {
+              throw new Error('Settings API returned null or undefined')
+            }
+
+            // Handle empty or invalid clinic_logo to prevent image loading errors
+            if (settings.clinic_logo && (settings.clinic_logo.trim() === '' || settings.clinic_logo === 'null' || settings.clinic_logo === 'undefined')) {
+              logger.warn('Settings Store: Invalid clinic_logo detected, setting to null to prevent errors')
+              settings.clinic_logo = null
+            }
 
             // If settings are missing or incomplete, try to restore from localStorage backup
             if (!settings || !settings.clinic_name || settings.clinic_name === 'عيادة الأسنان') {
@@ -114,13 +179,17 @@ export const useSettingsStore = create<SettingsStore>()(
                   settings: restoredSettings,
                   language: settings?.language || 'ar',
                   currency: settings?.currency || 'USD',
-                  isLoading: false
+                  isLoading: false,
+                  isLoaded: true // Mark as loaded
                 })
                 // Save the restored settings as a new backup
                 saveSettingsBackup(restoredSettings)
                 const backupEndTime = performance.now()
-                console.log(`🔄 Settings Backup Restore: ${(backupEndTime - backupStartTime).toFixed(2)}ms`)
-                console.log(`📋 Settings Store: Load Settings: ${(backupEndTime - startTime).toFixed(2)}ms`)
+                logger.debug(`Settings Backup Restore: ${(backupEndTime - backupStartTime).toFixed(2)}ms`)
+                logger.success(`Settings Store: Load Settings: ${(backupEndTime - startTime).toFixed(2)}ms`)
+                
+                // Reset failure counter on success
+                set({ consecutiveFailures: 0 })
                 return
               }
             }
@@ -131,22 +200,60 @@ export const useSettingsStore = create<SettingsStore>()(
               language: settings?.language || 'ar',
               currency: settings?.currency || 'USD',
               useArabicNumerals: settings?.use_arabic_numerals || false,
-              isLoading: false
+              isLoading: false,
+              isLoaded: true // Mark as loaded
             })
             const updateEndTime = performance.now()
-            console.log(`💾 Settings State Update: ${(updateEndTime - updateStartTime).toFixed(2)}ms`)
+            logger.debug(`Settings State Update: ${(updateEndTime - updateStartTime).toFixed(2)}ms`)
 
             // Save backup of loaded settings
             saveSettingsBackup(settings)
             const endTime = performance.now()
-            console.log(`📋 Settings Store: Load Settings: ${(endTime - startTime).toFixed(2)}ms`)
+            logger.success(`Settings Store: Load Settings: ${(endTime - startTime).toFixed(2)}ms`)
+            
+            // Reset failure counter and update last successful load time
+            set({ 
+              consecutiveFailures: 0,
+              lastSuccessfulLoad: Date.now()
+            })
           } catch (error) {
             const endTime = performance.now()
-            console.log(`📋 Settings Store: Load Settings Failed: ${(endTime - startTime).toFixed(2)}ms`)
-            set({
-              error: error instanceof Error ? error.message : 'Failed to load settings',
-              isLoading: false
-            })
+            
+            // Check if this is an image loading error
+            const isImageError = error instanceof Error && 
+              (error.message.includes('Failed to load image from path') || 
+               error.message.includes('Failed to load image'))
+            
+            // Log detailed error information
+            const errorDetails = {
+              message: error instanceof Error ? error.message : 'Unknown error',
+              stack: error instanceof Error ? error.stack : undefined,
+              type: typeof error,
+              error: error,
+              isImageError: isImageError
+            }
+            
+            if (isImageError) {
+              logger.warn(`Settings Store: Image Loading Error (non-critical): ${(endTime - startTime).toFixed(2)}ms`, errorDetails)
+              // For image errors, don't increment failure counter as it's not critical
+              set({
+                error: null, // Clear error for image loading issues
+                isLoading: false,
+                isLoaded: true,
+                consecutiveFailures: 0 // Reset failure counter for image errors
+              })
+            } else {
+              logger.error(`Settings Store: Load Settings Failed: ${(endTime - startTime).toFixed(2)}ms`, errorDetails)
+              
+              // Increment failure counter for non-image errors
+              const currentFailures = get().consecutiveFailures || 0
+              set({
+                error: error instanceof Error ? error.message : 'Failed to load settings',
+                isLoading: false,
+                isLoaded: true, // Even on error, consider it an attempt to load
+                consecutiveFailures: currentFailures + 1
+              })
+            }
           }
         },
 
@@ -159,7 +266,8 @@ export const useSettingsStore = create<SettingsStore>()(
               language: updatedSettings.language,
               currency: updatedSettings.currency,
               useArabicNumerals: updatedSettings.use_arabic_numerals || false,
-              isLoading: false
+              isLoading: false,
+              isLoaded: true
             })
 
             // Save backup immediately after successful update
@@ -177,13 +285,17 @@ export const useSettingsStore = create<SettingsStore>()(
           } catch (error) {
             set({
               error: error instanceof Error ? error.message : 'Failed to update settings',
-              isLoading: false
+              isLoading: false,
+              isLoaded: true
             })
           }
         },
 
         // UI preferences
         toggleDarkMode: () => {
+          const startTime = performance.now()
+          logger.performance('Theme switch initiated')
+
           const { isDarkMode, settings } = get()
           const newDarkMode = !isDarkMode
 
@@ -196,18 +308,26 @@ export const useSettingsStore = create<SettingsStore>()(
             settings: currentSettings // Explicitly preserve settings
           })
 
-          // Apply dark mode to document
-          if (newDarkMode) {
-            document.documentElement.classList.add('dark')
-            localStorage.setItem('dental-clinic-theme', 'dark')
-          } else {
-            document.documentElement.classList.remove('dark')
-            localStorage.setItem('dental-clinic-theme', 'light')
-          }
+          // Use requestAnimationFrame for smooth DOM updates
+          requestAnimationFrame(() => {
+            const domStartTime = performance.now()
 
-          // Save settings backup immediately to prevent data loss
+            // Apply dark mode to document
+            if (newDarkMode) {
+              document.documentElement.classList.add('dark')
+              localStorage.setItem('dental-clinic-theme', 'dark')
+              logger.performance(`DOM class added (dark mode): ${(performance.now() - domStartTime).toFixed(2)}ms`)
+            } else {
+              document.documentElement.classList.remove('dark')
+              localStorage.setItem('dental-clinic-theme', 'light')
+              logger.performance(`DOM class removed (light mode): ${(performance.now() - domStartTime).toFixed(2)}ms`)
+            }
+          })
+
+          // Save settings backup immediately to prevent data loss (non-blocking)
           if (currentSettings) {
             try {
+              const backupStartTime = performance.now()
               localStorage.setItem('dental-clinic-settings-backup', JSON.stringify({
                 clinic_name: currentSettings.clinic_name,
                 doctor_name: currentSettings.doctor_name,
@@ -217,17 +337,17 @@ export const useSettingsStore = create<SettingsStore>()(
                 clinic_address: currentSettings.clinic_address,
                 backup_timestamp: Date.now()
               }))
+              logger.performance(`Settings backup saved: ${(performance.now() - backupStartTime).toFixed(2)}ms`)
             } catch (error) {
               console.warn('Failed to save settings backup:', error)
             }
           }
 
           // Update settings in database if available (non-blocking)
-          try {
-            get().updateSettings({ theme: newDarkMode ? 'dark' : 'light' })
-          } catch (error) {
-            console.warn('Failed to save theme preference to database:', error)
-          }
+          // Note: Theme is stored in localStorage, not database to avoid sync issues
+          logger.performance(`Theme switch completed: ${(performance.now() - startTime).toFixed(2)}ms total`)
+
+          logger.performance(`Theme switch state update: ${(performance.now() - startTime).toFixed(2)}ms`)
         },
 
         // Initialize dark mode from stored preference
@@ -265,10 +385,8 @@ export const useSettingsStore = create<SettingsStore>()(
             }
           }
 
-          // Load settings if not already loaded (non-blocking)
-          if (!currentSettings) {
-            get().loadSettings()
-          }
+          // Removed the call to get().loadSettings() from here
+          // Settings loading is handled by App.tsx's initializeApp effect
         },
 
         setLanguage: (language) => {

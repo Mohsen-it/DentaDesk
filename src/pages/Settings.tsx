@@ -56,6 +56,9 @@ export default function Settings() {
   const [minutesBefore, setMinutesBefore] = useState<number>(0)
   const [messageText, setMessageText] = useState('')
   const [allowCustomMessage, setAllowCustomMessage] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [settingsLoaded, setSettingsLoaded] = useState(false)
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false)
   const [showQRModal, setShowQRModal] = useState(false)
   const [qrData, setQrData] = useState<string>('')
   const [qrImageUrl, setQrImageUrl] = useState<string>('')
@@ -122,7 +125,8 @@ export default function Settings() {
   const updateSessionStatus = async () => {
     try {
       // @ts-ignore
-      if (window.electronAPI?.whatsappReminders?.getStatus) {
+      if (// @ts-ignore
+window.electronAPI?.whatsappReminders?.getStatus) {
         // @ts-ignore
         const status = await window.electronAPI.whatsappReminders.getStatus()
         const isConnected = status.isReady && (status.state === 'connected' || status.state === 'authenticated')
@@ -214,7 +218,8 @@ export default function Settings() {
     const checkExistingQr = async () => {
       try {
         // @ts-ignore
-        if (window.electronAPI?.whatsappReminders?.getStatus) {
+        if (// @ts-ignore
+window.electronAPI?.whatsappReminders?.getStatus) {
           // @ts-ignore
           const status = await window.electronAPI.whatsappReminders.getStatus()
           if (status.qr) {
@@ -306,34 +311,170 @@ export default function Settings() {
     }
   }, [showDeleteConfirm])
 
-  // Fetch initial WhatsApp settings
-  useEffect(() => {
+  // Function to fetch WhatsApp settings
     const fetchWhatsAppSettings = async () => {
       try {
         // Prefer new API via electronAPI.whatsappReminders; fallback to legacy window.electron
         let data: any
+        // @ts-ignore
         if (window.electronAPI?.whatsappReminders?.getSettings) {
+          // @ts-ignore
           data = await window.electronAPI.whatsappReminders.getSettings()
+          console.log('📱 Loaded WhatsApp settings from electron:', data)
+          console.log('🧪 [DEBUG] Raw data from database:', JSON.stringify(data, null, 2))
+          console.log('📱 Setting enableReminder to:', Boolean(data.whatsapp_reminder_enabled))
+          console.log('📱 Setting hoursBefore to:', Number(data.hours_before ?? 24))
+          console.log('📱 Setting minutesBefore to:', Number(data.minutes_before ?? (data.hours_before ?? 0) * 60))
+          console.log('📱 Setting messageText to:', String(data.message ?? ''))
+          console.log('📱 Setting allowCustomMessage to:', Boolean(data.custom_enabled))
           setEnableReminder(Boolean(data.whatsapp_reminder_enabled))
           setHoursBefore(Number(data.hours_before ?? 24))
-          setMinutesBefore(Number((data as any).minutes_before ?? (data.hours_before ?? 0) * 60))
+          setMinutesBefore(Number(data.minutes_before ?? (data.hours_before ?? 0) * 60))
           setMessageText(String(data.message ?? ''))
           setAllowCustomMessage(Boolean(data.custom_enabled))
+          setSettingsLoaded(true)
+          setInitialLoadComplete(true)
         } else if (window.electron?.getWhatsAppSettings) {
           const legacy = await window.electron.getWhatsAppSettings()
           setEnableReminder(legacy.enableReminder || false)
           setHoursBefore(legacy.hoursBefore || 24)
           setMessageText(legacy.messageText || '')
           setAllowCustomMessage(legacy.allowCustomMessage || false)
+          setSettingsLoaded(true)
+          setInitialLoadComplete(true)
         } else {
           console.warn('WhatsApp settings API not available')
         }
       } catch (error) {
         console.error('Error fetching WhatsApp settings:', error)
+        // Don't reset settingsLoaded on error to prevent reload loops
+        // setSettingsLoaded(false) // Reset on error to allow retry
       }
     }
-    fetchWhatsAppSettings()
-  }, [])
+
+  // Fetch initial WhatsApp settings (only once on component mount)
+  useEffect(() => {
+    if (!initialLoadComplete) {
+      console.log('🚀 Initial WhatsApp settings load')
+      fetchWhatsAppSettings()
+    }
+  }, [initialLoadComplete])
+
+  // Fetch WhatsApp settings on page focus/visibility change (handles page refresh)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && activeTab === 'whatsapp' && !settingsLoaded && !initialLoadComplete) {
+        console.log('🔄 Page became visible, loading WhatsApp settings')
+        fetchWhatsAppSettings()
+      }
+    }
+
+    const handleFocus = () => {
+      if (activeTab === 'whatsapp' && !settingsLoaded && !initialLoadComplete) {
+        console.log('🔄 Window focused, loading WhatsApp settings')
+        fetchWhatsAppSettings()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [activeTab])
+
+  // Fetch WhatsApp settings when switching to WhatsApp tab (only if not already loaded)
+  useEffect(() => {
+    if (activeTab === 'whatsapp' && !settingsLoaded && !initialLoadComplete) {
+      console.log('🔄 Loading WhatsApp settings for the first time')
+      fetchWhatsAppSettings()
+    } else if (activeTab === 'whatsapp' && (settingsLoaded || initialLoadComplete)) {
+      console.log('✅ WhatsApp settings already loaded, skipping reload')
+    }
+  }, [activeTab, settingsLoaded, initialLoadComplete])
+
+  // Auto-save WhatsApp settings when they change (with better debouncing)
+  useEffect(() => {
+    // Only auto-save if we're on the WhatsApp tab, settings have been loaded, and not currently saving
+    if (activeTab === 'whatsapp' && settingsLoaded && !isSaving) {
+      const autoSaveSettings = async () => {
+        if (isSaving) return // Double check to avoid race conditions
+        
+        try {
+          setIsSaving(true)
+      const settingsPayload = {
+        whatsapp_reminder_enabled: enableReminder ? 1 : 0,
+        hours_before: hoursBefore,
+        minutes_before: minutesBefore,
+        message: messageText,
+        custom_enabled: allowCustomMessage ? 1 : 0,
+      }
+
+          // @ts-ignore
+          // @ts-ignore
+          if (window.electronAPI?.whatsappReminders?.setSettings) {
+            console.log('🧪 [DEBUG] About to save settings to database:', settingsPayload)
+            // @ts-ignore
+            const saveResult = await window.electronAPI.whatsappReminders.setSettings(settingsPayload)
+            console.log('🧪 [DEBUG] Save result from database:', saveResult)
+            console.log('📱 Auto-saved WhatsApp settings:', settingsPayload)
+            
+            // Test: Immediately reload settings to verify they were saved
+            setTimeout(async () => {
+              try {
+                // @ts-ignore
+                const testReload = await window.electronAPI.whatsappReminders.getSettings()
+                console.log('🧪 [TEST] Settings reloaded from database after save:', testReload)
+              } catch (error) {
+                console.error('🧪 [TEST] Failed to reload settings for verification:', error)
+              }
+            }, 1000)
+          }
+        } catch (error) {
+          console.error('Error auto-saving WhatsApp settings:', error)
+        } finally {
+          // Add a small delay before allowing next auto-save
+          setTimeout(() => setIsSaving(false), 1000)
+        }
+      }
+
+      // Increased debounce time to 5 seconds to avoid conflicts with manual save
+      const timeoutId = setTimeout(autoSaveSettings, 2000)
+      return () => clearTimeout(timeoutId)
+    }
+  }, [activeTab, enableReminder, hoursBefore, minutesBefore, messageText, allowCustomMessage, isSaving, settingsLoaded])
+
+  // Save settings before page unload
+  useEffect(() => {
+    const handleBeforeUnload = async () => {
+      if (activeTab === 'whatsapp') {
+        try {
+          const settingsPayload = {
+            whatsapp_reminder_enabled: enableReminder ? 1 : 0,
+            hours_before: hoursBefore,
+            minutes_before: minutesBefore,
+            message: messageText,
+            custom_enabled: allowCustomMessage ? 1 : 0,
+          }
+
+          // @ts-ignore
+if (window.electronAPI?.whatsappReminders?.setSettings) {
+            // Use synchronous save if possible
+            // @ts-ignore
+            await window.electronAPI.whatsappReminders.setSettings(settingsPayload)
+            console.log('📱 Saved WhatsApp settings before unload:', settingsPayload)
+          }
+        } catch (error) {
+          console.error('Error saving WhatsApp settings before unload:', error)
+        }
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [activeTab, enableReminder, hoursBefore, minutesBefore, messageText, allowCustomMessage])
 
   const showNotification = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
     setNotification({ message, type, show: true })
@@ -343,30 +484,6 @@ export default function Settings() {
   }
 
   // Save WhatsApp settings
-  const saveWhatsAppSettings = async () => {
-    try {
-      if (window.electronAPI?.whatsappReminders?.setSettings) {
-        await window.electronAPI.whatsappReminders.setSettings({
-          whatsapp_reminder_enabled: enableReminder ? 1 : 0,
-          hours_before: hoursBefore,
-          minutes_before: minutesBefore,
-          message: messageText,
-          custom_enabled: allowCustomMessage ? 1 : 0,
-        })
-      } else if (window.electron?.setWhatsAppSettings) {
-        await window.electron.setWhatsAppSettings({
-          enableReminder,
-          hoursBefore,
-          messageText,
-          allowCustomMessage,
-        })
-      }
-      showNotification('تم حفظ إعدادات تذكير واتساب بنجاح', 'success')
-    } catch (error) {
-      console.error('Error saving WhatsApp settings:', error)
-      showNotification('فشل في حفظ إعدادات تذكير واتساب', 'error')
-    }
-  }
 
   // Insert token at current caret position in textarea
   const insertTokenAtCursor = (token: string) => {
@@ -912,50 +1029,8 @@ export default function Settings() {
               </p>
             </div>
             <div className="p-6 space-y-6">
-              {/* Reset WhatsApp Session */}
-              <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-muted/30">
-                <div>
-                  <label className="text-sm font-medium text-foreground">إعادة تهيئة اتصال واتساب</label>
-                  <p className="text-xs text-muted-foreground mt-1">حذف الجلسة الحالية لإظهار رمز QR من جديد وإعادة الربط.</p>
-                </div>
-                <button
-                  onClick={() => setConfirmResetOpen(true)}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  حذف جلسة الربط (QR)
-                </button>
-              </div>
-
-              {/* Scan QR Button */}
-              <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-muted/30">
-                <div>
-                  <label className="text-sm font-medium text-foreground">مسح رمز QR للربط</label>
-                  <p className="text-xs text-muted-foreground mt-1">اضغط لبدء التهيئة وعرض رمز QR داخل التطبيق للمسح.</p>
-                </div>
-                <button
-                  onClick={async () => {
-                    try {
-                      setQrData('')
-                      setShowQRModal(true)
-                      // Try to get current status first
-                      const status = await window.electronAPI?.whatsappReminders?.getStatus?.()
-                      if (status?.qr) {
-                        // Use the latest QR already held by the main process and DO NOT reset
-                        setQrData(status.qr)
-                        return
-                      }
-                      // If no QR available, request a new one
-                      await window.electronAPI?.whatsappReminders?.resetSession?.()
-                    } catch (error) {
-                      console.error('Failed to start QR flow:', error)
-                      showNotification('تعذر بدء عملية الربط عبر QR', 'error')
-                    }
-                  }}
-                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-                >
-                  مسح ال qr code
-                </button>
-              </div>
+         
+           
               {/* Dark Mode Toggle */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3 space-x-reverse">
@@ -1154,15 +1229,7 @@ export default function Settings() {
                 </div>
               )}
 
-              {/* Explicit save button to persist settings */}
-              <div className="flex justify-end">
-                <button
-                  onClick={saveWhatsAppSettings}
-                  className="px-6 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-                >
-                  حفظ إعدادات واتساب
-                </button>
-              </div>
+          
 
               {/* WhatsApp Session Status */}
           
@@ -1196,11 +1263,13 @@ export default function Settings() {
                             setShowQRModal(true)
                         console.log('📱 QR modal opened, checking existing QR...')
                         // First try to reuse any existing QR
+                        // @ts-ignore
                         const st = await window.electronAPI?.whatsappReminders?.getStatus?.()
                         if (st?.qr) {
                           setQrData(st.qr)
                         } else {
                           // Request a new QR only if none exists
+                            // @ts-ignore
                             const result = await window.electronAPI?.whatsappReminders?.resetSession?.()
                             console.log('🔄 Reset session result:', result)
                         }
@@ -1313,7 +1382,8 @@ export default function Settings() {
               className="bg-destructive hover:bg-destructive/90"
               onClick={async () => {
                 try {
-                  const res = await window.electronAPI?.whatsappReminders?.resetSession?.()
+                  // @ts-ignore
+const res = await window.electronAPI?.whatsappReminders?.resetSession?.()
                   if (res?.success) {
                     showNotification('تم حذف الجلسة بنجاح. سيظهر رمز QR لإعادة الربط.', 'success')
                   } else {
@@ -1353,7 +1423,8 @@ export default function Settings() {
               className="bg-destructive hover:bg-destructive/90"
               onClick={async () => {
                 try {
-                  const res = await window.electronAPI?.whatsappReminders?.resetSession?.()
+                  // @ts-ignore
+const res = await window.electronAPI?.whatsappReminders?.resetSession?.()
                   if (res?.success) {
                     showNotification('تمت إعادة تهيئة جلسة واتساب بنجاح. قد تحتاج لإعادة ربط الحساب.', 'success')
                   } else {
@@ -1912,8 +1983,10 @@ export default function Settings() {
                   onClick={async () => {
                     try {
                       setQrData('')
+                      // @ts-ignore
                       const status = await window.electronAPI?.whatsappReminders?.getStatus?.()
                       if (status?.qr) setQrData(status.qr)
+                      // @ts-ignore
                       await window.electronAPI?.whatsappReminders?.resetSession?.()
                     } catch {}
                   }}

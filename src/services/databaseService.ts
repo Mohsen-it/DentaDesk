@@ -99,10 +99,241 @@ export class DatabaseService {
    * Synchronous initialization for critical operations only
    */
   private initializeDatabaseSync(): void {
-    // Read and execute schema (synchronous for now, but could be optimized)
-    const schemaPath = join(__dirname, '../database/schema.sql')
-    const schema = readFileSync(schemaPath, 'utf-8')
-    this.db.exec(schema)
+    console.log('🔧 Starting database initialization...')
+
+    // Manual table creation as fallback
+    this.createEssentialTablesManually()
+
+    // Try to load full schema as well
+    this.tryLoadFullSchema()
+
+    console.log('✅ Database schema initialization completed')
+  }
+
+  private createEssentialTablesManually(): void {
+    console.log('🔧 Creating essential tables manually...')
+
+    try {
+      // First, drop any existing tables to ensure clean state
+      const existingTables = this.db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as { name: string }[]
+      console.log('📊 Existing tables:', existingTables.map(t => t.name).join(', '))
+
+      // Drop existing tables in reverse dependency order
+      const tablesToDrop = ['payments', 'appointments', 'treatments', 'patients', 'settings']
+      for (const tableName of tablesToDrop) {
+        if (existingTables.some(t => t.name === tableName)) {
+          console.log(`🗑️ Dropping existing table: ${tableName}`)
+          this.db.exec(`DROP TABLE IF EXISTS ${tableName}`)
+        }
+      }
+
+      // Now create tables without foreign keys first
+      console.log('🏗️ Creating tables without foreign keys...')
+
+      // Create settings table (no dependencies)
+      this.db.exec(`
+        CREATE TABLE settings (
+          id TEXT PRIMARY KEY DEFAULT 'clinic_settings',
+          clinic_name TEXT DEFAULT 'Dental Clinic',
+          doctor_name TEXT DEFAULT 'د. محمد أحمد',
+          clinic_address TEXT,
+          clinic_phone TEXT,
+          clinic_email TEXT,
+          clinic_logo TEXT,
+          currency TEXT DEFAULT 'USD',
+          language TEXT DEFAULT 'en',
+          timezone TEXT DEFAULT 'UTC',
+          backup_frequency TEXT DEFAULT 'daily',
+          auto_save_interval INTEGER DEFAULT 300,
+          appointment_duration INTEGER DEFAULT 60,
+          working_hours_start TEXT DEFAULT '09:00',
+          working_hours_end TEXT DEFAULT '17:00',
+          working_days TEXT DEFAULT 'monday,tuesday,wednesday,thursday,friday',
+          app_password TEXT,
+          password_enabled INTEGER DEFAULT 0,
+          security_question TEXT,
+          security_answer TEXT,
+          whatsapp_reminder_enabled INTEGER DEFAULT 0,
+          whatsapp_reminder_hours_before INTEGER DEFAULT 3,
+          whatsapp_reminder_minutes_before INTEGER DEFAULT 180,
+          whatsapp_reminder_message TEXT DEFAULT 'مرحبًا {{patient_name}}، تذكير بموعدك في عيادة الأسنان بتاريخ {{appointment_date}} الساعة {{appointment_time}}. نشكرك على التزامك.',
+          whatsapp_reminder_custom_enabled INTEGER DEFAULT 0,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `)
+      console.log('✅ Settings table created')
+
+      // Create patients table (no dependencies)
+      this.db.exec(`
+        CREATE TABLE patients (
+          id TEXT PRIMARY KEY,
+          serial_number TEXT UNIQUE NOT NULL,
+          full_name TEXT NOT NULL,
+          gender TEXT NOT NULL CHECK (gender IN ('male', 'female')),
+          age INTEGER NOT NULL CHECK (age > 0),
+          patient_condition TEXT,
+          allergies TEXT,
+          medical_conditions TEXT,
+          email TEXT,
+          address TEXT,
+          notes TEXT,
+          phone TEXT,
+          date_added DATETIME DEFAULT CURRENT_TIMESTAMP,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `)
+      console.log('✅ Patients table created')
+
+      // Create treatments table (no dependencies)
+      this.db.exec(`
+        CREATE TABLE treatments (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          description TEXT,
+          default_cost DECIMAL(10,2),
+          duration_minutes INTEGER,
+          category TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `)
+      console.log('✅ Treatments table created')
+
+      // Create appointments table (depends on patients and treatments)
+      this.db.exec(`
+        CREATE TABLE appointments (
+          id TEXT PRIMARY KEY,
+          patient_id TEXT NOT NULL,
+          treatment_id TEXT,
+          title TEXT NOT NULL,
+          description TEXT,
+          start_time DATETIME NOT NULL,
+          end_time DATETIME NOT NULL,
+          status TEXT DEFAULT 'scheduled',
+          cost DECIMAL(10,2),
+          notes TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
+          FOREIGN KEY (treatment_id) REFERENCES treatments(id) ON DELETE SET NULL
+        )
+      `)
+      console.log('✅ Appointments table created')
+
+      // Create payments table (depends on patients and appointments)
+      this.db.exec(`
+        CREATE TABLE payments (
+          id TEXT PRIMARY KEY,
+          patient_id TEXT NOT NULL,
+          appointment_id TEXT,
+          amount DECIMAL(10,2) NOT NULL,
+          payment_method TEXT NOT NULL,
+          payment_date DATETIME NOT NULL,
+          description TEXT,
+          receipt_number TEXT,
+          status TEXT DEFAULT 'completed',
+          notes TEXT,
+          discount_amount DECIMAL(10,2) DEFAULT 0,
+          tax_amount DECIMAL(10,2) DEFAULT 0,
+          total_amount DECIMAL(10,2),
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
+          FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE SET NULL
+        )
+      `)
+      console.log('✅ Payments table created')
+
+      // Insert default settings
+      this.db.exec(`
+        INSERT OR IGNORE INTO settings (id) VALUES ('clinic_settings')
+      `)
+      console.log('✅ Default settings inserted')
+
+      // Insert default treatments
+      this.db.exec(`
+        INSERT OR IGNORE INTO treatments (id, name, description, default_cost, duration_minutes, category) VALUES
+        ('cleaning', 'تنظيف الأسنان', 'تنظيف وتلميع الأسنان بشكل منتظم', 100.00, 60, 'العلاجات الوقائية'),
+        ('filling', 'حشو الأسنان', 'إجراء حشو الأسنان المتضررة', 150.00, 90, 'الترميمية (المحافظة)'),
+        ('extraction', 'قلع الأسنان', 'إجراء إزالة الأسنان', 200.00, 45, 'العلاجات الجراحية'),
+        ('crown', 'تاج الأسنان', 'إجراء تركيب تاج الأسنان', 800.00, 120, 'التعويضات'),
+        ('root_canal', 'علاج العصب', 'علاج عصب الأسنان', 600.00, 90, 'علاج العصب'),
+        ('whitening', 'تبييض الأسنان', 'تبييض الأسنان المهني', 300.00, 60, 'العلاجات التجميلية'),
+        ('checkup', 'فحص عام', 'فحص روتيني شامل للأسنان', 75.00, 30, 'العلاجات الوقائية')
+      `)
+      console.log('✅ Default treatments inserted')
+
+      // Create basic indexes
+      this.db.exec(`
+        CREATE INDEX IF NOT EXISTS idx_patients_name ON patients(full_name);
+        CREATE INDEX IF NOT EXISTS idx_patients_serial ON patients(serial_number);
+        CREATE INDEX IF NOT EXISTS idx_patients_phone ON patients(phone);
+        CREATE INDEX IF NOT EXISTS idx_appointments_patient ON appointments(patient_id);
+        CREATE INDEX IF NOT EXISTS idx_appointments_date ON appointments(start_time);
+        CREATE INDEX IF NOT EXISTS idx_appointments_status ON appointments(status);
+        CREATE INDEX IF NOT EXISTS idx_payments_patient ON payments(patient_id);
+        CREATE INDEX IF NOT EXISTS idx_payments_date ON payments(payment_date);
+        CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
+        CREATE INDEX IF NOT EXISTS idx_treatments_name ON treatments(name);
+        CREATE INDEX IF NOT EXISTS idx_treatments_category ON treatments(category);
+      `)
+      console.log('✅ Basic indexes created')
+
+      // Verify tables were created
+      const tables = this.db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all()
+      console.log('📊 Manual tables created:', tables.length)
+      console.log('📋 Tables:', tables.map((t: any) => t.name).join(', '))
+
+    } catch (error: any) {
+      console.error('❌ Failed to create essential tables manually:', error.message)
+    }
+  }
+
+  private tryLoadFullSchema(): void {
+    // Try to load the full schema file as well
+    const possiblePaths = [
+      join(__dirname, '../../src/database/schema.sql'),
+      join(__dirname, '../src/database/schema.sql'),
+      join(process.cwd(), 'src/database/schema.sql'),
+      join(process.cwd(), 'database/schema.sql'),
+      join(__dirname, '../database/schema.sql'),
+    ]
+
+    for (const schemaPath of possiblePaths) {
+      try {
+        if (require('fs').existsSync(schemaPath)) {
+          console.log('🔍 Loading full schema from:', schemaPath)
+          const schemaContent = readFileSync(schemaPath, 'utf-8')
+          const statements = schemaContent.split(';').filter(stmt => stmt.trim().length > 0)
+
+          let successful = 0
+          for (const statement of statements) {
+            if (statement.trim().length > 10) {
+              try {
+                const trimmedStmt = statement.trim()
+                // Skip CREATE TABLE statements since we already created them manually
+                if (!trimmedStmt.toUpperCase().startsWith('CREATE TABLE')) {
+                  this.db.exec(trimmedStmt + ';')
+                  successful++
+                }
+              } catch (stmtError: any) {
+                console.log(`⚠️ Schema statement failed (continuing): ${stmtError.message}`)
+                // Continue with other statements
+              }
+            }
+          }
+
+          console.log(`✅ Full schema loaded: ${successful} statements executed`)
+          return
+        }
+      } catch (error: any) {
+        // Continue trying other paths
+      }
+    }
+
+    console.log('⚠️ Full schema loading skipped (manual tables created)')
 
     // Enable foreign keys and basic optimizations
     this.db.pragma('foreign_keys = ON')
@@ -3132,12 +3363,115 @@ export class DatabaseService {
 
   // Settings operations
   async getSettings(): Promise<ClinicSettings> {
-    const stmt = this.db.prepare('SELECT * FROM settings WHERE id = ?')
-    return stmt.get('clinic_settings') as ClinicSettings
+    try {
+      console.log('📋 DB: Executing getSettings query')
+
+      // First check if settings table exists
+      const tableExists = this.db.prepare(`
+        SELECT name FROM sqlite_master
+        WHERE type='table' AND name='settings'
+      `).get()
+
+      if (!tableExists) {
+        console.warn('⚠️ DB: Settings table does not exist, returning default settings')
+        return {
+          id: 'clinic_settings',
+          clinic_name: 'عيادة الأسنان',
+          doctor_name: 'د. محمد أحمد',
+          clinic_logo: '',
+          currency: 'USD',
+          language: 'ar'
+        } as ClinicSettings
+      }
+
+      const stmt = this.db.prepare('SELECT * FROM settings WHERE id = ?')
+      const settings = stmt.get('clinic_settings') as ClinicSettings
+
+      console.log('📋 DB: Settings retrieved successfully:', {
+        has_settings: !!settings,
+        clinic_name: settings?.clinic_name,
+        has_clinic_logo: !!settings?.clinic_logo,
+        clinic_logo_length: settings?.clinic_logo?.length || 0,
+        clinic_logo_preview: settings?.clinic_logo?.substring(0, 50) + '...' || 'none',
+        whatsapp_reminder_enabled: settings?.whatsapp_reminder_enabled,
+        whatsapp_reminder_hours_before: settings?.whatsapp_reminder_hours_before,
+        whatsapp_reminder_minutes_before: settings?.whatsapp_reminder_minutes_before,
+        whatsapp_reminder_message: settings?.whatsapp_reminder_message,
+        whatsapp_reminder_custom_enabled: settings?.whatsapp_reminder_custom_enabled
+      })
+
+      // If clinic_logo is empty or invalid, set it to null to prevent Electron errors
+      if (settings && (!settings.clinic_logo || settings.clinic_logo.trim() === '' || settings.clinic_logo === 'null' || settings.clinic_logo === 'undefined')) {
+        console.warn('⚠️ DB: clinic_logo is empty or invalid, setting to null.')
+        settings.clinic_logo = null // Ensure it's explicitly null
+      }
+
+      // If no settings found, return default settings
+      if (!settings) {
+        console.log('📋 DB: No settings found, returning default settings')
+        return {
+          id: 'clinic_settings',
+          clinic_name: 'عيادة الأسنان',
+          doctor_name: 'د. محمد أحمد',
+          clinic_logo: null, // Ensure default is null to prevent errors
+          currency: 'USD',
+          language: 'ar'
+        } as ClinicSettings
+      }
+
+      return settings
+    } catch (error) {
+      console.error('❌ DB: Error in getSettings:', error)
+
+      // Return default settings on any error to prevent app crashes
+      console.log('📋 DB: Returning default settings due to error')
+      return {
+        id: 'clinic_settings',
+        clinic_name: 'عيادة الأسنان',
+        doctor_name: 'د. محمد أحمد',
+        clinic_logo: null, // Ensure default is null to prevent errors
+        currency: 'USD',
+        language: 'ar'
+      } as ClinicSettings
+    }
   }
 
   async updateSettings(settings: Partial<ClinicSettings>): Promise<ClinicSettings> {
     const now = new Date().toISOString()
+    
+    console.log('🧪 [DEBUG] Database updateSettings called with:', {
+      whatsapp_reminder_enabled: settings.whatsapp_reminder_enabled,
+      whatsapp_reminder_hours_before: settings.whatsapp_reminder_hours_before,
+      whatsapp_reminder_minutes_before: settings.whatsapp_reminder_minutes_before,
+      whatsapp_reminder_message: settings.whatsapp_reminder_message,
+      whatsapp_reminder_custom_enabled: settings.whatsapp_reminder_custom_enabled
+    });
+
+    // Ensure WhatsApp columns exist
+    try {
+      console.log('🧪 [DEBUG] Ensuring WhatsApp columns exist in database service...');
+      const columns = this.db.prepare(`PRAGMA table_info(settings)`).all();
+      const existingColumns = columns.map((c: any) => c.name);
+      
+      const requiredColumns = [
+        { name: 'whatsapp_reminder_enabled', type: 'INTEGER DEFAULT 0' },
+        { name: 'whatsapp_reminder_hours_before', type: 'INTEGER DEFAULT 3' },
+        { name: 'whatsapp_reminder_minutes_before', type: 'INTEGER DEFAULT 180' },
+        { name: 'whatsapp_reminder_message', type: 'TEXT DEFAULT ""' },
+        { name: 'whatsapp_reminder_custom_enabled', type: 'INTEGER DEFAULT 0' }
+      ];
+      
+      for (const column of requiredColumns) {
+        if (!existingColumns.includes(column.name)) {
+          console.log(`🧪 [DEBUG] Adding missing column: ${column.name}`);
+          this.db.prepare(`ALTER TABLE settings ADD COLUMN ${column.name} ${column.type}`).run();
+        }
+      }
+      
+      console.log('🧪 [DEBUG] WhatsApp columns ensured in database service');
+    } catch (error) {
+      console.error('🧪 [DEBUG] Error ensuring columns in database service:', error);
+    }
 
     const stmt = this.db.prepare(`
       UPDATE settings SET
@@ -3158,20 +3492,42 @@ export class DatabaseService {
         working_days = COALESCE(?, working_days),
         app_password = COALESCE(?, app_password),
         password_enabled = COALESCE(?, password_enabled),
+        whatsapp_reminder_enabled = COALESCE(?, whatsapp_reminder_enabled),
+        whatsapp_reminder_hours_before = COALESCE(?, whatsapp_reminder_hours_before),
+        whatsapp_reminder_minutes_before = COALESCE(?, whatsapp_reminder_minutes_before),
+        whatsapp_reminder_message = COALESCE(?, whatsapp_reminder_message),
+        whatsapp_reminder_custom_enabled = COALESCE(?, whatsapp_reminder_custom_enabled),
         updated_at = ?
       WHERE id = ?
     `)
 
-    stmt.run(
+    const result = stmt.run(
       settings.clinic_name, settings.doctor_name, settings.clinic_address, settings.clinic_phone,
       settings.clinic_email, settings.clinic_logo, settings.currency,
       settings.language, settings.timezone, settings.backup_frequency,
       settings.auto_save_interval, settings.appointment_duration,
       settings.working_hours_start, settings.working_hours_end,
-      settings.working_days, settings.app_password, settings.password_enabled, now, 'clinic_settings'
+      settings.working_days, settings.app_password, settings.password_enabled,
+      settings.whatsapp_reminder_enabled, settings.whatsapp_reminder_hours_before,
+      settings.whatsapp_reminder_minutes_before, settings.whatsapp_reminder_message,
+      settings.whatsapp_reminder_custom_enabled, now, 'clinic_settings'
     )
+    
+    console.log('🧪 [DEBUG] Database update result:', {
+      changes: result.changes,
+      lastInsertRowid: result.lastInsertRowid
+    });
 
-    return this.getSettings()
+    const updatedSettings = await this.getSettings()
+    console.log('🧪 [DEBUG] Settings after update:', {
+      whatsapp_reminder_enabled: updatedSettings.whatsapp_reminder_enabled,
+      whatsapp_reminder_hours_before: updatedSettings.whatsapp_reminder_hours_before,
+      whatsapp_reminder_minutes_before: updatedSettings.whatsapp_reminder_minutes_before,
+      whatsapp_reminder_message: updatedSettings.whatsapp_reminder_message,
+      whatsapp_reminder_custom_enabled: updatedSettings.whatsapp_reminder_custom_enabled
+    });
+    
+    return updatedSettings
   }
 
   // Dashboard statistics

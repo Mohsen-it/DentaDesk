@@ -55,7 +55,10 @@ export function useStableSettings() {
   // تحميل الإعدادات عند التهيئة إذا لم تكن موجودة
   useEffect(() => {
     if (!settings && !isLoading && !stableSettings) {
-      loadSettings()
+      console.log('🔄 useStableSettings: Attempting to load settings...')
+      loadSettings().catch(error => {
+        console.error('❌ useStableSettings: Failed to load settings:', error)
+      })
     }
   }, [settings, isLoading, stableSettings, loadSettings])
 

@@ -9,8 +9,8 @@ import { useRealTimeTableSync } from './hooks/useRealTimeTableSync'
 import { useAuth } from './hooks/useAuth'
 import { useLicense } from './hooks/useLicense'
 import { useSystemShortcuts } from './hooks/useKeyboardShortcuts'
-import { useTreatmentNames } from './hooks/useTreatmentNames'
 import { enhanceKeyboardEvent } from '@/utils/arabicKeyboardMapping'
+import logger from './utils/logger'
 import LoginScreen from './components/auth/LoginScreen'
 import LicenseEntryScreen from './components/auth/LicenseEntryScreen'
 import AddPatientDialog from './components/patients/AddPatientDialog'
@@ -22,6 +22,7 @@ import QuickShortcutHint from './components/help/QuickShortcutHint'
 import PageLoading from './components/ui/PageLoading'
 import ErrorBoundary from './components/ErrorBoundary'
 import ThemeToggle from './components/ThemeToggle'
+import { useTreatmentNames } from './hooks/useTreatmentNames' // Import useTreatmentNames hook
 
 // Lazy load heavy page components
 const PaymentsPage = React.lazy(() => import('./pages/Payments'))
@@ -140,7 +141,7 @@ function AppContent() {
   }, [formatAmount])
 
   const handleSearchResultSelect = useCallback((result: any) => {
-    console.log('🎯 Search result selected:', result)
+    logger.search('Search result selected:', result)
 
     // Navigate to appropriate tab based on result type
     switch (result.type) {
@@ -194,16 +195,16 @@ function AppContent() {
 
   // Effect hooks (all grouped together)
   useEffect(() => {
-    console.log('🚀 App.tsx: App component mounted')
+    logger.start('App component mounted')
 
     // Check if electronAPI is available
     if (typeof window !== 'undefined') {
-      console.log('🔌 electronAPI available:', !!window.electronAPI)
-      console.log('🔌 window.electron available:', !!window.electron)
+      logger.system('electronAPI available:', !!window.electronAPI)
+      logger.system('window.electron available:', !!window.electron)
     }
 
     return () => {
-      console.log('🔄 App.tsx: App component unmounting')
+      logger.stop('App component unmounting')
     }
   }, [])
 
@@ -234,7 +235,7 @@ function AppContent() {
 
       if (isTyping && !isImportantShortcut) {
         // تسجيل للتشخيص
-        console.log('🚫 App.tsx: Ignoring shortcut for typing element:', {
+        logger.debug('Ignoring shortcut for typing element:', {
           key: event.key,
           tagName: target.tagName,
           hasPreventAttr: target.hasAttribute('data-prevent-shortcuts'),
@@ -246,89 +247,93 @@ function AppContent() {
       // استخدام الدالة المحسنة لمعالجة أحداث لوحة المفاتيح
       const enhanced = enhanceKeyboardEvent(event)
 
-      // Navigation shortcuts (0-8) with Arabic numeral support - updated for visible tabs
-      if (enhanced.mappedKey === '0') {
-        enhanced.preventDefault()
-        setActiveTab('dashboard')
-      } else if (enhanced.mappedKey === '1') {
-        enhanced.preventDefault()
-        setActiveTab('patients')
-      } else if (enhanced.mappedKey === '2') {
-        enhanced.preventDefault()
-        setActiveTab('appointments')
-      } else if (enhanced.mappedKey === '3') {
-        enhanced.preventDefault()
-        handleTabChange('payments')
-      } else if (enhanced.mappedKey === '4') {
-        enhanced.preventDefault()
-        setActiveTab('labs')
-      } else if (enhanced.mappedKey === '5') {
-        enhanced.preventDefault()
-        setActiveTab('dental-treatments')
-      } else if (enhanced.mappedKey === '6') {
-        enhanced.preventDefault()
-        setActiveTab('expenses')
-      } else if (enhanced.mappedKey === '7') {
-        enhanced.preventDefault()
-        setActiveTab('reports')
-      } else if (enhanced.mappedKey === '8') {
-        enhanced.preventDefault()
-        setActiveTab('settings')
-      }
-
-      // Quick actions - اختصارات متجاورة ASD (دعم محسن للعربية والإنجليزية)
-      if (enhanced.mappedKey.toLowerCase() === 'a') {
-        enhanced.preventDefault()
-        console.log('🎯 Shortcut A/ش pressed - Opening Add Patient dialog')
-        setShowAddPatient(true)
-      } else if (enhanced.mappedKey.toLowerCase() === 's') {
-        enhanced.preventDefault()
-        console.log('🎯 Shortcut S/س pressed - Opening Add Appointment dialog')
-        setShowAddAppointment(true)
-      } else if (enhanced.mappedKey.toLowerCase() === 'd') {
-        enhanced.preventDefault()
-        console.log('🎯 Shortcut D/ي pressed - Opening Add Payment dialog')
-        setShowAddPayment(true)
-      }
-
-      // Refresh (دعم الحرف العربي ق)
-      if (enhanced.mappedKey.toLowerCase() === 'r') {
-        enhanced.preventDefault()
-        console.log('🎯 Shortcut R/ق pressed - Refreshing page')
-        window.location.reload()
-      }
-
-      // Search (دعم الحرف العربي ب)
-      if (enhanced.mappedKey.toLowerCase() === 'f') {
-        enhanced.preventDefault()
-        console.log('🎯 Shortcut F/ب pressed - Opening global search')
-        setShowGlobalSearch(true)
-      }
-
-      // Open Settings (F1)
-      if (event.key === 'F1') {
-        event.preventDefault()
-        console.log('🎯 Opening Settings')
-        setActiveTab('settings')
+      // Use a switch statement for cleaner and potentially faster shortcut handling
+      switch (enhanced.mappedKey.toLowerCase()) {
+        case '0':
+          enhanced.preventDefault()
+          setActiveTab('dashboard')
+          break
+        case '1':
+          enhanced.preventDefault()
+          setActiveTab('patients')
+          break
+        case '2':
+          enhanced.preventDefault()
+          setActiveTab('appointments')
+          break
+        case '3':
+          enhanced.preventDefault()
+          handleTabChange('payments')
+          break
+        case '4':
+          enhanced.preventDefault()
+          setActiveTab('labs')
+          break
+        case '5':
+          enhanced.preventDefault()
+          setActiveTab('dental-treatments')
+          break
+        case '6':
+          enhanced.preventDefault()
+          setActiveTab('expenses')
+          break
+        case '7':
+          enhanced.preventDefault()
+          setActiveTab('reports')
+          break
+        case '8':
+          enhanced.preventDefault()
+          setActiveTab('settings')
+          break
+        case 'a': // Quick actions
+          enhanced.preventDefault()
+          logger.ui('Shortcut A/ش pressed - Opening Add Patient dialog')
+          setShowAddPatient(true)
+          break
+        case 's':
+          enhanced.preventDefault()
+          logger.ui('Shortcut S/س pressed - Opening Add Appointment dialog')
+          setShowAddAppointment(true)
+          break
+        case 'd':
+          enhanced.preventDefault()
+          logger.ui('Shortcut D/ي pressed - Opening Add Payment dialog')
+          setShowAddPayment(true)
+          break
+        case 'r': // Refresh
+          enhanced.preventDefault()
+          logger.ui('Shortcut R/ق pressed - Triggering data refresh')
+          // Instead of full page reload, trigger a more targeted data refresh
+          // This would typically involve calling load functions from your Zustand stores
+          loadSettings(); // Example: Refresh settings
+          loadPatients(); // Example: Refresh patients data
+          loadAppointments(); // Example: Refresh appointments data
+          // Add other data loading/refresh calls as needed for the current active tab
+          break
+        case 'f': // Search
+          enhanced.preventDefault()
+          logger.ui('Shortcut F/ب pressed - Opening global search')
+          setShowGlobalSearch(true)
+          break
+        case 'F1': // Open Settings (F1 is handled directly by event.key)
+          event.preventDefault()
+          logger.ui('Opening Settings')
+          setActiveTab('settings')
+          break
+        case 'F12': // F12 diagnostic shortcut (handled separately due to Electron dev tools)
+          event.preventDefault()
+          setShowDiagnostics(true)
+          break
       }
     }
 
     // Always add/remove event listener to maintain consistent hook order
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, []) // Removed conditional dependencies to prevent hook order issues
+  }, [handleTabChange, loadSettings, loadPatients, loadAppointments]) // Added dependencies for refresh functions
 
-  // F12 diagnostic shortcut
-  useEffect(() => {
-    const handleF12 = (e: KeyboardEvent) => {
-      if (e.key === 'F12') {
-        e.preventDefault()
-        setShowDiagnostics(true)
-      }
-    }
-    window.addEventListener('keydown', handleF12)
-    return () => window.removeEventListener('keydown', handleF12)
-  }, [])
+  // F12 diagnostic shortcut (moved into the main handleKeyDown for consistency and to avoid double handling)
+  // Removed separate useEffect for F12, as it's now part of the main handler
 
   // Handle successful payment authentication
   const handlePaymentAuthSuccess = () => {
@@ -374,38 +379,34 @@ function AppContent() {
     // Initialize app only if both license is valid AND authenticated
     const initializeApp = async () => {
       if (isLicenseValid && isAuthenticated) {
-        console.time('🚀 App Data Initialization')
-        console.log('🚀 Initializing app with valid license and authentication')
+        logger.time('App Data Initialization')
+        logger.start('Initializing app with valid license and authentication')
 
         // Stage 1: Load critical settings first (non-blocking for UI)
-        console.time('⚙️ Settings Loading')
-        loadSettings().then(() => {
-          console.timeEnd('⚙️ Settings Loading')
+        logger.time('Settings Loading')
+        await loadSettings().then(() => {
+          logger.timeEnd('Settings Loading')
         }).catch(error => {
-          console.error('Settings loading failed:', error)
+          logger.error('Settings loading failed:', error)
         })
 
-        // Stage 2: Load data progressively to avoid blocking UI
-        setTimeout(() => {
-          console.time('👥 Patients Loading')
-          loadPatients().then(() => {
-            console.timeEnd('👥 Patients Loading')
-          }).catch(error => {
-            console.error('Patients loading failed:', error)
-          })
+        // Stage 2: Load data progressively (without fixed delays)
+        logger.time('Patients Loading')
+        loadPatients().then(() => {
+          logger.timeEnd('Patients Loading')
+        }).catch(error => {
+          logger.error('Patients loading failed:', error)
+        })
 
-          setTimeout(() => {
-            console.time('📅 Appointments Loading')
-            loadAppointments().then(() => {
-              console.timeEnd('📅 Appointments Loading')
-              console.timeEnd('🚀 App Data Initialization')
-            }).catch(error => {
-              console.error('Appointments loading failed:', error)
-            })
-          }, 500) // Small delay between data loads
-        }, 200) // Delay data loading to prioritize UI rendering
+        logger.time('Appointments Loading')
+        loadAppointments().then(() => {
+          logger.timeEnd('Appointments Loading')
+          logger.timeEnd('App Data Initialization')
+        }).catch(error => {
+          logger.error('Appointments loading failed:', error)
+        })
       } else {
-        console.log('⏳ Waiting for license validation and authentication before initializing app')
+        logger.loading('Waiting for license validation and authentication before initializing app')
       }
     }
 
@@ -424,16 +425,18 @@ function AppContent() {
 
   const handleLicenseActivation = async (licenseKey: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      console.log('🔐 Handling license activation...')
+      logger.license('Handling license activation...')
       const result = await activateLicense(licenseKey)
 
       if (result.success) {
+        logger.success('License activated successfully')
         toast({
           title: 'نجح التفعيل',
           description: 'تم تفعيل الترخيص بنجاح',
           variant: 'default',
         })
       } else {
+        logger.failure('License activation failed:', result.error)
         toast({
           title: 'فشل التفعيل',
           description: result.error || 'فشل في تفعيل الترخيص',
@@ -443,7 +446,7 @@ function AppContent() {
 
       return result
     } catch (error) {
-      console.error('❌ License activation error:', error)
+      logger.error('License activation error:', error)
       const errorMessage = 'حدث خطأ أثناء تفعيل الترخيص'
       toast({
         title: 'خطأ',
@@ -584,9 +587,10 @@ function AppContent() {
         await deleteAppointment(selectedAppointment.id)
         setShowDeleteAppointmentConfirm(false)
         setSelectedAppointment(null)
+        logger.success('Appointment deleted successfully')
         showNotification("تم حذف الموعد بنجاح", "success")
       } catch (error) {
-        console.error('Error deleting appointment:', error)
+        logger.error('Error deleting appointment:', error)
         showNotification("فشل في حذف الموعد. يرجى المحاولة مرة أخرى", "error")
       }
     }
@@ -597,9 +601,10 @@ function AppContent() {
       await updateAppointment(id, appointmentData)
       setShowEditAppointment(false)
       setSelectedAppointment(null)
+      logger.success('Appointment updated successfully')
       showNotification("تم تحديث الموعد بنجاح", "success")
     } catch (error) {
-      console.error('Error updating appointment:', error)
+      logger.error('Error updating appointment:', error)
       showNotification("فشل في تحديث الموعد. يرجى المحاولة مرة أخرى", "error")
     }
   }
@@ -783,9 +788,10 @@ function AppContent() {
           try {
             await createAppointment(appointmentData)
             setShowAddAppointment(false)
+            logger.success('New appointment created successfully')
             showNotification("تم إضافة الموعد الجديد بنجاح", "success")
           } catch (error) {
-            console.error('Error creating appointment:', error)
+            logger.error('Error creating appointment:', error)
             showNotification("فشل في إضافة الموعد. يرجى المحاولة مرة أخرى", "error")
           }
         }}
@@ -806,9 +812,10 @@ function AppContent() {
               await updateAppointment(selectedAppointment.id, appointmentData)
               setShowEditAppointment(false)
               setSelectedAppointment(null)
+              logger.success('Appointment updated successfully')
               showNotification("تم تحديث الموعد بنجاح", "success")
             } catch (error) {
-              console.error('Error updating appointment:', error)
+              logger.error('Error updating appointment:', error)
               showNotification("فشل في تحديث الموعد. يرجى المحاولة مرة أخرى", "error")
             }
           }}

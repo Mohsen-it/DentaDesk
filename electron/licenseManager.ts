@@ -1,5 +1,5 @@
 import { machineIdSync } from 'node-machine-id'
-import { createHash, createCipheriv, createDecipheriv, randomBytes, pbkdf2Sync } from 'crypto'
+import { createHash, createCipheriv, createDecipheriv, randomBytes, pbkdf2 } from 'crypto' // Import pbkdf2
 import Store from 'electron-store'
 import { app } from 'electron'
 
@@ -34,7 +34,10 @@ export class LicenseManager {
   private currentHWID: string | null = null
 
   private constructor() {
-    this.currentHWID = this.generateHWID()
+    // Initialize HWID asynchronously to avoid blocking the constructor
+    ;(async () => {
+      this.currentHWID = await this.generateHWIDAsync()
+    })()
   }
 
   public static getInstance(): LicenseManager {
@@ -47,7 +50,7 @@ export class LicenseManager {
   /**
    * Generate unique hardware identifier for this machine
    */
-  public generateHWID(): string {
+  public async generateHWIDAsync(): Promise<string> {
     try {
       // Get machine ID and create a hash for privacy
       const machineId = machineIdSync()
@@ -77,9 +80,15 @@ export class LicenseManager {
   /**
    * Encrypt license data using AES-256-GCM
    */
-  private encryptLicenseData(data: LicenseData): string {
+  private async encryptLicenseData(data: LicenseData): Promise<string> {
     try {
-      const key = pbkdf2Sync(APP_SALT, 'license-encryption', KEY_DERIVATION_ITERATIONS, 32, 'sha256')
+      // Use asynchronous pbkdf2
+      const key = await new Promise<Buffer>((resolve, reject) => {
+        pbkdf2(APP_SALT, 'license-encryption', KEY_DERIVATION_ITERATIONS, 32, 'sha256', (err, derivedKey) => {
+          if (err) reject(err)
+          resolve(derivedKey)
+        })
+      })
       const iv = randomBytes(16)
       const cipher = createCipheriv(ENCRYPTION_ALGORITHM, key, iv)
 
@@ -101,9 +110,16 @@ export class LicenseManager {
   /**
    * Decrypt license data
    */
-  private decryptLicenseData(encryptedData: string): LicenseData {
+  private async decryptLicenseData(encryptedData: string): Promise<LicenseData> {
     try {
-      const key = pbkdf2Sync(APP_SALT, 'license-encryption', KEY_DERIVATION_ITERATIONS, 32, 'sha256')
+      // Use asynchronous pbkdf2
+      const key = await new Promise<Buffer>((resolve, reject) => {
+        pbkdf2(APP_SALT, 'license-encryption', KEY_DERIVATION_ITERATIONS, 32, 'sha256', (err, derivedKey) => {
+          if (err) reject(err)
+          resolve(derivedKey)
+        })
+      })
+
       const decodedData = Buffer.from(encryptedData, 'base64').toString('utf8')
       const [ivHex, authTagHex, encrypted] = decodedData.split(':')
 
@@ -142,7 +158,7 @@ export class LicenseManager {
         activated: true
       }
 
-      const encryptedData = this.encryptLicenseData(licenseData)
+      const encryptedData = await this.encryptLicenseData(licenseData) // Await encryption
       licenseStore.set('licenseData', encryptedData)
       licenseStore.set('lastValidation', Date.now())
 
@@ -170,7 +186,7 @@ export class LicenseManager {
         }
       }
 
-      const licenseData = this.decryptLicenseData(encryptedData)
+      const licenseData = await this.decryptLicenseData(encryptedData) // Await decryption
 
       // Validate license format
       if (!this.validateLicenseFormat(licenseData.license)) {
@@ -230,7 +246,7 @@ export class LicenseManager {
       const normalizedKey = licenseKey.trim().toUpperCase()
 
       // Store the license with current hardware ID
-      const success = await this.storeLicense(normalizedKey, this.currentHWID!)
+      const success = await this.storeLicense(normalizedKey, this.currentHWID!) // Await storeLicense
 
       if (success) {
         const licenseData: LicenseData = {
@@ -276,7 +292,12 @@ export class LicenseManager {
    * Get current hardware ID
    */
   public getCurrentHWID(): string {
-    return this.currentHWID || this.generateHWID()
+    // Ensure HWID is available, if not, attempt to generate it (this should ideally be avoided post-constructor)
+    if (!this.currentHWID) {
+      console.warn('Current HWID not yet available, generating synchronously as fallback.')
+      this.currentHWID = machineIdSync() // Fallback to synchronous if not set
+    }
+    return this.currentHWID || 'unknown'
   }
 
   /**
@@ -298,7 +319,7 @@ export class LicenseManager {
   /**
    * Get license information (for display purposes)
    */
-  public async getLicenseInfo(): Promise<{ license?: string; hwid: string; activated: boolean; timestamp?: number } | null> {
+  public async getLicenseInfo(): Promise<{ license?: string; hwid: string; activated: boolean; timestamp?: number; storageType?: string } | null> {
     try {
       const validation = await this.validateStoredLicense()
 
@@ -307,19 +328,22 @@ export class LicenseManager {
           license: validation.licenseData.license,
           hwid: validation.licenseData.hwid,
           activated: validation.licenseData.activated,
-          timestamp: validation.licenseData.timestamp
+          timestamp: validation.licenseData.timestamp,
+          storageType: 'electron-store' // Always use electron-store now
         }
       }
 
       return {
         hwid: this.getCurrentHWID(),
-        activated: false
+        activated: false,
+        storageType: 'electron-store' // Always use electron-store now
       }
     } catch (error) {
       console.error('Error getting license info:', error)
       return {
         hwid: this.getCurrentHWID(),
-        activated: false
+        activated: false,
+        storageType: 'error'
       }
     }
   }

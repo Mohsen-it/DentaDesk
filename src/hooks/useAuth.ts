@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSettingsStore } from '../store/settingsStore'
+import logger from '../utils/logger'
 
 interface AuthState {
   isAuthenticated: boolean
@@ -16,30 +17,25 @@ export function useAuth() {
 
   const { settings, loadSettings } = useSettingsStore()
 
-  useEffect(() => {
-    checkAuthStatus()
-
-    // Note: Removed session clearing on page refresh to maintain login state
-    // Session will only be cleared when app is closed (handled by Electron main process)
-  }, []) // Remove settings dependency to avoid infinite loop
-
-  const checkAuthStatus = async () => {
+  const checkAuthStatus = useCallback(async () => {
     try {
-      console.log('🔐 Checking auth status...')
+      logger.auth('Checking auth status...')
 
-      // Load settings directly from API instead of store
-      const currentSettings = await window.electronAPI.settings.get()
-      console.log('🔐 Current settings:', currentSettings)
+      // Ensure settings are loaded before proceeding
+      if (!settings?.isLoaded) { // Use optional chaining here
+        await loadSettings();
+      }
+      const currentSettings = useSettingsStore.getState().settings; // Get latest settings after loading
 
       const passwordEnabled = currentSettings?.password_enabled === 1
       const hasPassword = currentSettings?.app_password && currentSettings.app_password.length > 0
 
-      console.log('🔐 Password enabled:', passwordEnabled)
-      console.log('🔐 Has password:', hasPassword)
+      logger.auth('Password enabled:', passwordEnabled)
+      logger.auth('Has password:', hasPassword)
 
       if (!passwordEnabled || !hasPassword) {
         // No password protection enabled
-        console.log('🔐 No password protection, allowing access')
+        logger.auth('No password protection, allowing access')
         setAuthState({
           isAuthenticated: true,
           isLoading: false,
@@ -50,11 +46,11 @@ export function useAuth() {
 
       // Check if user has valid session
       const hasValidSession = sessionStorage.getItem('dental_clinic_auth') === 'true'
-      console.log('🔐 Has valid session:', hasValidSession)
+      logger.auth('Has valid session:', hasValidSession)
 
       if (hasValidSession) {
         // User has valid session, allow access
-        console.log('🔐 Valid session found, allowing access')
+        logger.auth('Valid session found, allowing access')
         setAuthState({
           isAuthenticated: true,
           isLoading: false,
@@ -62,7 +58,7 @@ export function useAuth() {
         })
       } else {
         // No valid session, require authentication
-        console.log('🔐 No valid session, requiring authentication')
+        logger.auth('No valid session, requiring authentication')
         setAuthState({
           isAuthenticated: false,
           isLoading: false,
@@ -70,33 +66,37 @@ export function useAuth() {
         })
       }
     } catch (error) {
-      console.error('❌ Error checking auth status:', error)
+      logger.error('Error checking auth status:', error)
       setAuthState({
         isAuthenticated: false,
         isLoading: false,
         passwordEnabled: false
       })
     }
-  }
+  }, [settings, loadSettings])
+
+  useEffect(() => {
+    checkAuthStatus()
+  }, [checkAuthStatus])
 
   const login = async (password: string): Promise<boolean> => {
     try {
-      console.log('🔐 Attempting login...')
+      logger.auth('Attempting login...')
 
-      // Get current settings directly from API
-      const currentSettings = await window.electronAPI.settings.get()
+      // Use settings from the store
+      const currentSettings = useSettingsStore.getState().settings;
 
       if (!currentSettings?.app_password) {
-        console.log('❌ No password set in settings')
+        logger.auth('No password set in settings')
         return false
       }
 
       // Hash the input password and compare with stored hash
       const hashedInput = await hashPassword(password)
-      console.log('🔐 Password hashed, comparing...')
+      logger.auth('Password hashed, comparing...')
 
       if (hashedInput === currentSettings.app_password) {
-        console.log('✅ Password correct, setting session')
+        logger.success('Password correct, setting session')
         sessionStorage.setItem('dental_clinic_auth', 'true')
         setAuthState(prev => ({
           ...prev,
@@ -105,10 +105,10 @@ export function useAuth() {
         return true
       }
 
-      console.log('❌ Password incorrect')
+      logger.failure('Password incorrect')
       return false
     } catch (error) {
-      console.error('❌ Login error:', error)
+      logger.error('Login error:', error)
       return false
     }
   }
@@ -123,7 +123,7 @@ export function useAuth() {
         await window.electronAPI.auth.clearSession()
       }
     } catch (error) {
-      console.log('Could not clear session via Electron:', error)
+      logger.debug('Could not clear session via Electron:', error)
     }
 
     setAuthState(prev => ({
@@ -134,10 +134,10 @@ export function useAuth() {
 
   const setPassword = async (password: string): Promise<boolean> => {
     try {
-      console.log('🔐 Setting password...')
+      logger.auth('Setting password...')
       const hashedPassword = await hashPassword(password)
 
-      console.log('🔐 Updating settings with hashed password...')
+      logger.auth('Updating settings with hashed password...')
       const updatedSettings = await withTimeout(
         window.electronAPI.settings.update({
           app_password: hashedPassword,
@@ -146,7 +146,7 @@ export function useAuth() {
         10000 // 10 second timeout
       )
 
-      console.log('🔐 Settings updated:', updatedSettings)
+      logger.auth('Settings updated:', updatedSettings)
 
       if (updatedSettings) {
         // Update auth state directly without reloading settings to avoid loop
@@ -154,21 +154,21 @@ export function useAuth() {
           ...prev,
           passwordEnabled: true
         }))
-        console.log('✅ Password set successfully')
+        logger.success('Password set successfully')
         return true
       }
 
-      console.log('❌ Failed to update settings')
+      logger.failure('Failed to update settings')
       return false
     } catch (error) {
-      console.error('❌ Error setting password:', error)
+      logger.error('Error setting password:', error)
       return false
     }
   }
 
   const removePassword = async (): Promise<boolean> => {
     try {
-      console.log('🔐 Removing password...')
+      logger.auth('Removing password...')
       const updatedSettings = await withTimeout(
         window.electronAPI.settings.update({
           app_password: null,
@@ -177,7 +177,7 @@ export function useAuth() {
         10000 // 10 second timeout
       )
 
-      console.log('🔐 Settings updated:', updatedSettings)
+      logger.auth('Settings updated:', updatedSettings)
 
       if (updatedSettings) {
         // Update auth state directly without reloading settings to avoid loop
@@ -186,40 +186,40 @@ export function useAuth() {
           passwordEnabled: false,
           isAuthenticated: true
         }))
-        console.log('✅ Password removed successfully')
+        logger.success('Password removed successfully')
         return true
       }
 
-      console.log('❌ Failed to update settings')
+      logger.failure('Failed to update settings')
       return false
     } catch (error) {
-      console.error('❌ Error removing password:', error)
+      logger.error('Error removing password:', error)
       return false
     }
   }
 
   const changePassword = async (oldPassword: string, newPassword: string): Promise<boolean> => {
     try {
-      console.log('🔐 Changing password...')
+      logger.auth('Changing password...')
 
-      // Get current settings directly from API
-      const currentSettings = await window.electronAPI.settings.get()
+      // Use settings from the store
+      const currentSettings = useSettingsStore.getState().settings;
 
       if (!currentSettings?.app_password) {
-        console.log('❌ No existing password found')
+        logger.auth('No existing password found')
         return false
       }
 
       // Verify old password
       const hashedOld = await hashPassword(oldPassword)
       if (hashedOld !== currentSettings.app_password) {
-        console.log('❌ Old password is incorrect')
+        logger.failure('Old password is incorrect')
         return false
       }
 
       // Set new password
       const hashedNew = await hashPassword(newPassword)
-      console.log('🔐 Updating with new password...')
+      logger.auth('Updating with new password...')
 
       const updatedSettings = await withTimeout(
         window.electronAPI.settings.update({
@@ -228,17 +228,17 @@ export function useAuth() {
         10000 // 10 second timeout
       )
 
-      console.log('🔐 Settings updated:', updatedSettings)
+      logger.auth('Settings updated:', updatedSettings)
 
       if (updatedSettings) {
-        console.log('✅ Password changed successfully')
+        logger.success('Password changed successfully')
         return true
       }
 
-      console.log('❌ Failed to update settings')
+      logger.failure('Failed to update settings')
       return false
     } catch (error) {
-      console.error('❌ Error changing password:', error)
+      logger.error('Error changing password:', error)
       return false
     }
   }
@@ -263,7 +263,7 @@ async function hashPassword(password: string): Promise<string> {
     const hashArray = Array.from(new Uint8Array(hashBuffer))
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
   } catch (error) {
-    console.error('Error hashing password:', error)
+    logger.error('Error hashing password:', error)
     throw error
   }
 }

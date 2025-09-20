@@ -135,6 +135,12 @@ export class LowDBService {
       working_days: 'السبت,الأحد,الاثنين,الثلاثاء,الأربعاء',
       app_password: null,
       password_enabled: 0,
+      // WhatsApp reminder settings
+      whatsapp_reminder_enabled: 0,
+      whatsapp_reminder_hours_before: 3,
+      whatsapp_reminder_minutes_before: 180,
+      whatsapp_reminder_message: 'مرحبًا {{patient_name}}، تذكير بموعدك في عيادة الأسنان بتاريخ {{appointment_date}} الساعة {{appointment_time}}. نشكرك على التزامك.',
+      whatsapp_reminder_custom_enabled: 0,
       created_at: now,
       updated_at: now
     }

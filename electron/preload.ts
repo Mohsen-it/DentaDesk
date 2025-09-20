@@ -253,6 +253,11 @@ export interface ElectronAPI {
     saveImage: (payload: { dataUrl?: string; svg?: string }) => Promise<{ success: boolean; filePath?: string; error?: string }>
     openTerminal: (qrText: string) => Promise<{ success: boolean; error?: string }>
   }
+
+  // Debug utilities (for troubleshooting)
+  debug: {
+    testIPC: () => Promise<{ success: boolean; timestamp: string }>
+  }
 }
 
 // Expose protected methods that allow the renderer process to use
@@ -451,6 +456,17 @@ const electronAPI: ElectronAPI = {
   qr: {
     saveImage: (payload) => ipcRenderer.invoke('qr:save-image', payload),
     openTerminal: (qrText) => ipcRenderer.invoke('qr:open-terminal', qrText)
+  },
+
+  // Debug utilities
+  debug: {
+    testIPC: () => ipcRenderer.invoke('test-ipc'),
+    testWhatsAppHandler: () => ipcRenderer.invoke('debug:test-whatsapp-handler')
+  },
+
+  // Debug utilities
+  debug: {
+    testIPC: () => ipcRenderer.invoke('test-ipc')
   }
 }
 

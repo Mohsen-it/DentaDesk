@@ -256,6 +256,20 @@ class LicenseManager {
    */
   async validateStoredLicense() {
     try {
+      // في بيئة التطوير، اعتبار الترخيص صالحاً دائماً
+      const isDev = process.env.NODE_ENV === 'development' || !require('electron').app.isPackaged
+      if (isDev) {
+        console.log('🔧 Development mode: License validation bypassed')
+        return {
+          isValid: true,
+          licenseData: {
+            license: 'DEV-LICENSE-KEY',
+            activated: true,
+            hwid: this.currentHWID
+          }
+        }
+      }
+
       const encryptedData = licenseStore.get('licenseData')
 
       if (!encryptedData) {

@@ -105,6 +105,11 @@ async function initializeClient() {
         '--disable-setuid-sandbox',
         '--disable-gpu',
         '--disable-dev-shm-usage',
+        '--disable-web-security',
+        '--disable-features=VizDisplayCompositor',
+        '--disable-background-timer-throttling',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-renderer-backgrounding',
         '--no-first-run',
         '--no-zygote',
         '--disable-web-security',
@@ -226,7 +231,13 @@ async function initializeClient() {
       const globalAttempt = initAttemptCount
       console.log(`🚀 Initializing WhatsApp client (attempt ${attempts + 1}/${maxInitAttempts}, global attempt #${globalAttempt})...`)
       try {
-        await client.initialize()
+        // Add timeout for initialization to prevent hanging
+        const initPromise = client.initialize()
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('WhatsApp initialization timeout')), 30000) // 30 seconds timeout
+        )
+        
+        await Promise.race([initPromise, timeoutPromise])
         console.log('✅ WhatsApp client initialized successfully')
         break
       } catch (err) {

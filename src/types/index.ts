@@ -206,6 +206,13 @@ export interface ClinicSettings {
   app_password?: string | null
   password_enabled?: number
   use_arabic_numerals?: boolean
+  isLoaded?: boolean // Add isLoaded property
+  // WhatsApp reminder settings
+  whatsapp_reminder_enabled?: number
+  whatsapp_reminder_hours_before?: number
+  whatsapp_reminder_minutes_before?: number
+  whatsapp_reminder_message?: string
+  whatsapp_reminder_custom_enabled?: number
   // External estimate settings
   estimate_default_validity_days?: number
   estimate_default_tax_rate?: number

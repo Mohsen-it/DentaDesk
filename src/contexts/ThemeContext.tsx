@@ -14,7 +14,7 @@ interface ThemeProviderProps {
 }
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  const { isDarkMode, toggleDarkMode: storeToggleDarkMode, initializeDarkMode, loadSettings, settings } = useSettingsStore()
+  const { isDarkMode, toggleDarkMode: storeToggleDarkMode, initializeDarkMode, loadSettings, settings, isLoaded } = useSettingsStore()
 
   // Initialize theme immediately and on mount
   useEffect(() => {
@@ -40,11 +40,9 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     }
 
     // Load settings only if not already loaded to prevent unnecessary reloads
-    // Use a flag to prevent multiple loads during theme changes
-    if (!settings) {
-      loadSettings()
-    }
-  }, [initializeDarkMode]) // Remove loadSettings and settings from dependencies to prevent reloads
+    // Ensure settings are loaded by App.tsx before ThemeProvider needs them
+    // Removed conditional loadSettings() call here, as it's handled upstream
+  }, [initializeDarkMode, isLoaded]) // Added isLoaded to dependencies to re-evaluate when settings are loaded
 
   // Apply theme changes to document when state changes
   useEffect(() => {
