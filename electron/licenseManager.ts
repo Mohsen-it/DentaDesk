@@ -164,7 +164,9 @@ export class LicenseManager {
       if (!encryptedData) {
         return {
           isValid: false,
-          error: 'No license found'
+          error: 'No license found', // Keep this error for now, as useLicense.ts will handle isFirstRun based on this.
+          // The critical change is ensuring isFirstRun is true when no license data.
+          // This will be handled by the checkStatus IPC in main.ts/preload.ts
         }
       }
 
@@ -283,13 +285,13 @@ export class LicenseManager {
   public isFirstRun(): boolean {
     try {
       const hasLicense = licenseStore.has('licenseData')
-      const lastValidation = licenseStore.get('lastValidation')
+      // const lastValidation = licenseStore.get('lastValidation') // Not strictly needed for first run check
 
-      // Consider it first run if no license data exists
+      // If no license data exists, it's considered a first run
       return !hasLicense
     } catch (error) {
       console.error('Error checking first run status:', error)
-      return true // Default to requiring license on error
+      return true // Default to requiring license on error to be safe
     }
   }
 

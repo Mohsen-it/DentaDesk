@@ -7,6 +7,7 @@ import { AutoSaveService } from '../src/services/autoSaveService'
 import { ReportsService } from '../src/services/reportsService'
 import { initializeClient, resetWhatsAppSession, getWhatsAppStatus } from './services/whatsapp'
 import { startScheduler, runReminderDiagnostic } from './services/whatsappReminderScheduler'
+import { licenseManager } from './licenseManager'
 
 const isDev = process.env.IS_DEV === 'true'
 
@@ -27,10 +28,20 @@ function createWindow(): void {
       nodeIntegration: false,
       contextIsolation: true,
       enableRemoteModule: false,
+      // Performance optimizations
+      webSecurity: true,
+      allowRunningInsecureContent: false,
+      experimentalFeatures: false,
+      // Disable unnecessary features for better performance
+      backgroundThrottling: false,
+      offscreen: false,
     },
     icon: join(__dirname, '../assets/icon.png'),
     titleBarStyle: 'default',
-    show: false,
+    show: true, // Show window immediately for faster perceived startup
+    // Performance optimizations
+    backgroundColor: '#ffffff',
+    title: 'DentaDesk - نظام إدارة عيادة الأسنان',
   })
 
   // Load the app
@@ -41,12 +52,30 @@ function createWindow(): void {
     mainWindow.loadFile(join(__dirname, '../dist/index.html'))
   }
 
-  mainWindow.once('ready-to-show', () => {
-    mainWindow?.show()
-  })
-
   mainWindow.on('closed', () => {
     mainWindow = null
+  })
+
+  // Optimize window performance
+  mainWindow.webContents.on('did-finish-load', () => {
+    console.log('✅ Application content loaded successfully')
+  })
+
+  // Add error logging for debugging
+  mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
+    console.log(`[RENDERER] ${message}`)
+  })
+
+  mainWindow.webContents.on('crashed', (event) => {
+    console.error('❌ Renderer process crashed')
+  })
+
+  mainWindow.webContents.on('unresponsive', () => {
+    console.error('❌ Renderer process became unresponsive')
+  })
+
+  mainWindow.webContents.on('responsive', () => {
+    console.log('✅ Renderer process became responsive')
   })
 }
 
@@ -68,16 +97,54 @@ if (!gotTheLock) {
   })
 
   app.whenReady().then(async () => {
+    console.time('🚀 Total App Startup Time')
+    console.time('🪟 Window Creation Time')
+
+    // Create window first for immediate user feedback
+    createWindow()
+
+    // Show window immediately for better UX
+    mainWindow?.once('ready-to-show', async () => {
+      mainWindow?.show()
+      console.timeEnd('🪟 Window Creation Time')
+
+      // Initialize services asynchronously after window is visible
+      console.time('🔧 Services Initialization Time')
+      try {
+        await initializeServicesAsync()
+        console.timeEnd('🔧 Services Initialization Time')
+        console.timeEnd('🚀 Total App Startup Time')
+        console.log('✅ App fully initialized and ready')
+      } catch (error) {
+        console.error('❌ Services initialization failed:', error)
+        console.timeEnd('🚀 Total App Startup Time')
+      }
+    })
+
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    })
+  })
+
+// Initialize services asynchronously to avoid blocking startup
+async function initializeServicesAsync() {
   try {
+    console.time('🚀 Background Service Initialization')
+    console.log('🚀 Starting background service initialization...')
+
+    console.time('🔄 Migration Check')
     // Check if migration is needed and perform it
     const migrationService = new DataMigrationService()
     const migrationStatus = await migrationService.getMigrationStatus()
+    console.timeEnd('🔄 Migration Check')
 
     console.log('Migration status:', migrationStatus)
 
     if (migrationStatus.migrationNeeded) {
+      console.time('🔄 Data Migration')
       console.log('🔄 Starting data migration from LowDB to SQLite...')
       const migrationResult = await migrationService.migrateData()
+      console.timeEnd('🔄 Data Migration')
 
       if (migrationResult.success) {
         console.log('✅ Migration completed successfully:', migrationResult.stats)
@@ -89,57 +156,88 @@ if (!gotTheLock) {
       console.log('✅ No migration needed, using existing SQLite database')
     }
 
+    console.time('🗄️ Database Service Creation')
     // Initialize services with SQLite
     databaseService = new DatabaseService()
+    console.timeEnd('🗄️ Database Service Creation')
+
+    console.time('🔧 Other Services Creation')
     backupService = new BackupService(databaseService)
     autoSaveService = new AutoSaveService(databaseService)
     reportsService = new ReportsService()
+    console.timeEnd('🔧 Other Services Creation')
 
     // Clean up migration service
     migrationService.close()
 
     console.log('✅ All services initialized successfully')
+
+    console.time('💾 AutoSave Service Start')
+    // Start auto-save service
+    autoSaveService.start()
+    console.timeEnd('💾 AutoSave Service Start')
+
+    console.time('🔄 Auto Backup Initialization')
+    // Start automatic backup scheduling
+    const initializeAutoBackup = async () => {
+      try {
+        const settings = await databaseService.getSettings()
+        if (settings?.backup_frequency) {
+          await backupService.scheduleAutomaticBackups(settings.backup_frequency as 'hourly' | 'daily' | 'weekly')
+          console.log(`Automatic backup scheduled: ${settings.backup_frequency}`)
+        }
+      } catch (error) {
+        console.error('Failed to initialize automatic backup:', error)
+      }
+    }
+
+    initializeAutoBackup()
+    console.timeEnd('🔄 Auto Backup Initialization')
+
+    console.time('📱 WhatsApp Initialization Start')
+    // Initialize WhatsApp client asynchronously (non-blocking) after window is shown
+    setTimeout(async () => {
+      try {
+        await initializeWhatsAppAsync()
+        console.log('✅ WhatsApp services initialized in background')
+      } catch (error) {
+        console.error('❌ WhatsApp background initialization failed:', error)
+      }
+    }, 1000) // Small delay to ensure UI is fully responsive
+    console.timeEnd('📱 WhatsApp Initialization Start')
+
+    console.timeEnd('🚀 Background Service Initialization')
+
   } catch (error) {
     console.error('❌ Failed to initialize services:', error)
-    throw error
+    // Don't throw error to avoid crashing the app
   }
+}
 
-  createWindow()
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
-  })
-
-  // Start auto-save service
-  autoSaveService.start()
-
-  // Start automatic backup scheduling
-  const initializeAutoBackup = async () => {
-    try {
-      const settings = await databaseService.getSettings()
-      if (settings?.backup_frequency) {
-        await backupService.scheduleAutomaticBackups(settings.backup_frequency as 'hourly' | 'daily' | 'weekly')
-        console.log(`Automatic backup scheduled: ${settings.backup_frequency}`)
-      }
-    } catch (error) {
-      console.error('Failed to initialize automatic backup:', error)
-    }
-  }
-
-  initializeAutoBackup()
-
-  // Initialize WhatsApp client and start reminder scheduler
+// Initialize WhatsApp services asynchronously
+async function initializeWhatsAppAsync() {
+  console.time('📱 WhatsApp Client Init Time')
   try {
+    console.log('📱 Starting WhatsApp client initialization...')
     await initializeClient()
+    console.log('✅ WhatsApp client initialization completed')
   } catch (e) {
-    console.warn('WhatsApp client initialization warning:', e)
+    console.warn('❌ WhatsApp client initialization failed:', e.message || e)
+  } finally {
+    console.timeEnd('📱 WhatsApp Client Init Time')
   }
+
+  console.time('📅 WhatsApp Scheduler Init Time')
   try {
+    console.log('📅 Starting WhatsApp reminder scheduler...')
     await startScheduler()
+    console.log('✅ WhatsApp reminder scheduler started successfully')
   } catch (e) {
-    console.error('Failed to start WhatsApp reminder scheduler:', e)
+    console.error('❌ Failed to start WhatsApp reminder scheduler:', e.message || e)
+  } finally {
+    console.timeEnd('📅 WhatsApp Scheduler Init Time')
   }
-  })
+}
 }
 
 app.on('window-all-closed', () => {
@@ -731,15 +829,23 @@ ipcMain.handle('settings:update', async (_, settings) => {
 // WhatsApp Settings IPC Handlers
 ipcMain.handle('get-whatsapp-settings', async () => {
   try {
-    console.log('Getting WhatsApp settings...')
+    console.log('📞 Getting WhatsApp settings...')
     // Ensure minutes column exists
     try {
+      console.log('🔍 Checking settings table schema...')
       const cols = databaseService.db.prepare(`PRAGMA table_info(settings)`).all()
+      console.log('📊 Current settings table columns:', cols?.map((c: any) => c.name) || [])
       const hasMinutes = cols?.some((c: any) => c.name === 'whatsapp_reminder_minutes_before')
       if (!hasMinutes) {
+        console.log('⚠️ whatsapp_reminder_minutes_before column missing, adding it...')
         databaseService.db.prepare(`ALTER TABLE settings ADD COLUMN whatsapp_reminder_minutes_before INTEGER DEFAULT 0`).run()
+        console.log('✅ Column added successfully')
+      } else {
+        console.log('✅ whatsapp_reminder_minutes_before column exists')
       }
-    } catch {}
+    } catch (schemaErr) {
+      console.warn('⚠️ Schema check failed:', schemaErr.message)
+    }
 
     const stmt = databaseService.db.prepare(`
       SELECT
@@ -809,15 +915,23 @@ ipcMain.handle('set-whatsapp-settings', async (_, whatsappSettings) => {
 // New aliases matching preload whatsappReminders API
 ipcMain.handle('whatsapp-reminders:get-settings', async () => {
   try {
-    console.log('Main: Handling whatsapp-reminders:get-settings request.');
+    console.log('📱 Main: Handling whatsapp-reminders:get-settings request.');
     // Ensure minutes column exists to avoid failures on fresh DBs
     try {
+      console.log('🔍 Checking settings table schema for whatsapp-reminders...')
       const cols = databaseService.db.prepare(`PRAGMA table_info(settings)`).all()
+      console.log('📊 Current settings table columns (whatsapp-reminders):', cols?.map((c: any) => c.name) || [])
       const hasMinutes = cols?.some((c: any) => c.name === 'whatsapp_reminder_minutes_before')
       if (!hasMinutes) {
+        console.log('⚠️ whatsapp_reminder_minutes_before column missing for whatsapp-reminders, adding it...')
         databaseService.db.prepare(`ALTER TABLE settings ADD COLUMN whatsapp_reminder_minutes_before INTEGER DEFAULT 0`).run()
+        console.log('✅ Column added successfully for whatsapp-reminders')
+      } else {
+        console.log('✅ whatsapp_reminder_minutes_before column exists for whatsapp-reminders')
       }
-    } catch {}
+    } catch (schemaErr) {
+      console.warn('⚠️ Schema check failed for whatsapp-reminders:', schemaErr.message)
+    }
     const stmt = databaseService.db.prepare(`
       SELECT
         whatsapp_reminder_enabled AS whatsapp_reminder_enabled,
@@ -912,6 +1026,16 @@ ipcMain.handle('whatsapp-reminders:reset-session', async () => {
     return { success: true }
   } catch (error) {
     return { success: false, error: error instanceof Error ? error.message : 'Failed to reset session' }
+  }
+})
+
+// WhatsApp Status Notifications
+ipcMain.handle('whatsapp:get-status', async () => {
+  try {
+    return getWhatsAppStatus()
+  } catch (error) {
+    console.error('Error getting WhatsApp status:', error)
+    return { isReady: false, hasQr: false, error: error instanceof Error ? error.message : 'Unknown error' }
   }
 })
 
@@ -2049,5 +2173,58 @@ ipcMain.handle('db:toothTreatmentImages:delete', async (_, id) => {
   } catch (error) {
     console.error('Error deleting tooth treatment image:', error)
     throw error
+  }
+})
+
+ipcMain.handle('license:getLicenseInfo', async () => {
+  try {
+    if (!licenseManager) {
+      return null
+    }
+    const licenseInfo = await licenseManager.getLicenseInfo()
+    return licenseInfo
+  } catch (error) {
+    console.error('❌ Error getting license info:', error)
+    return null
+  }
+})
+
+ipcMain.handle('license:checkStatus', async () => {
+  try {
+    if (!licenseManager) {
+      return {
+        isValid: false,
+        isFirstRun: true,
+        error: 'License manager not available'
+      }
+    }
+    const validationResult = await licenseManager.validateStoredLicense()
+    const isFirstRun = licenseManager.isFirstRun()
+
+    return {
+      isValid: validationResult.isValid,
+      isFirstRun: isFirstRun,
+      error: validationResult.error
+    }
+  } catch (error) {
+    console.error('❌ Error checking license status:', error)
+    return {
+      isValid: false,
+      isFirstRun: true,
+      error: 'Failed to check license status'
+    }
+  }
+})
+
+ipcMain.handle('license:clearData', async () => {
+  try {
+    if (!licenseManager) {
+      return { success: false, error: 'License manager not available' }
+    }
+    await licenseManager.clearLicenseData()
+    return { success: true }
+  } catch (error) {
+    console.error('❌ Error clearing license data:', error)
+    return { success: false, error: 'Failed to clear license data' }
   }
 })

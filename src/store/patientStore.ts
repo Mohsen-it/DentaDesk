@@ -55,15 +55,29 @@ export const usePatientStore = create<PatientStore>()(
 
       // Data operations
       loadPatients: async () => {
+        const startTime = performance.now()
         set({ isLoading: true, error: null })
         try {
+          const apiStartTime = performance.now()
           const patients = await window.electronAPI?.patients?.getAll() || []
+          const apiEndTime = performance.now()
+          console.log(`📡 Patients API Call: ${(apiEndTime - apiStartTime).toFixed(2)}ms`)
+          console.log(`✅ Loaded ${patients.length} patients`)
+
+          const updateStartTime = performance.now()
           set({
             patients,
             filteredPatients: patients,
             isLoading: false
           })
+          const updateEndTime = performance.now()
+          console.log(`💾 Patients State Update: ${(updateEndTime - updateStartTime).toFixed(2)}ms`)
+
+          const endTime = performance.now()
+          console.log(`👥 Patient Store: Load Patients: ${(endTime - startTime).toFixed(2)}ms`)
         } catch (error) {
+          const endTime = performance.now()
+          console.log(`👥 Patient Store: Load Patients Failed: ${(endTime - startTime).toFixed(2)}ms`)
           console.error('Error loading patients:', error)
           set({
             error: error instanceof Error ? error.message : 'Failed to load patients',

@@ -76,8 +76,14 @@ import './styles/globals.css'
 const GlobalSearch = React.lazy(() => import('@/components/globalThis/GlobalSearch'))
 
 function AppContent() {
-  const { isDarkMode, setDarkMode } = useTheme()
+  // ALL HOOKS MUST BE CALLED IN THE SAME ORDER EVERY TIME
+  // This prevents "Rendered more hooks than during the previous render" error
+
+  // Theme and UI hooks (always first)
+  const { setDarkMode } = useTheme()
   const { toast } = useToast()
+
+  // Authentication and license hooks
   const { isAuthenticated, isLoading: authLoading, passwordEnabled, login } = useAuth()
   const {
     isLicenseValid,
@@ -89,41 +95,119 @@ function AppContent() {
   } = useLicense()
   const { formatAmount } = useCurrency()
 
-  // Enable real-time synchronization for the entire application
+  // Custom hooks (always in same order)
   useRealTimeSync()
   useRealTimeTableSync()
-
-  // Load custom treatment names for proper display
   useTreatmentNames()
 
-  // Format currency callback - moved to top level to ensure consistent hook order
+  // Store hooks (always in same order)
+  const { loadPatients, patients } = usePatientStore()
+  const {
+    appointments,
+    isLoading: appointmentsLoading,
+    error: appointmentsError,
+    loadAppointments,
+    createAppointment,
+    updateAppointment,
+    deleteAppointment
+  } = useAppointmentStore()
+  const { loadSettings } = useSettingsStore()
+
+  // State hooks (always in same order)
+  const [activeTab, setActiveTab] = useState('dashboard')
+  const [showSplash, setShowSplash] = useState(true)
+  const [showAddPatient, setShowAddPatient] = useState(false)
+  const [showAddPayment, setShowAddPayment] = useState(false)
+  const [loginLoading, setLoginLoading] = useState(false)
+  const [showPaymentPasswordModal, setShowPaymentPasswordModal] = useState(false)
+  const [showPasswordResetModal, setShowPasswordResetModal] = useState(false)
+  const [showPasswordSetupModal, setShowPasswordSetupModal] = useState(false)
+  const [isPaymentsAuthenticated, setIsPaymentsAuthenticated] = useState(false)
+  const [showGlobalSearch, setShowGlobalSearch] = useState(false)
+  const [showDiagnostics, setShowDiagnostics] = useState(false)
+
+  // Appointment states
+  const [showAddAppointment, setShowAddAppointment] = useState(false)
+  const [showEditAppointment, setShowEditAppointment] = useState(false)
+  const [showDeleteAppointmentConfirm, setShowDeleteAppointmentConfirm] = useState(false)
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
+  const [appointmentSearchQuery, setAppointmentSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+
+  // Callback hooks
   const formatCurrency = useCallback((amount: number) => {
     return formatAmount(amount)
   }, [formatAmount])
 
-  // Setup keyboard shortcuts - تم تعطيلها لصالح الاختصارات المحلية في كل صفحة
-  // useSystemShortcuts({
-  //   onGlobalSearch: () => {
-  //     console.log('Global search shortcut triggered')
-  //   },
-  //   onNavigateToDashboard: () => setActiveTab('dashboard'),
-  //   onNavigateToPatients: () => setActiveTab('patients'),
-  //   onNavigateToAppointments: () => setActiveTab('appointments'),
-  //   onNavigateToPayments: () => handleTabChange('payments'),
-  //   onNavigateToTreatments: () => setActiveTab('dental-treatments'),
-  //   onNewPatient: () => setShowAddPatient(true),
-  //   onNewAppointment: () => setShowAddAppointment(true),
-  //   onNewPayment: () => setShowAddPayment(true),
-  //   onRefresh: () => {
-  //     window.location.reload()
-  //   },
-  //   onHelp: () => {
-  //     console.log('Help shortcut triggered')
-  //   },
-  //   enabled: isAuthenticated && isLicenseValid
-  // })
+  const handleSearchResultSelect = useCallback((result: any) => {
+    console.log('🎯 Search result selected:', result)
 
-  // Setup simple keyboard shortcuts for navigation
+    // Navigate to appropriate tab based on result type
+    switch (result.type) {
+      case 'patient':
+        setActiveTab('patients')
+        break
+      case 'appointment':
+        setActiveTab('appointments')
+        break
+      case 'payment':
+        handleTabChange('payments')
+        break
+      case 'treatment':
+        setActiveTab('dental-treatments')
+        break
+      case 'prescription':
+        setActiveTab('medications')
+        break
+      default:
+        // Default to dashboard if type is unknown
+        setActiveTab('dashboard')
+        break
+    }
+
+    // Close the search overlay
+    setShowGlobalSearch(false)
+  }, [])
+
+  // Custom tab change handler with optional password protection
+  const handleTabChange = (tab: string) => {
+    if (tab === 'payments') {
+      if (isPasswordSet()) {
+        // Password is set, check if already authenticated
+        if (!isPaymentsAuthenticated) {
+          setShowPaymentPasswordModal(true)
+        } else {
+          setActiveTab('payments')
+        }
+      } else {
+        // No password set, allow direct access
+        setActiveTab('payments')
+      }
+    } else {
+      // Reset payments authentication when switching away
+      if (isPaymentsAuthenticated) {
+        setIsPaymentsAuthenticated(false)
+      }
+      setActiveTab(tab)
+    }
+  }
+
+  // Effect hooks (all grouped together)
+  useEffect(() => {
+    console.log('🚀 App.tsx: App component mounted')
+
+    // Check if electronAPI is available
+    if (typeof window !== 'undefined') {
+      console.log('🔌 electronAPI available:', !!window.electronAPI)
+      console.log('🔌 window.electron available:', !!window.electron)
+    }
+
+    return () => {
+      console.log('🔄 App.tsx: App component unmounting')
+    }
+  }, [])
+
+  // Setup keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       // تجاهل الاختصارات إذا كان المستخدم يكتب في input أو textarea
@@ -221,92 +305,30 @@ function AppContent() {
         setShowGlobalSearch(true)
       }
 
-
-
       // Open Settings (F1)
       if (event.key === 'F1') {
         event.preventDefault()
         console.log('🎯 Opening Settings')
         setActiveTab('settings')
       }
-
-
     }
 
-    if (isAuthenticated && isLicenseValid) {
-      window.addEventListener('keydown', handleKeyDown)
-      return () => window.removeEventListener('keydown', handleKeyDown)
+    // Always add/remove event listener to maintain consistent hook order
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, []) // Removed conditional dependencies to prevent hook order issues
+
+  // F12 diagnostic shortcut
+  useEffect(() => {
+    const handleF12 = (e: KeyboardEvent) => {
+      if (e.key === 'F12') {
+        e.preventDefault()
+        setShowDiagnostics(true)
+      }
     }
-  }, [isAuthenticated, isLicenseValid])
-
-  const [activeTab, setActiveTab] = useState('dashboard')
-  const [showSplash, setShowSplash] = useState(true)
-  const [showAddPatient, setShowAddPatient] = useState(false)
-  const [showAddPayment, setShowAddPayment] = useState(false)
-  const [loginLoading, setLoginLoading] = useState(false)
-
-  // Password protection states
-  const [showPaymentPasswordModal, setShowPaymentPasswordModal] = useState(false)
-  const [showPasswordResetModal, setShowPasswordResetModal] = useState(false)
-  const [showPasswordSetupModal, setShowPasswordSetupModal] = useState(false)
-  const [isPaymentsAuthenticated, setIsPaymentsAuthenticated] = useState(false)
-
-  // Global search state
-  const [showGlobalSearch, setShowGlobalSearch] = useState(false)
-
-  // Handle global search result selection
-  const handleSearchResultSelect = useCallback((result: any) => {
-    console.log('🎯 Search result selected:', result)
-
-    // Navigate to appropriate tab based on result type
-    switch (result.type) {
-      case 'patient':
-        setActiveTab('patients')
-        break
-      case 'appointment':
-        setActiveTab('appointments')
-        break
-      case 'payment':
-        handleTabChange('payments')
-        break
-      case 'treatment':
-        setActiveTab('dental-treatments')
-        break
-      case 'prescription':
-        setActiveTab('medications')
-        break
-      default:
-        // Default to dashboard if type is unknown
-        setActiveTab('dashboard')
-        break
-    }
-
-    // Close the search overlay
-    setShowGlobalSearch(false)
+    window.addEventListener('keydown', handleF12)
+    return () => window.removeEventListener('keydown', handleF12)
   }, [])
-
-  // Custom tab change handler with optional password protection
-  const handleTabChange = (tab: string) => {
-    if (tab === 'payments') {
-      if (isPasswordSet()) {
-        // Password is set, check if already authenticated
-        if (!isPaymentsAuthenticated) {
-          setShowPaymentPasswordModal(true)
-        } else {
-          setActiveTab('payments')
-        }
-      } else {
-        // No password set, allow direct access
-        setActiveTab('payments')
-      }
-    } else {
-      // Reset payments authentication when switching away
-      if (isPaymentsAuthenticated) {
-        setIsPaymentsAuthenticated(false)
-      }
-      setActiveTab(tab)
-    }
-  }
 
   // Handle successful payment authentication
   const handlePaymentAuthSuccess = () => {
@@ -333,13 +355,7 @@ function AppContent() {
 
 
 
-  // Appointment states
-  const [showAddAppointment, setShowAddAppointment] = useState(false)
-  const [showEditAppointment, setShowEditAppointment] = useState(false)
-  const [showDeleteAppointmentConfirm, setShowDeleteAppointmentConfirm] = useState(false)
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
-  const [appointmentSearchQuery, setAppointmentSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
+  // All appointment states moved to top level hooks section
 
 
 
@@ -351,36 +367,43 @@ function AppContent() {
     })
   }
 
-  const { loadPatients, patients } = usePatientStore()
-
-  const {
-    appointments,
-    isLoading: appointmentsLoading,
-    error: appointmentsError,
-    loadAppointments,
-    createAppointment,
-    updateAppointment,
-    deleteAppointment
-  } = useAppointmentStore()
-
-  // Settings store
-  const {
-    loadSettings
-  } = useSettingsStore()
+  // Store hooks moved to top level to ensure consistent hook order
 
 
   useEffect(() => {
     // Initialize app only if both license is valid AND authenticated
     const initializeApp = async () => {
       if (isLicenseValid && isAuthenticated) {
+        console.time('🚀 App Data Initialization')
         console.log('🚀 Initializing app with valid license and authentication')
 
-        // Load settings automatically when app starts
-        await loadSettings()
+        // Stage 1: Load critical settings first (non-blocking for UI)
+        console.time('⚙️ Settings Loading')
+        loadSettings().then(() => {
+          console.timeEnd('⚙️ Settings Loading')
+        }).catch(error => {
+          console.error('Settings loading failed:', error)
+        })
 
-        // Load app data
-        loadPatients()
-        loadAppointments()
+        // Stage 2: Load data progressively to avoid blocking UI
+        setTimeout(() => {
+          console.time('👥 Patients Loading')
+          loadPatients().then(() => {
+            console.timeEnd('👥 Patients Loading')
+          }).catch(error => {
+            console.error('Patients loading failed:', error)
+          })
+
+          setTimeout(() => {
+            console.time('📅 Appointments Loading')
+            loadAppointments().then(() => {
+              console.timeEnd('📅 Appointments Loading')
+              console.timeEnd('🚀 App Data Initialization')
+            }).catch(error => {
+              console.error('Appointments loading failed:', error)
+            })
+          }, 500) // Small delay between data loads
+        }, 200) // Delay data loading to prioritize UI rendering
       } else {
         console.log('⏳ Waiting for license validation and authentication before initializing app')
       }
@@ -448,6 +471,73 @@ function AppContent() {
           <p className="text-muted-foreground">
             {licenseLoading ? 'جاري التحقق من الترخيص...' : 'جاري التحميل...'}
           </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            إذا استمر هذا التحميل، حاول إعادة تشغيل التطبيق
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error screen if there's a license error
+  if (licenseError && !isFirstRun) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="text-red-500 mb-4">
+            <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h2 className="text-lg font-semibold mb-2">خطأ في الترخيص</h2>
+          <p className="text-muted-foreground mb-4">{licenseError}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90"
+          >
+            إعادة المحاولة
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Diagnostic screen state - now moved to top level hooks section
+
+  // F12 diagnostic shortcut moved to top level hooks section
+
+  if (showDiagnostics) {
+    return (
+      <div className="min-h-screen bg-background p-8">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-2xl font-bold mb-6">تشخيص التطبيق</h1>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-card p-4 rounded-lg">
+              <h2 className="text-lg font-semibold mb-3">حالة التطبيق</h2>
+              <div className="space-y-2">
+                <p>ترخيص صالح: {isLicenseValid ? '✅' : '❌'}</p>
+                <p>مصادق عليه: {isAuthenticated ? '✅' : '❌'}</p>
+                <p>كلمة مرور مطلوبة: {passwordEnabled ? '✅' : '❌'}</p>
+                <p>أول تشغيل: {isFirstRun ? '✅' : '❌'}</p>
+              </div>
+            </div>
+            <div className="bg-card p-4 rounded-lg">
+              <h2 className="text-lg font-semibold mb-3">واجهات API</h2>
+              <div className="space-y-2">
+                <p>electronAPI متوفر: {!!window.electronAPI ? '✅' : '❌'}</p>
+                <p>electron متوفر: {!!window.electron ? '✅' : '❌'}</p>
+                <p>window.electronAPI.patients: {!!window.electronAPI?.patients ? '✅' : '❌'}</p>
+              </div>
+            </div>
+          </div>
+          <div className="mt-6">
+            <button
+              onClick={() => setShowDiagnostics(false)}
+              className="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90"
+            >
+              إغلاق التشخيص
+            </button>
+          </div>
         </div>
       </div>
     )

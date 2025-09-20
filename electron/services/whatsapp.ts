@@ -14,6 +14,14 @@ let lastReadyAt: number | null = null;
 const sessionPath = app.getPath('userData') + '/whatsapp-session';
 
 export async function initializeClient(): Promise<void> {
+  // Skip WhatsApp initialization if already initialized
+  if (client && isReady) {
+    console.log('✅ WhatsApp client already initialized')
+    return
+  }
+
+  console.log('🚀 Initializing WhatsApp client...')
+  
   // تحديد مسار Chrome للتطبيق المصدر
   let executablePath: string | undefined = undefined
   if (process.env.NODE_ENV === 'production' || !process.env.IS_DEV) {
@@ -50,68 +58,118 @@ export async function initializeClient(): Promise<void> {
       dataPath: sessionPath,
     }),
     puppeteer: {
-      headless: true,
-      executablePath: executablePath,
+      executablePath,
+      headless: true, // Run in headless mode for better performance
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
+        '--disable-accelerated-video-decode',
         '--no-first-run',
-        '--no-zygote',
-        '--disable-web-security',
-        '--disable-features=VizDisplayCompositor',
-        '--disable-extensions',
-        '--disable-plugins',
-        '--disable-default-apps',
-        '--disable-sync',
-        '--disable-translate',
-        '--hide-scrollbars',
-        '--mute-audio',
         '--no-default-browser-check',
-        '--no-pings',
-        '--password-store=basic',
-        '--use-mock-keychain',
-        '--disable-background-timer-throttling',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-renderer-backgrounding',
-        '--disable-features=TranslateUI',
+        '--disable-gpu',
+        '--disable-canvas-aa',
+        '--disable-gl-drawing-for-tests',
+        '--disable-extensions',
+        '--disable-infobars',
+        '--disable-notifications',
+        '--disable-speech-api',
+        '--disable-web-security',
+        '--disable-site-isolation-trials',
+        '--disable-features=IsolateOrigins,site-per-process',
+        '--disk-cache-size=104857600', // 100MB disk cache
+        '--ignore-certificate-errors',
+        '--ignore-ssl-errors',
+        '--disable-sync',
+        '--metrics-recording-only',
+        '--disable-background-networking',
+        '--disable-breakpad',
+        '--disable-component-update',
+        '--disable-domain-reliability',
         '--disable-ipc-flooding-protection',
-        '--disable-gpu'
-      ]
-    }
+        '--disable-features=site-per-process,TranslateUI',
+        '--disable-hang-monitor',
+        '--disable-partial-raster',
+        '--disable-popup-blocking',
+        '--disable-prompt-on-repost',
+        '--disable-renderer-backgrounding',
+        '--disable-sync-tabs',
+        '--disable-zero-copy',
+        '--enable-low-end-device-mode',
+        '--font-render-hinting=none',
+        '--force-color-profile=srgb',
+        '--blink-settings=imagesEnabled=false', // Disable images
+      ],
+    },
   });
 
-  client.on('qr', (qr: string) => {
-    console.log('QR Code received, scan it with your WhatsApp app:');
-    qrcode.generate(qr, { small: true });
+  client.on('qr', (qr) => {
     lastQr = qr;
-    try {
-      const windows = BrowserWindow.getAllWindows();
-      for (const win of windows) {
-        win.webContents.send('whatsapp:qr', qr);
+    console.log('QR RECEIVED', qr);
+    BrowserWindow.getAllWindows().forEach(window => {
+      if (window.webContents && !window.webContents.isDestroyed()) {
+        window.webContents.send('whatsapp:qr', qr);
       }
-    } catch (err) {
-      console.warn('Failed to broadcast QR to renderer:', err);
-    }
+    });
   });
 
   client.on('ready', () => {
-    console.log('WhatsApp client is ready!');
     isReady = true;
     lastReadyAt = Date.now();
+    console.log('WhatsApp Client is READY!');
+    BrowserWindow.getAllWindows().forEach(window => {
+      if (window.webContents && !window.webContents.isDestroyed()) {
+        window.webContents.send('whatsapp:ready');
+      }
+    });
   });
 
-  client.on('auth_failure', (msg: string) => {
-    console.error('Authentication failed:', msg);
+  client.on('authenticated', (session) => {
+    console.log('AUTHENTICATED', session);
   });
 
-  client.on('disconnected', (reason: string) => {
-    console.log('Client was disconnected:', reason);
+  client.on('auth_failure', msg => {
+    console.error('AUTHENTICATION FAILURE', msg);
     isReady = false;
+    lastQr = null;
+    BrowserWindow.getAllWindows().forEach(window => {
+      if (window.webContents && !window.webContents.isDestroyed()) {
+        window.webContents.send('whatsapp:auth_failure', msg);
+      }
+    });
   });
 
-  await client.initialize();
+  client.on('disconnected', (reason) => {
+    console.log('Client was disconnected', reason);
+    isReady = false;
+    lastQr = null;
+    BrowserWindow.getAllWindows().forEach(window => {
+      if (window.webContents && !window.webContents.isDestroyed()) {
+        window.webContents.send('whatsapp:disconnected', reason);
+      }
+    });
+    // Attempt to re-initialize after a delay
+    setTimeout(() => {
+      console.log('Attempting to re-initialize WhatsApp client...');
+      initializeClient();
+    }, 5000);
+  });
+
+  // Handle client initialization with timeout
+  const initTimeout = 30 * 1000; // 30 seconds
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('WhatsApp client initialization timed out')), initTimeout)
+  );
+
+  try {
+    await Promise.race([client.initialize(), timeoutPromise]);
+    console.log('✅ WhatsApp client initialized successfully (or already running)');
+  } catch (error) {
+    console.error('❌ WhatsApp client initialization failed:', error);
+    isReady = false;
+    lastQr = null;
+    throw error;
+  }
 }
 
 export async function sendMessage(phoneNumber: string, message: string): Promise<void> {
@@ -137,54 +195,33 @@ export async function sendMessage(phoneNumber: string, message: string): Promise
 }
 
 export async function resetWhatsAppSession(): Promise<void> {
-  try {
-    if (client) {
-      try {
-        await client.logout();
-      } catch (_) {}
-      try {
-        await client.destroy();
-      } catch (_) {}
+  console.log('Resetting WhatsApp session...');
+  if (client) {
+    try {
+      await client.destroy();
+      console.log('Client destroyed.');
+    } catch (e) {
+      console.warn('Error destroying client:', e);
     }
-
-    if (fs.existsSync(sessionPath)) {
-      const rm = (target: string) => {
-        if (fs.lstatSync(target).isDirectory()) {
-          for (const entry of fs.readdirSync(target)) {
-            rm(path.join(target, entry));
-          }
-          fs.rmdirSync(target);
-        } else {
-          fs.unlinkSync(target);
-        }
-      };
-      rm(sessionPath);
-    }
-
-    lastQr = null;
-    isReady = false;
-    await initializeClient();
-  } catch (error) {
-    console.error('Failed to reset WhatsApp session:', error);
-    throw error;
   }
+  if (fs.existsSync(sessionPath)) {
+    console.log('Deleting session data...');
+    fs.rmSync(sessionPath, { recursive: true, force: true });
+    console.log('Session data deleted.');
+  }
+  client = undefined as any; // Clear the client object
+  isReady = false;
+  lastQr = null;
+  console.log('WhatsApp session reset complete. Re-initializing client...');
+  await initializeClient();
 }
 
 export function getWhatsAppStatus() {
   return {
-    isReady,
-    hasQr: !!lastQr,
-    qr: lastQr || undefined,
-    device: {
-      hostname: os.hostname(),
-      platform: os.platform(),
-      arch: os.arch(),
-    },
-    account: {
-      wid: (client as any)?.info?.wid?._serialized || (client as any)?.info?.wid?.user || undefined,
-      pushname: (client as any)?.info?.pushname || undefined,
-      platform: (client as any)?.info?.platform || undefined,
-    },
-    lastReadyAt
+    isReady: isReady,
+    hasQr: lastQr !== null,
+    qr: lastQr,
+    lastReadyAt: lastReadyAt,
+    uptime: isReady && lastReadyAt ? Date.now() - lastReadyAt : 0
   };
 }

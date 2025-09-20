@@ -9,6 +9,7 @@ let lastQr = null
 let isReady = false
 let isInitializing = false
 let isResetting = false
+let initAttemptCount = 0
 
 const sessionPath = app.getPath('userData') + '/whatsapp-session'
 
@@ -16,30 +17,41 @@ async function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
 
 // Health check function to verify client status
 async function performHealthCheck() {
-  if (!client) return false
+  if (!client) {
+    console.log('🔍 Health check: No client instance')
+    return false
+  }
 
   try {
     const state = await client.getState().catch(() => null)
     const stateStr = String(state || '').toLowerCase()
-    return stateStr === 'connected' || stateStr === 'authenticated'
+    const isHealthy = stateStr === 'connected' || stateStr === 'authenticated'
+    console.log(`🔍 Health check result: ${isHealthy ? 'HEALTHY' : 'UNHEALTHY'} (state: ${stateStr})`)
+    return isHealthy
   } catch (err) {
-    console.warn('Health check failed:', err.message)
+    console.warn('❌ Health check failed:', err.message)
     return false
   }
 }
 
 // Periodic health monitoring
 setInterval(async () => {
+  console.log(`⏰ Health check interval triggered at ${new Date().toISOString()}`)
   if (!isReady && !isInitializing && !isResetting) {
+    console.log('⏰ Conditions met for health check (client not ready, not initializing, not resetting)')
     const isHealthy = await performHealthCheck()
     if (!isHealthy) {
-      console.log('Client appears unhealthy, attempting recovery...')
+      console.log('🚨 Client appears unhealthy, attempting recovery...')
       try {
         await initializeClient()
       } catch (err) {
-        console.warn('Automatic recovery failed:', err.message)
+        console.warn('❌ Automatic recovery failed:', err.message)
       }
+    } else {
+      console.log('✅ Client is healthy, no recovery needed')
     }
+  } else {
+    console.log(`⏰ Skipping health check (ready: ${isReady}, initializing: ${isInitializing}, resetting: ${isResetting})`)
   }
 }, 30000) // فحص كل 30 ثانية
 
@@ -210,10 +222,12 @@ async function initializeClient() {
     let lastError = null
 
     while (attempts < maxInitAttempts) {
+      initAttemptCount++
+      const globalAttempt = initAttemptCount
+      console.log(`🚀 Initializing WhatsApp client (attempt ${attempts + 1}/${maxInitAttempts}, global attempt #${globalAttempt})...`)
       try {
-        console.log(`Initializing WhatsApp client (attempt ${attempts + 1}/${maxInitAttempts})...`)
         await client.initialize()
-        console.log('WhatsApp client initialized successfully')
+        console.log('✅ WhatsApp client initialized successfully')
         break
       } catch (err) {
         attempts += 1

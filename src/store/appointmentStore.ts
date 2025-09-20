@@ -42,26 +42,6 @@ type AppointmentStore = AppointmentState & AppointmentActions
 export const useAppointmentStore = create<AppointmentStore>()(
   devtools(
     (set, get) => {
-      // Listen for patient deletion events to update appointments
-      if (typeof window !== 'undefined') {
-        window.addEventListener('patient-deleted', (event: any) => {
-          const { patientId } = event.detail
-          const { appointments, selectedAppointment } = get()
-
-          // Remove appointments for deleted patient
-          const updatedAppointments = appointments.filter(a => a.patient_id !== patientId)
-
-          set({
-            appointments: updatedAppointments,
-            selectedAppointment: selectedAppointment?.patient_id === patientId ? null : selectedAppointment
-          })
-
-          // Update calendar events
-          get().convertToCalendarEvents()
-
-          console.log(`🗑️ Removed ${appointments.length - updatedAppointments.length} appointments for deleted patient ${patientId}`)
-        })
-      }
 
       return {
         // Initial state
@@ -75,10 +55,15 @@ export const useAppointmentStore = create<AppointmentStore>()(
 
       // Data operations
       loadAppointments: async () => {
+        const startTime = performance.now()
         set({ isLoading: true, error: null })
         try {
+          const apiStartTime = performance.now()
           const appointments = await window.electronAPI.appointments.getAll()
+          const apiEndTime = performance.now()
+          console.log(`📡 Appointments API Call: ${(apiEndTime - apiStartTime).toFixed(2)}ms`)
           console.log('🏪 Store: Loaded appointments:', appointments.length)
+
           if (appointments.length > 0) {
             console.log('🏪 Store: First appointment sample:', appointments[0])
 
@@ -95,14 +80,22 @@ export const useAppointmentStore = create<AppointmentStore>()(
             })
           }
 
+          const updateStartTime = performance.now()
           set({
             appointments,
             isLoading: false
           })
+          const updateEndTime = performance.now()
+          console.log(`💾 Appointments State Update: ${(updateEndTime - updateStartTime).toFixed(2)}ms`)
 
           // Convert to calendar events
           get().convertToCalendarEvents()
+
+          const endTime = performance.now()
+          console.log(`📅 Appointment Store: Load Appointments: ${(endTime - startTime).toFixed(2)}ms`)
         } catch (error) {
+          const endTime = performance.now()
+          console.log(`📅 Appointment Store: Load Appointments Failed: ${(endTime - startTime).toFixed(2)}ms`)
           console.error('🏪 Store: Failed to load appointments:', error)
           set({
             error: error instanceof Error ? error.message : 'Failed to load appointments',
@@ -357,3 +350,40 @@ export const useAppointmentStore = create<AppointmentStore>()(
     }
   )
 )
+
+// Setup event listeners outside of store creation to avoid hooks order issues
+if (typeof window !== 'undefined') {
+  // We'll set up event listeners when the store is first used
+  let listenersSetup = false
+
+  const setupEventListeners = () => {
+    if (listenersSetup) return
+    listenersSetup = true
+
+    window.addEventListener('patient-deleted', (event: any) => {
+      const { patientId } = event.detail
+      // Get the store instance (this will be called when the store is actually used)
+      const store = useAppointmentStore.getState()
+
+      const { appointments, selectedAppointment } = store
+
+      // Remove appointments for deleted patient
+      const updatedAppointments = appointments.filter(a => a.patient_id !== patientId)
+
+      useAppointmentStore.setState({
+        appointments: updatedAppointments,
+        selectedAppointment: selectedAppointment?.patient_id === patientId ? null : selectedAppointment
+      })
+
+      // Update calendar events
+      store.convertToCalendarEvents()
+
+      console.log(`🗑️ Removed ${appointments.length - updatedAppointments.length} appointments for deleted patient ${patientId}`)
+    })
+  }
+
+  // Setup listeners when the store is first accessed
+  useAppointmentStore.subscribe(() => {
+    setupEventListeners()
+  })
+}

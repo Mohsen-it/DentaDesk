@@ -91,12 +91,17 @@ export const useSettingsStore = create<SettingsStore>()(
 
         // Data operations
         loadSettings: async () => {
+          const startTime = performance.now()
           set({ isLoading: true, error: null })
           try {
+            const apiStartTime = performance.now()
             const settings = await window.electronAPI.settings.get()
+            const apiEndTime = performance.now()
+            console.log(`📡 Settings API Call: ${(apiEndTime - apiStartTime).toFixed(2)}ms`)
 
             // If settings are missing or incomplete, try to restore from localStorage backup
             if (!settings || !settings.clinic_name || settings.clinic_name === 'عيادة الأسنان') {
+              const backupStartTime = performance.now()
               const backup = restoreSettingsBackup()
               if (backup) {
                 // Update settings with backup data
@@ -113,10 +118,14 @@ export const useSettingsStore = create<SettingsStore>()(
                 })
                 // Save the restored settings as a new backup
                 saveSettingsBackup(restoredSettings)
+                const backupEndTime = performance.now()
+                console.log(`🔄 Settings Backup Restore: ${(backupEndTime - backupStartTime).toFixed(2)}ms`)
+                console.log(`📋 Settings Store: Load Settings: ${(backupEndTime - startTime).toFixed(2)}ms`)
                 return
               }
             }
 
+            const updateStartTime = performance.now()
             set({
               settings,
               language: settings?.language || 'ar',
@@ -124,10 +133,16 @@ export const useSettingsStore = create<SettingsStore>()(
               useArabicNumerals: settings?.use_arabic_numerals || false,
               isLoading: false
             })
+            const updateEndTime = performance.now()
+            console.log(`💾 Settings State Update: ${(updateEndTime - updateStartTime).toFixed(2)}ms`)
 
             // Save backup of loaded settings
             saveSettingsBackup(settings)
+            const endTime = performance.now()
+            console.log(`📋 Settings Store: Load Settings: ${(endTime - startTime).toFixed(2)}ms`)
           } catch (error) {
+            const endTime = performance.now()
+            console.log(`📋 Settings Store: Load Settings Failed: ${(endTime - startTime).toFixed(2)}ms`)
             set({
               error: error instanceof Error ? error.message : 'Failed to load settings',
               isLoading: false
