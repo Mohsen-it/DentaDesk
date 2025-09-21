@@ -15,9 +15,8 @@
     "postinstall": "electron-builder install-app-deps",
     "test": "echo \"No tests specified\"",
     "install-deps": "npm install vite @vitejs/plugin-react react react-dom typescript",
-    "install-chrome": "node scripts/install-chrome.js",
-    "dist": "npm run install-chrome && npm run build && electron-builder",
-    "dist:win": "npm run install-chrome && npm run build && electron-builder --win",
+    "dist": "npm run build && electron-builder",
+    "dist:win": "npm run build && electron-builder --win",
     "dist:mac": "npm run build && electron-builder --mac",
     "dist:linux": "npm run build && electron-builder --linux"
   },
@@ -37,6 +36,7 @@
     "@radix-ui/react-tabs": "^1.1.12",
     "@radix-ui/react-toast": "^1.2.14",
     "@radix-ui/react-tooltip": "^1.2.7",
+    "@whiskeysockets/baileys": "^7.0.0-rc.3",
     "archiver": "^7.0.1",
     "better-sqlite3": "^12.2.0",
     "class-variance-authority": "^0.7.1",
@@ -59,7 +59,6 @@
     "node-machine-id": "^1.1.12",
     "pdfkit": "^0.17.1",
     "pdfmake": "^0.2.20",
-    "puppeteer-core": "^24.22.0",
     "qrcode": "^1.5.4",
     "qrcode-terminal": "^0.12.0",
     "react": "^18.2.0",
@@ -73,7 +72,6 @@
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^9.0.1",
-    "whatsapp-web.js": "^1.26.0",
     "zod": "^3.25.67",
     "zustand": "^5.0.5"
   },
@@ -118,13 +116,6 @@
       {
         "from": "src/database",
         "to": "database"
-      },
-      {
-        "from": "node_modules/puppeteer-core/.local-chromium",
-        "to": "chrome-win",
-        "filter": [
-          "**/*"
-        ]
       }
     ],
     "win": {

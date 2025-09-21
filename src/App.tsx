@@ -24,7 +24,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 import ThemeToggle from './components/ThemeToggle'
 import { useTreatmentNames } from './hooks/useTreatmentNames' // Import useTreatmentNames hook
 
-// Lazy load heavy page components
+// Lazy load heavy page components with optimized chunk loading
 const PaymentsPage = React.lazy(() => import('./pages/Payments'))
 const SettingsPage = React.lazy(() => import('./pages/Settings'))
 const InventoryPage = React.lazy(() => import('./pages/Inventory'))
@@ -39,6 +39,22 @@ const DentalTreatments = React.lazy(() => import('./pages/DentalTreatments'))
 const ClinicNeeds = React.lazy(() => import('./pages/ClinicNeeds'))
 const Expenses = React.lazy(() => import('./pages/Expenses'))
 const ExternalEstimate = React.lazy(() => import('./pages/ExternalEstimate'))
+
+// Preload critical components for faster navigation
+const preloadComponent = (importFn: () => Promise<any>) => {
+  // Start loading the component in the background
+  const promise = importFn()
+  return promise
+}
+
+// Preload commonly used components
+const preloadCriticalComponents = () => {
+  setTimeout(() => {
+    preloadComponent(() => import('./pages/Patients'))
+    preloadComponent(() => import('./pages/Appointments'))
+    preloadComponent(() => import('./pages/Dashboard'))
+  }, 2000) // Preload after 2 seconds to not interfere with initial load
+}
 import { AppSidebar } from './components/AppSidebar'
 import { AppSidebarTrigger } from './components/AppSidebarTrigger'
 import LiveDateTime from './components/LiveDateTime'
@@ -202,6 +218,9 @@ function AppContent() {
       logger.system('electronAPI available:', !!window.electronAPI)
       logger.system('window.electron available:', !!window.electron)
     }
+
+    // Preload critical components for faster navigation
+    preloadCriticalComponents()
 
     return () => {
       logger.stop('App component unmounting')

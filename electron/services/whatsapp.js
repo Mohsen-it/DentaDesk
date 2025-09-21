@@ -1,547 +1,606 @@
-const { app, BrowserWindow } = require('electron')
-const { Client, LocalAuth } = require('whatsapp-web.js')
-const qrcode = require('qrcode-terminal')
-const fs = require('fs')
-const path = require('path')
-
-let client
-let lastQr = null
-let isReady = false
-let isInitializing = false
-let isResetting = false
-let initAttemptCount = 0
-
-const sessionPath = app.getPath('userData') + '/whatsapp-session'
-
-async function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
-
-// Health check function to verify client status
-async function performHealthCheck() {
-  if (!client) {
-    console.log('🔍 Health check: No client instance')
-    return false
-  }
-
-  try {
-    const state = await client.getState().catch(() => null)
-    const stateStr = String(state || '').toLowerCase()
-    const isHealthy = stateStr === 'connected' || stateStr === 'authenticated'
-    console.log(`🔍 Health check result: ${isHealthy ? 'HEALTHY' : 'UNHEALTHY'} (state: ${stateStr})`)
-    return isHealthy
-  } catch (err) {
-    console.warn('❌ Health check failed:', err.message)
-    return false
-  }
-}
-
-// Periodic health monitoring
-setInterval(async () => {
-  console.log(`⏰ Health check interval triggered at ${new Date().toISOString()}`)
-  if (!isReady && !isInitializing && !isResetting) {
-    console.log('⏰ Conditions met for health check (client not ready, not initializing, not resetting)')
-    const isHealthy = await performHealthCheck()
-    if (!isHealthy) {
-      console.log('🚨 Client appears unhealthy, attempting recovery...')
-      try {
-        await initializeClient()
-      } catch (err) {
-        console.warn('❌ Automatic recovery failed:', err.message)
-      }
-    } else {
-      console.log('✅ Client is healthy, no recovery needed')
-    }
-  } else {
-    console.log(`⏰ Skipping health check (ready: ${isReady}, initializing: ${isInitializing}, resetting: ${isResetting})`)
-  }
-}, 30000) // فحص كل 30 ثانية
-
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.initializeClient = initializeClient;
+exports.getClient = getClient;
+exports.getLastQr = getLastQr;
+exports.getIsReady = getIsReady;
+exports.getLastReadyAt = getLastReadyAt;
+exports.clearSessionData = clearSessionData;
+exports.resetSession = resetSession;
+exports.getWhatsAppDiagnosticInfo = getWhatsAppDiagnosticInfo;
+exports.getWhatsAppStatus = getWhatsAppStatus;
+exports.generateNewQR = generateNewQR;
+exports.sendMessage = sendMessage;
+exports.validateConnectionState = validateConnectionState;
+exports.isClientReady = () => isReady;
+const baileys_1 = require("@whiskeysockets/baileys");
+const boom_1 = require("@hapi/boom");
+const electron_1 = require("electron");
+const fs = require("fs");
+const pino_1 = require("pino");
+let sock = null; // Baileys socket instance
+let lastQr = null;
+let isReady = false;
+let lastReadyAt = null;
+let initializationAttempts = 0;
+const MAX_INITIALIZATION_ATTEMPTS = 5;
+let isInitializing = false; // Flag to prevent multiple concurrent initializations
+const sessionPath = electron_1.app.getPath('userData') + '/baileys-session';
 async function initializeClient() {
-  if (isInitializing) return
-  if (client) {
-    try { await client.getState() ; return } catch (_) { /* fallthrough to recreate */ }
-  }
-  isInitializing = true
-
-  // تحديد مسار Chrome للتطبيق المصدر
-  let executablePath = null
-  if (process.env.NODE_ENV === 'production' || !process.env.IS_DEV) {
-    // في التطبيق المصدر، نحتاج للبحث عن Chrome في المسارات المحتملة
-    const possiblePaths = [
-      path.join(process.resourcesPath, 'chrome-win', 'chrome.exe'),
-      path.join(process.resourcesPath, 'chrome', 'chrome.exe'),
-      path.join(__dirname, '..', '..', 'chrome-win', 'chrome.exe'),
-      path.join(__dirname, '..', '..', 'chrome', 'chrome.exe'),
-      'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-      'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
-      'C:\\Users\\' + require('os').userInfo().username + '\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe'
-    ]
-    
-    for (const chromePath of possiblePaths) {
-      try {
-        if (fs.existsSync(chromePath)) {
-          executablePath = chromePath
-          console.log('✅ تم العثور على Chrome في:', chromePath)
-          break
-        }
-      } catch (err) {
-        // تجاهل الأخطاء والاستمرار
-      }
+    console.log('🔍 DEBUG: initializeClient() function called');
+    if (isInitializing) {
+        console.log('⏳ WhatsApp client initialization already in progress, skipping.');
+        return;
     }
-    
-    if (!executablePath) {
-      console.warn('⚠️ لم يتم العثور على Chrome، سيتم استخدام المتصفح الافتراضي')
+    isInitializing = true;
+    initializationAttempts++;
+    console.log(`🚀 Initializing WhatsApp client with Baileys (attempt ${initializationAttempts}/${MAX_INITIALIZATION_ATTEMPTS})...`);
+    console.log('🔍 DEBUG: Initialization state set, proceeding with setup...');
+    // Skip WhatsApp initialization if already initialized and ready
+    if (sock && isReady) {
+        console.log('✅ WhatsApp client already initialized and ready.');
+        isInitializing = false;
+        return;
     }
-  }
-
-  client = new Client({
-    authStrategy: new LocalAuth({
-      dataPath: sessionPath,
-    }),
-    puppeteer: {
-      headless: true,
-      executablePath: executablePath,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-gpu',
-        '--disable-dev-shm-usage',
-        '--disable-web-security',
-        '--disable-features=VizDisplayCompositor',
-        '--disable-background-timer-throttling',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-renderer-backgrounding',
-        '--no-first-run',
-        '--no-zygote',
-        '--disable-web-security',
-        '--disable-features=VizDisplayCompositor',
-        '--disable-extensions',
-        '--disable-plugins',
-        '--disable-default-apps',
-        '--disable-sync',
-        '--disable-translate',
-        '--hide-scrollbars',
-        '--mute-audio',
-        '--no-default-browser-check',
-        '--no-pings',
-        '--password-store=basic',
-        '--use-mock-keychain',
-        '--disable-background-timer-throttling',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-renderer-backgrounding',
-        '--disable-features=TranslateUI',
-        '--disable-ipc-flooding-protection',
-      ],
-    },
-    takeoverOnConflict: true,
-    takeoverTimeoutMs: 0,
-    qrMaxRetries: 12,
-    // Note: webVersionCache can be set to a fixed remote HTML when needed
-  })
-
-  client.on('qr', (qr) => {
-    try {
-      console.log('QR Code received, scan it with your WhatsApp app:')
-      qrcode.generate(qr, { small: true })
-    } catch (_) {}
-    lastQr = qr
-    try {
-      const windows = BrowserWindow.getAllWindows()
-      for (const win of windows) {
-        win.webContents.send('whatsapp:qr', qr)
-      }
-    } catch (err) {
-      console.warn('Failed to broadcast QR to renderer:', err)
-    }
-  })
-
-  client.on('ready', () => {
-    console.log('WhatsApp client is ready!')
-    isReady = true
-
-    // Send success notification to renderer
-    try {
-      const { BrowserWindow } = require('electron')
-      const windows = BrowserWindow.getAllWindows()
-      for (const win of windows) {
-        win.webContents.send('whatsapp:session:connected', {
-          message: 'تم ربط حساب واتساب بنجاح!',
-          timestamp: Date.now()
-        })
-      }
-    } catch (err) {
-      console.warn('Failed to send connection notification:', err.message)
-    }
-  })
-
-  client.on('authenticated', () => {
-    console.log('WhatsApp authenticated')
-    try {
-      const windows = BrowserWindow.getAllWindows()
-      for (const win of windows) {
-        win.webContents.send('whatsapp:ready')
-      }
-    } catch (_) {}
-  })
-
-  client.on('change_state', (state) => {
-    console.log('WhatsApp state changed:', state)
-  })
-
-  client.on('auth_failure', (msg) => {
-    console.error('Authentication failed:', msg)
-    isReady = false
-    lastQr = null
-
-    // إرسال إشعار فشل المصادقة للواجهة
-    try {
-      const windows = BrowserWindow.getAllWindows()
-      for (const win of windows) {
-        win.webContents.send('whatsapp:auth_failure', {
-          message: 'فشل في المصادقة: ' + msg,
-          timestamp: Date.now()
-        })
-      }
-    } catch (err) {
-      console.warn('Failed to send auth failure notification:', err.message)
-    }
-
-    // في حالة فشل المصادقة، قد نحتاج لإعادة توليد QR
-    if (!isResetting) {
-      console.log('Authentication failed, clearing session for fresh start...')
-      setTimeout(() => {
-        resetWhatsAppSession().catch(err => {
-          console.error('Failed to reset session after auth failure:', err.message)
-        })
-      }, 3000)
-    }
-  })
-
-  client.on('loading_screen', (percent, message) => {
-    console.log('WhatsApp loading:', percent, message)
-  })
-
-  // Initialize with enhanced retry logic and better error handling
-  try {
-    let attempts = 0
-    const maxInitAttempts = 5
-    let lastError = null
-
-    while (attempts < maxInitAttempts) {
-      initAttemptCount++
-      const globalAttempt = initAttemptCount
-      console.log(`🚀 Initializing WhatsApp client (attempt ${attempts + 1}/${maxInitAttempts}, global attempt #${globalAttempt})...`)
-      try {
-        // Add timeout for initialization to prevent hanging
-        const initPromise = client.initialize()
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('WhatsApp initialization timeout')), 30000) // 30 seconds timeout
-        )
-        
-        await Promise.race([initPromise, timeoutPromise])
-        console.log('✅ WhatsApp client initialized successfully')
-        break
-      } catch (err) {
-        attempts += 1
-        lastError = err
-        const msg = String(err && err.message ? err.message : err || '')
-
-        console.warn(`WhatsApp initialization attempt ${attempts} failed:`, msg)
-
-        // أنواع الأخطاء الشائعة وكيفية التعامل معها
-        const isRetryableError = (
-          msg.includes('Target closed') ||
-          msg.includes('Session closed') ||
-          msg.includes('Protocol error') ||
-          msg.includes('WebSocket') ||
-          msg.includes('net::ERR') ||
-          msg.includes('timeout') ||
-          msg.includes('ECONNRESET') ||
-          msg.includes('ENOTFOUND')
-        )
-
-        if (!isRetryableError || attempts >= maxInitAttempts) {
-          console.error('Non-retryable error or max attempts reached:', msg)
-          
-          // إرسال إشعار الخطأ للواجهة
-          try {
-            const windows = BrowserWindow.getAllWindows()
-            for (const win of windows) {
-              win.webContents.send('whatsapp:error', {
-                message: 'فشل في تهيئة واتساب: ' + msg,
-                timestamp: Date.now(),
-                retryable: false
-              })
-            }
-          } catch (err) {
-            console.warn('Failed to send error notification:', err.message)
-          }
-          
-          throw err
-        }
-
-        // إرسال إشعار إعادة المحاولة للواجهة
+    // Clean up any existing socket before reinitializing
+    if (sock) {
         try {
-          const windows = BrowserWindow.getAllWindows()
-          for (const win of windows) {
-            win.webContents.send('whatsapp:retrying', {
-              message: 'إعادة محاولة الاتصال... (' + (attempts + 1) + '/' + maxInitAttempts + ')',
-              timestamp: Date.now(),
-              attempt: attempts + 1,
-              maxAttempts: maxInitAttempts
-            })
-          }
-        } catch (err) {
-          console.warn('Failed to send retry notification:', err.message)
+            console.log('🧹 Cleaning up existing WhatsApp socket...');
+            sock.end();
+            sock = null;
         }
-
-        // زيادة وقت الانتظار تدريجياً
-        const waitTime = Math.min(1000 * Math.pow(2, attempts), 10000)
-        console.log(`Waiting ${waitTime}ms before retry...`)
-        await sleep(waitTime)
-
-        // إعادة إنشاء الـ client في بعض الحالات
-        if (msg.includes('Target closed') && attempts > 2) {
-          console.log('Recreating WhatsApp client instance...')
-          try {
-            await client.destroy().catch(() => {})
-          } catch (_) {}
-          await sleep(1000)
+        catch (error) {
+            console.warn('⚠️ Error cleaning up existing socket:', error);
         }
-      }
     }
-
-    if (attempts >= maxInitAttempts) {
-      throw lastError || new Error('Failed to initialize WhatsApp client after maximum attempts')
-    }
-  } finally {
-    isInitializing = false
-  }
-}
-
-async function sendMessage(phoneNumber, message) {
-  if (!client) {
-    await initializeClient()
-  }
-
-  // Wait until client is ready with better error handling and retry logic
-  const waitUntilReady = async (timeoutMs = 30000, maxRetries = 3) => {
-    let attempts = 0
-
-    while (attempts < maxRetries) {
-      const start = Date.now()
-
-      // انتظار جاهزية الـ client
-      while (Date.now() - start < timeoutMs) {
-        if (isReady) return
-
-        try {
-          const state = await client.getState().catch(() => null)
-          const stateStr = String(state || '').toLowerCase()
-
-          // إذا كان الـ client جاهز أو متصل
-          if (state && (stateStr === 'connected' || stateStr === 'authenticated')) {
-            return
-          }
-
-          // إذا كان منفصل، سنحاول إعادة التهيئة
-          if (stateStr === 'disconnected') {
-            console.log('Client is disconnected, attempting to reconnect...')
-            break
-          }
-        } catch (err) {
-          console.warn('Error checking client state:', err.message)
-        }
-
-        await sleep(500) // انتظر نصف ثانية قبل المحاولة التالية
-      }
-
-      attempts++
-      console.log(`WhatsApp client not ready (attempt ${attempts}/${maxRetries})`)
-
-      // إذا لم ننجح في المحاولة الأولى، حاول إعادة تهيئة الـ client
-      if (attempts < maxRetries) {
-        try {
-          console.log('Attempting to reinitialize WhatsApp client...')
-          isReady = false
-          await initializeClient()
-          await sleep(2000) // انتظر 2 ثانية بعد إعادة التهيئة
-        } catch (err) {
-          console.warn('Failed to reinitialize client:', err.message)
-        }
-      }
-    }
-
-    throw new Error(`WhatsApp client not ready after ${maxRetries} attempts within ${timeoutMs}ms`)
-  }
-  await waitUntilReady()
-
-  // Normalize phone number (digits only)
-  const sanitized = String(phoneNumber).replace(/\D/g, '')
-  if (!sanitized) throw new Error('Invalid phone number')
-
-  // Resolve number to WhatsApp ID
-  const numberInfo = await client.getNumberId(sanitized)
-  if (!numberInfo || !numberInfo._serialized) {
-    throw new Error('Number is not on WhatsApp or invalid format')
-  }
-  const wid = numberInfo._serialized
-
-  const maxRetries = 5
-  let attempts = 0
-  let lastError = null
-
-  while (attempts < maxRetries) {
     try {
-      console.log(`Sending WhatsApp message (attempt ${attempts + 1}/${maxRetries}) to ${sanitized}...`)
-      await client.sendMessage(wid, message)
-      console.log('WhatsApp message sent successfully')
-      return
-    } catch (err) {
-      attempts += 1
-      lastError = err
-      const msg = String(err && err.message ? err.message : err || '')
-
-      console.warn(`Send message attempt ${attempts} failed:`, msg)
-
-      // أنواع الأخطاء التي يمكن إعادة المحاولة فيها
-      const isRetryableError = (
-        msg.includes('timeout') ||
-        msg.includes('ECONNRESET') ||
-        msg.includes('ENOTFOUND') ||
-        msg.includes('Network') ||
-        msg.includes('connection') ||
-        msg.includes('busy') ||
-        msg.includes('rate limit')
-      )
-
-      if (!isRetryableError || attempts >= maxRetries) {
-        console.error('Non-retryable error or max attempts reached:', msg)
-        break
-      }
-
-      // زيادة وقت الانتظار بين المحاولات
-      const waitTime = Math.min(2000 * attempts, 10000)
-      console.log(`Waiting ${waitTime}ms before retry...`)
-      await sleep(waitTime)
-
-      // التأكد من أن الـ client ما زال جاهز بعد الانتظار
-      try {
-        await waitUntilReady(5000, 1)
-      } catch (readyErr) {
-        console.warn('Client not ready after wait:', readyErr.message)
-      }
-    }
-  }
-
-  throw lastError || new Error('Failed to send WhatsApp message after maximum attempts')
-}
-
-async function resetWhatsAppSession() {
-  if (isResetting) return
-  isResetting = true
-  try {
-    if (client) {
-      try { await client.logout() } catch (_) {}
-      try { await client.destroy() } catch (_) {}
-    }
-
-    if (fs.existsSync(sessionPath)) {
-      try {
-        if (fs.rmSync) {
-          fs.rmSync(sessionPath, { recursive: true, force: true })
-        } else {
-          const rm = (target) => {
-            try {
-              if (fs.lstatSync(target).isDirectory()) {
-                for (const entry of fs.readdirSync(target)) {
-                  rm(path.join(target, entry))
+        // Create auth state
+        const { state, saveCreds } = await (0, baileys_1.useMultiFileAuthState)(sessionPath);
+        // Create Baileys socket
+        sock = (0, baileys_1.default)({
+            auth: {
+                creds: state.creds,
+                keys: (0, baileys_1.makeCacheableSignalKeyStore)(state.keys, (0, pino_1.pino)({ level: 'silent' })),
+            },
+            printQRInTerminal: false,
+            logger: (0, pino_1.pino)({ level: 'silent' }),
+            browser: baileys_1.Browsers.macOS('Desktop'),
+            generateHighQualityLinkPreview: true,
+        });
+        // Handle QR code generation
+        sock.ev.on('connection.update', (update) => {
+            const { connection, lastDisconnect, qr } = update;
+            if (qr) {
+                lastQr = qr;
+                console.log('QR RECEIVED:', qr.substring(0, 50) + '...');
+                // Send QR code as string directly (not as data URL)
+                electron_1.BrowserWindow.getAllWindows().forEach(window => {
+                    if (window.webContents && !window.webContents.isDestroyed()) {
+                        try {
+                            window.webContents.send('whatsapp:qr', qr);
+                            console.log('✅ QR sent to window:', window.id);
+                        }
+                        catch (error) {
+                            console.error('❌ Failed to send QR to window:', window.id, error);
+                        }
+                    }
+                });
+                // Also send to main process for forwarding
+                try {
+                    const { ipcMain } = require('electron');
+                    if (ipcMain) {
+                        ipcMain.emit('whatsapp:qr', null, qr);
+                    }
                 }
-                fs.rmdirSync(target)
-              } else {
-                fs.unlinkSync(target)
-              }
-            } catch (err) {
-              if (err && (err.code === 'EBUSY' || err.code === 'EPERM')) {
-                try { fs.renameSync(target, target + '.tmp_delete') } catch (_) {}
-              } else {
-                throw err
-              }
+                catch (error) {
+                    console.warn('⚠️ Could not forward QR to main process:', error);
+                }
             }
-          }
-          rm(sessionPath)
+            if (connection === 'close') {
+                const shouldReconnect = (lastDisconnect?.error instanceof boom_1.Boom)
+                    ? lastDisconnect.error.output.statusCode !== baileys_1.DisconnectReason.loggedOut
+                    : true;
+                console.log('Connection closed due to:', lastDisconnect?.error, ', reconnecting:', shouldReconnect);
+                if (shouldReconnect) {
+                    console.log('🔄 Connection lost, attempting to reconnect...');
+                    isReady = false;
+                    lastQr = null;
+                    isInitializing = false;
+                    attemptReinitialization();
+                }
+                else {
+                    console.log('📱 Logged out from WhatsApp');
+                    isReady = false;
+                    lastQr = null;
+                    electron_1.BrowserWindow.getAllWindows().forEach(window => {
+                        if (window.webContents && !window.webContents.isDestroyed()) {
+                            try {
+                                window.webContents.send('whatsapp:auth_failure', {
+                                    message: 'Logged out from WhatsApp',
+                                    timestamp: Date.now()
+                                });
+                            }
+                            catch (error) {
+                                console.error('❌ Failed to send auth failure event:', error);
+                            }
+                        }
+                    });
+                    isInitializing = false;
+                }
+            }
+            else if (connection === 'open') {
+                isReady = true;
+                lastReadyAt = Date.now();
+                console.log('✅ WhatsApp Client is READY!');
+                // Send ready event to all windows
+                electron_1.BrowserWindow.getAllWindows().forEach(window => {
+                    if (window.webContents && !window.webContents.isDestroyed()) {
+                        try {
+                            window.webContents.send('whatsapp:ready', {
+                                timestamp: lastReadyAt,
+                                message: 'WhatsApp client is ready for sending messages'
+                            });
+                            console.log('✅ Ready event sent to window:', window.id);
+                        }
+                        catch (error) {
+                            console.error('❌ Failed to send ready event to window:', window.id, error);
+                        }
+                    }
+                });
+                // Also send connected event for backward compatibility
+                electron_1.BrowserWindow.getAllWindows().forEach(window => {
+                    if (window.webContents && !window.webContents.isDestroyed()) {
+                        try {
+                            window.webContents.send('whatsapp:session:connected', {
+                                message: 'تم ربط واتساب بنجاح',
+                                timestamp: lastReadyAt
+                            });
+                            console.log('✅ Connected event sent to window:', window.id);
+                        }
+                        catch (error) {
+                            console.error('❌ Failed to send connected event to window:', window.id, error);
+                        }
+                    }
+                });
+                isInitializing = false;
+                initializationAttempts = 0;
+            }
+        });
+        // Handle credential updates
+        sock.ev.on('creds.update', saveCreds);
+        console.log('✅ WhatsApp client initialized successfully with Baileys');
+        console.log('🔍 DEBUG: initializeClient() completed successfully');
+    }
+    catch (error) {
+        console.error('❌ WhatsApp client initialization failed:', error);
+        console.error('Error details:', error?.message || 'Unknown error');
+        console.error('Stack trace:', error?.stack || 'No stack trace');
+        console.error('🔍 DEBUG: initializeClient() failed with error:', error);
+        isReady = false;
+        lastQr = null;
+        isInitializing = false;
+        // Attempt to reinitialize
+        attemptReinitialization();
+        throw error;
+    }
+    finally {
+        console.log('🔍 DEBUG: initializeClient() function ending, isInitializing:', isInitializing);
+    }
+}
+// Function to attempt re-initialization with exponential backoff
+function attemptReinitialization() {
+    if (initializationAttempts < MAX_INITIALIZATION_ATTEMPTS) {
+        const delay = Math.pow(2, initializationAttempts) * 1000; // Exponential backoff (2s, 4s, 8s, etc.)
+        console.log(`⏳ Retrying WhatsApp client initialization in ${delay / 1000} seconds (attempt ${initializationAttempts + 1}/${MAX_INITIALIZATION_ATTEMPTS})...`);
+        setTimeout(async () => {
+            try {
+                isInitializing = false; // Reset flag before retry
+                await initializeClient();
+            }
+            catch (error) {
+                console.error('❌ Retry initialization failed:', error);
+            }
+        }, delay);
+    }
+    else {
+        console.error(`❌ Maximum WhatsApp client initialization attempts reached (${MAX_INITIALIZATION_ATTEMPTS}). Clearing session data and notifying user.`);
+        clearSessionData(); // Clear session if max attempts reached
+        // Notify user about the failure
+        electron_1.BrowserWindow.getAllWindows().forEach(window => {
+            if (window.webContents && !window.webContents.isDestroyed()) {
+                try {
+                    window.webContents.send('whatsapp:auth_failure', {
+                        message: 'Maximum initialization attempts reached. Please try again later.',
+                        timestamp: Date.now()
+                    });
+                }
+                catch (error) {
+                    console.error('❌ Failed to send auth failure notification:', error);
+                }
+            }
+        });
+    }
+}
+function getClient() {
+    return sock;
+}
+function getLastQr() {
+    return lastQr;
+}
+function getIsReady() {
+    return isReady;
+}
+function getLastReadyAt() {
+    return lastReadyAt;
+}
+
+// Enhanced connection state validation function
+function validateConnectionState() {
+    const now = Date.now();
+    const timeSinceReady = lastReadyAt ? now - lastReadyAt : Infinity;
+
+    console.log('🔍 Validating WhatsApp connection state:', {
+        hasSocket: !!sock,
+        isReady,
+        hasSendMessage: sock ? typeof sock.sendMessage === 'function' : false,
+        timeSinceReady: timeSinceReady / 1000 + 's',
+        initializationAttempts,
+        isInitializing
+    });
+
+    // Check if socket exists and is ready
+    if (!sock) {
+        console.error('❌ Socket validation failed: No socket instance');
+        return { isValid: false, reason: 'No socket instance' };
+    }
+
+    if (!isReady) {
+        console.error('❌ Socket validation failed: Client not ready');
+        return { isValid: false, reason: 'Client not ready' };
+    }
+
+    if (typeof sock.sendMessage !== 'function') {
+        console.error('❌ Socket validation failed: No sendMessage method');
+        return { isValid: false, reason: 'No sendMessage method' };
+    }
+
+    // Check if connection has been ready for too long (might be stale)
+    const maxConnectionAge = 10 * 60 * 1000; // 10 minutes
+    if (timeSinceReady > maxConnectionAge) {
+        console.warn('⚠️ Connection is stale (ready for', timeSinceReady / 1000, 'seconds), should reinitialize');
+        return { isValid: false, reason: 'Connection stale', shouldReinitialize: true };
+    }
+
+    console.log('✅ Connection state validation passed');
+    return { isValid: true };
+}
+// Function to clear WhatsApp session data
+function clearSessionData() {
+    console.log('🧹 Clearing WhatsApp session data...');
+    if (sock) {
+        try {
+            sock.end();
+            sock = null;
+            console.log('✅ WhatsApp socket ended');
         }
-      } catch (err) {
-        console.warn('Non-fatal: failed to remove session path immediately:', err && err.message ? err.message : err)
-      }
+        catch (e) {
+            console.error('Error ending WhatsApp socket:', e);
+        }
+    }
+    // Reset all state variables
+    isReady = false;
+    lastQr = null;
+    initializationAttempts = 0;
+    isInitializing = false;
+    // Clear session files
+    if (fs.existsSync(sessionPath)) {
+        try {
+            fs.rmSync(sessionPath, { recursive: true, force: true });
+            console.log('✅ WhatsApp session directory cleared');
+        }
+        catch (e) {
+            console.error('❌ Error clearing WhatsApp session directory:', e);
+        }
+    }
+    // Inform renderer processes about session clear
+    electron_1.BrowserWindow.getAllWindows().forEach(window => {
+        if (window.webContents && !window.webContents.isDestroyed()) {
+            try {
+                window.webContents.send('whatsapp:session_cleared', { timestamp: Date.now() });
+                console.log('✅ Session cleared event sent to window:', window.id);
+            }
+            catch (error) {
+                console.error('❌ Failed to send session cleared event to window:', window.id, error);
+            }
+        }
+    });
+    console.log('✅ WhatsApp session data fully cleared');
+}
+// Function to reinitialize connection (lighter than full reset)
+async function reinitializeConnection() {
+    console.log('🔄 Reinitializing WhatsApp connection...');
+
+    // Set a flag to prevent concurrent reinitializations
+    if (isInitializing) {
+        console.log('⏳ WhatsApp reinitialization already in progress, skipping.');
+        return;
     }
 
-    lastQr = null
-    isReady = false
+    isInitializing = true;
 
-    // Send session deleted notification
     try {
-      const { BrowserWindow } = require('electron')
-      const windows = BrowserWindow.getAllWindows()
-      for (const win of windows) {
-        win.webContents.send('whatsapp:session:deleted', {
-          message: 'تم حذف جلسة واتساب بنجاح',
-          timestamp: Date.now()
-        })
-      }
-    } catch (err) {
-      console.warn('Failed to send deletion notification:', err.message)
-    }
+        if (sock) {
+            try {
+                // Try to gracefully end the current connection
+                console.log('🧹 Cleaning up existing WhatsApp socket...');
+                sock.end();
+                sock = null;
+                console.log('✅ Previous socket connection ended');
+            }
+            catch (error) {
+                console.warn('⚠️ Error ending previous socket:', error);
+                // Continue with reinitialization even if cleanup fails
+            }
+        }
 
-    await sleep(300)
+        // Reset state variables
+        isReady = false;
+        lastQr = null;
+
+        // Longer delay to ensure cleanup is complete
+        console.log('⏳ Waiting for cleanup to complete...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        try {
+            // Reinitialize the client
+            await initializeClient();
+            console.log('✅ WhatsApp connection reinitialized');
+
+            // Wait a bit more to ensure the connection is stable
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        catch (error) {
+            console.error('❌ Failed to reinitialize connection:', error);
+            throw error;
+        }
+    }
+    finally {
+        isInitializing = false;
+    }
+}
+// Function to reset and reinitialize the session
+async function resetSession() {
+    console.log('🔄 Resetting WhatsApp session...');
+    // Clear existing session
+    clearSessionData();
+    // Small delay to ensure cleanup is complete
+    await new Promise(resolve => setTimeout(resolve, 500));
+    // Reinitialize
+    await initializeClient();
+    console.log('✅ WhatsApp session reset completed');
+}
+// Enhanced diagnostic function for troubleshooting WhatsApp issues
+function getWhatsAppDiagnosticInfo() {
+    return {
+        isReady,
+        isInitializing,
+        lastQr: lastQr ? 'Present' : 'None',
+        lastReadyAt,
+        initializationAttempts,
+        sessionPath,
+        socketExists: !!sock,
+        socketType: sock ? typeof sock : 'null',
+        hasSendMessageMethod: sock ? typeof sock.sendMessage === 'function' : false,
+        socketState: sock ? 'Connected' : 'Disconnected',
+        timestamp: new Date().toISOString(),
+        environment: {
+            platform: process.platform,
+            nodeVersion: process.version,
+            electronVersion: process.versions.electron
+        }
+    };
+}
+// Function to get WhatsApp status with detailed information
+function getWhatsAppStatus() {
+    const diagnostic = getWhatsAppDiagnosticInfo();
+    return {
+        isReady: diagnostic.isReady,
+        hasQr: !!diagnostic.lastQr && diagnostic.lastQr !== 'None',
+        isConnected: diagnostic.socketExists,
+        lastReadyAt: diagnostic.lastReadyAt,
+        status: diagnostic.isReady ? 'Connected' : diagnostic.hasQr ? 'QR Required' : 'Disconnected',
+        diagnostic: diagnostic
+    };
+}
+// Function to force generate a new QR code
+async function generateNewQR() {
     try {
-      await initializeClient()
-    } catch (err) {
-      const msg = String(err && err.message ? err.message : err || '')
-      if (msg.includes('Target closed')) {
-        await sleep(700)
-        await initializeClient()
-      } else {
-        throw err
-      }
+        console.log('🔄 Forcing QR code generation...');
+
+        // Clear any existing state
+        lastQr = null;
+        isReady = false;
+
+        // Clean up existing socket
+        if (sock) {
+            try {
+                console.log('🧹 Cleaning up existing socket...');
+                sock.end();
+                sock = null;
+            }
+            catch (cleanupError) {
+                console.warn('⚠️ Error during socket cleanup:', cleanupError);
+            }
+        }
+
+        // Clear session directory to force fresh authentication
+        if (fs.existsSync(sessionPath)) {
+            try {
+                console.log('🗑️ Clearing session directory for fresh QR...');
+                fs.rmSync(sessionPath, { recursive: true, force: true });
+                console.log('✅ Session directory cleared');
+            }
+            catch (sessionError) {
+                console.warn('⚠️ Error clearing session directory:', sessionError);
+            }
+        }
+
+        // Reset initialization attempts
+        initializationAttempts = 0;
+        isInitializing = false;
+
+        // Create a fresh client
+        console.log('🚀 Creating fresh WhatsApp client for QR generation...');
+        await initializeClient();
+
+        // Wait for QR code to be generated
+        let attempts = 0;
+        const maxAttempts = 10;
+
+        while (attempts < maxAttempts) {
+            attempts++;
+            console.log(`⏳ Waiting for QR code (attempt ${attempts}/${maxAttempts})...`);
+
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            if (lastQr) {
+                console.log('✅ QR code generated successfully after', attempts, 'attempts');
+                return { success: true };
+            }
+        }
+
+        console.log('⚠️ QR code generation timeout - no QR received after', maxAttempts, 'attempts');
+        return {
+            success: false,
+            error: 'QR code generation timeout - no QR received after maximum attempts',
+            details: { maxAttempts, actualAttempts: attempts }
+        };
+
     }
-  } catch (error) {
-    console.error('Failed to reset WhatsApp session:', error)
-    throw error
-  } finally {
-    isResetting = false
-  }
-}
+    catch (error) {
+        console.error('❌ Failed to generate new QR:', error);
+        console.error('Error details:', {
+            message: error?.message || 'Unknown error',
+            stack: error?.stack || 'No stack trace',
+            code: error?.code || 'Unknown code'
+        });
 
-async function getWhatsAppStatus() {
-  let currentState = null
-  let isClientHealthy = false
-
-  try {
-    if (client) {
-      currentState = await client.getState().catch(() => null)
-      const stateStr = String(currentState || '').toLowerCase()
-      isClientHealthy = stateStr === 'connected' || stateStr === 'authenticated'
+        return {
+            success: false,
+            error: error?.message || 'Unknown error',
+            details: {
+                type: error?.constructor?.name || 'Unknown',
+                code: error?.code || 'N/A',
+                stack: error?.stack?.substring(0, 500) || 'No stack trace'
+            }
+        };
     }
-  } catch (err) {
-    console.warn('Error getting client status:', err.message)
-  }
-
-  return {
-    isReady: isReady && isClientHealthy,
-    hasQr: !!lastQr,
-    qr: lastQr || undefined,
-    state: currentState,
-    isClientHealthy,
-    lastQrTimestamp: lastQr ? Date.now() : null,
-  }
 }
+async function sendMessage(phoneNumber, message, retryCount = 0) {
+    const MAX_RETRIES = 4;
+    const RETRY_DELAY = 2000; // 2 seconds
+    const MESSAGE_TIMEOUT = 60000; // 60 seconds timeout (increased)
+    console.log(`📱 Attempting to send WhatsApp message (attempt ${retryCount + 1}/${MAX_RETRIES + 1})`);
 
-module.exports = {
-  initializeClient,
-  sendMessage,
-  resetWhatsAppSession,
-  getWhatsAppStatus,
-  performHealthCheck,
+    // Use the new connection state validation
+    const validation = validateConnectionState();
+    if (!validation.isValid) {
+        console.error('❌ Connection validation failed:', validation.reason);
+        if (validation.shouldReinitialize) {
+            console.log('🔄 Attempting to reinitialize connection due to stale connection...');
+            try {
+                await reinitializeConnection();
+                // Re-validate after reinitialization
+                const reValidation = validateConnectionState();
+                if (!reValidation.isValid) {
+                    throw new Error('WhatsApp client is not ready after reinitialization.');
+                }
+            }
+            catch (reinitError) {
+                console.error('❌ Failed to reinitialize connection:', reinitError);
+                throw new Error('WhatsApp client is not initialized.');
+            }
+        } else {
+            throw new Error('WhatsApp client is not ready.');
+        }
+    }
+
+    // Validate phone number
+    if (!phoneNumber || typeof phoneNumber !== 'string') {
+        throw new Error('Invalid phone number provided.');
+    }
+    // Validate message
+    if (!message || typeof message !== 'string' || message.trim().length === 0) {
+        throw new Error('Invalid message provided.');
+    }
+
+    // Sanitize phone number
+    const sanitizedNumber = phoneNumber.replace(/[-\s]/g, ''); // Remove dashes and spaces
+    if (!sanitizedNumber || sanitizedNumber.length < 8) {
+        throw new Error('Phone number is too short or invalid.');
+    }
+    const finalNumber = sanitizedNumber.startsWith('+' ) ? sanitizedNumber.slice(1) : sanitizedNumber;
+    try {
+        console.log(`📱 Sending message to ${finalNumber}...`);
+
+        // Send message using Baileys with longer timeout
+        const sendPromise = sock.sendMessage(`${finalNumber}@s.whatsapp.net`, { text: message.trim() });
+
+        // Add timeout to prevent hanging (increased to 60 seconds)
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Message send timeout')), MESSAGE_TIMEOUT);
+        });
+
+        await Promise.race([sendPromise, timeoutPromise]);
+        console.log(`✅ Message sent successfully to ${finalNumber}`);
+        return { success: true, phoneNumber: finalNumber };
+    }
+    catch (error) {
+        console.error(`❌ Failed to send message to ${finalNumber}:`, error);
+
+        // Check if error is recoverable with improved error classification
+        const isRecoverableError = (error.message &&
+            (error.message.includes('timeout') ||
+                error.message.includes('Connection lost') ||
+                error.message.includes('network') ||
+                error.message.includes('ECONNRESET') ||
+                error.message.includes('ENOTFOUND') ||
+                error.message.includes('socket hang up') ||
+                error.message.includes('connection reset') ||
+                error.message.includes('EPIPE') ||
+                error.message.includes('service unavailable') ||
+                error.message.includes('503') ||
+                error.message.includes('502') ||
+                error.message.includes('Connection closed') ||
+                error.message.includes('Connection ended')));
+
+        // Attempt retry if error is recoverable and we haven't exceeded max retries
+        if (isRecoverableError && retryCount < MAX_RETRIES) {
+            const delay = Math.min(RETRY_DELAY * Math.pow(2, retryCount), 10000); // Exponential backoff, max 10 seconds
+            console.log(`🔄 Retrying message send in ${delay}ms (attempt ${retryCount + 2}/${MAX_RETRIES + 1})`);
+
+            // Wait before retry with exponential backoff
+            await new Promise(resolve => setTimeout(resolve, delay));
+
+            // Attempt to reinitialize connection on retry attempts
+            if (retryCount >= 1) {
+                console.log('🔄 Attempting to reinitialize WhatsApp connection...');
+                try {
+                    await reinitializeConnection();
+                    // Wait a bit after reinitialization to ensure connection is stable
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                }
+                catch (reinitError) {
+                    console.warn('⚠️ Failed to reinitialize connection:', reinitError);
+                }
+            }
+
+            // Retry the message
+            return await sendMessage(phoneNumber, message, retryCount + 1);
+        }
+
+        // If retries exhausted or error is not recoverable, throw the error
+        console.error(`❌ All retry attempts failed for ${finalNumber} after ${retryCount + 1} attempts`);
+        throw new Error(`Failed to send WhatsApp message after ${retryCount + 1} attempts: ${error.message}`);
+    }
 }
-
-

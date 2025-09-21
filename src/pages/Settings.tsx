@@ -130,12 +130,12 @@ window.electronAPI?.whatsappReminders?.getStatus) {
         // @ts-ignore
         const status = await window.electronAPI.whatsappReminders.getStatus()
         const isConnected = status.isReady && (status.state === 'connected' || status.state === 'authenticated')
-        const isConnecting = status.hasQr || status.qr
+        const isConnecting = status.hasQr || !!status.qr
 
         setSessionStatus({
           isConnected,
-          isConnecting: isConnecting && !isConnected,
-          lastActivity: status.lastQrTimestamp ? new Date(status.lastQrTimestamp).toLocaleString('ar-SY') : null,
+          isConnecting: Boolean(isConnecting && !isConnected),
+          lastActivity: status.lastReadyAt ? new Date(status.lastReadyAt).toLocaleString('ar-SY') : null,
           qrAvailable: status.hasQr || !!status.qr
         })
       }
@@ -218,11 +218,11 @@ window.electronAPI?.whatsappReminders?.getStatus) {
     const checkExistingQr = async () => {
       try {
         // @ts-ignore
-        if (// @ts-ignore
-window.electronAPI?.whatsappReminders?.getStatus) {
+        if (window.electronAPI?.whatsappReminders?.getStatus) {
           // @ts-ignore
           const status = await window.electronAPI.whatsappReminders.getStatus()
           if (status.qr) {
+            console.log('🔍 Found existing QR data:', status.qr.substring(0, 50) + '...')
             setQrData(status.qr)
             return
           }
@@ -234,13 +234,122 @@ window.electronAPI?.whatsappReminders?.getStatus) {
 
     checkExistingQr()
 
-    // @ts-ignore
-    const unsubscribe = window.onWhatsAppQR?.((qr: string) => {
+    // Subscribe to QR events - fallback to direct event listener
+    const handleQrReceived = (event: any, qr: string) => {
       console.log('🔄 QR data received:', qr.substring(0, 50) + '...')
       setQrData(qr)
-    })
-    return () => {
-      if (typeof unsubscribe === 'function') unsubscribe()
+    }
+
+    const handleReady = (event: any, data: any) => {
+      console.log('✅ WhatsApp client is ready', data)
+      showNotification('تم ربط واتساب بنجاح!', 'success')
+      setShowQRModal(false)
+      updateSessionStatus()
+    }
+
+    const handleSessionConnected = (event: any, data: any) => {
+      console.log('📱 WhatsApp session connected', data)
+      showNotification(data?.message || 'تم ربط واتساب بنجاح!', 'success')
+      updateSessionStatus()
+    }
+
+    const handleAuthFailure = (event: any, data: any) => {
+      console.log('❌ WhatsApp authentication failed')
+      showNotification('فشل في ربط واتساب. يرجى المحاولة مرة أخرى.', 'error')
+    }
+
+    const handleSessionCleared = (event: any, data: any) => {
+      console.log('📱 WhatsApp session cleared')
+      setQrData('')
+      showNotification('تم مسح جلسة واتساب', 'info')
+    }
+
+    const handleConnectionFailure = (event: any, data: any) => {
+      console.log('❌ WhatsApp connection failure:', data)
+      showNotification(`فشل في الاتصال: ${data?.message || 'خطأ غير معروف'}`, 'error')
+    }
+
+    const handleInitFailure = (event: any, data: any) => {
+      console.log('❌ WhatsApp initialization failure:', data)
+      showNotification(`فشل في تهيئة واتساب: ${data?.message || 'خطأ غير معروف'}`, 'error')
+    }
+
+    const handleSessionAutoCleared = (event: any, data: any) => {
+      console.log('📱 WhatsApp session auto-cleared:', data)
+      showNotification('تم مسح جلسة واتساب تلقائياً بسبب خطأ 401. يرجى مسح رمز QR مرة أخرى.', 'info')
+
+      // Clear QR data to show waiting message
+      setQrData('')
+
+      // Auto-retry QR generation after a short delay
+      setTimeout(async () => {
+        try {
+          console.log('🔄 Auto-retrying QR generation after session clear...')
+          const generateResult = await window.electronAPI?.whatsappReminders?.generateNewQR?.()
+          if (generateResult?.success) {
+            showNotification('تم بدء عملية توليد رمز QR جديد', 'info')
+          } else {
+            console.warn('⚠️ Auto-retry QR generation failed:', generateResult?.error || 'Unknown error')
+            const errorDetails = (generateResult as any)?.details
+
+            let errorMessage = 'فشل في توليد رمز QR بعد مسح الجلسة'
+            if (generateResult?.error && generateResult.error !== 'Unknown error') {
+              errorMessage += `: ${generateResult.error}`
+            } else if (errorDetails) {
+              errorMessage += `: ${errorDetails.type}`
+              if (errorDetails.code !== 'N/A') {
+                errorMessage += ` (${errorDetails.code})`
+              }
+            } else {
+              errorMessage += `: خطأ غير معروف`
+            }
+
+            showNotification(errorMessage, 'error')
+
+            // Log detailed error for debugging
+            if (errorDetails) {
+              console.error('📊 Auto-retry detailed error info:', {
+                type: errorDetails.type,
+                code: errorDetails.code,
+                stack: errorDetails.stack
+              })
+            }
+
+            console.error('📊 Full auto-retry generateResult object:', generateResult)
+          }
+        } catch (error) {
+          console.error('Error auto-retrying QR generation:', error)
+        }
+      }, 2000)
+    }
+
+    try {
+      // Using dynamic typing for event listeners
+      const unsubscribeQR = window.electronAPI?.on('whatsapp:qr', handleQrReceived)
+      const unsubscribeReady = window.electronAPI?.on('whatsapp:ready', handleReady)
+      const unsubscribeSessionConnected = window.electronAPI?.on('whatsapp:session:connected', handleSessionConnected)
+      const unsubscribeAuthFailure = window.electronAPI?.on('whatsapp:auth_failure', handleAuthFailure)
+      const unsubscribeSessionCleared = window.electronAPI?.on('whatsapp:session_cleared', handleSessionCleared)
+      const unsubscribeConnectionFailure = window.electronAPI?.on('whatsapp:connection_failure', handleConnectionFailure)
+      const unsubscribeInitFailure = window.electronAPI?.on('whatsapp:init_failure', handleInitFailure)
+      const unsubscribeSessionAutoCleared = window.electronAPI?.on('whatsapp:session_auto_cleared', handleSessionAutoCleared)
+
+      return () => {
+        try {
+          if (typeof unsubscribeQR === 'function') unsubscribeQR()
+          if (typeof unsubscribeReady === 'function') unsubscribeReady()
+          if (typeof unsubscribeSessionConnected === 'function') unsubscribeSessionConnected()
+          if (typeof unsubscribeAuthFailure === 'function') unsubscribeAuthFailure()
+          if (typeof unsubscribeSessionCleared === 'function') unsubscribeSessionCleared()
+          if (typeof unsubscribeConnectionFailure === 'function') unsubscribeConnectionFailure()
+          if (typeof unsubscribeInitFailure === 'function') unsubscribeInitFailure()
+          if (typeof unsubscribeSessionAutoCleared === 'function') unsubscribeSessionAutoCleared()
+        } catch (error) {
+          console.warn('Error unsubscribing from events:', error)
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error setting up event listeners:', error)
     }
   }, [showQRModal])
 
@@ -248,12 +357,22 @@ window.electronAPI?.whatsappReminders?.getStatus) {
   useEffect(() => {
     let isCancelled = false
     const generate = async () => {
-      if (!qrData) {
+      if (!qrData || qrData.trim() === '') {
+        console.log('📱 QR data is empty or invalid, clearing images')
         setQrImageUrl('')
         setQrSvg('')
         return
       }
+
+      console.log('🔄 Generating QR code for data length:', qrData.length)
+
       try {
+        // Validate QR data before processing
+        if (qrData.length < 10) {
+          console.warn('⚠️ QR data too short, may be invalid:', qrData.substring(0, 50))
+          return
+        }
+
         // Prefer SVG for perfect sharpness (no resampling)
         const svg = await QRCode.toString(qrData, {
           type: 'svg',
@@ -261,30 +380,39 @@ window.electronAPI?.whatsappReminders?.getStatus) {
           margin: 2,
           color: {
             dark: '#000000',
-            light: '#e5e7eb' // light gray like terminal background
+            light: '#FFFFFF' // pure white for better contrast
           },
+          width: 512
         })
-        if (!isCancelled) setQrSvg(svg)
 
-        // Also prepare a PNG fallback of exact 512px (no CSS scaling)
+        if (!isCancelled) {
+          setQrSvg(svg)
+          console.log('✅ SVG QR code generated successfully')
+        }
+
+        // Also prepare a PNG fallback with better quality settings
         const url = await QRCode.toDataURL(qrData, {
           errorCorrectionLevel: 'M',
           margin: 2,
-          width: 512,
-          color: {
-            dark: '#000000',
-            light: '#e5e7eb'
-          }
+          width: 512
         })
-        if (!isCancelled) setQrImageUrl(url)
+
+        if (!isCancelled) {
+          setQrImageUrl(url)
+          console.log('✅ PNG QR code generated successfully')
+        }
       } catch (e) {
-        console.warn('Failed to generate local QR image:', e)
+        console.error('❌ Failed to generate QR code:', e)
+        console.error('QR Data that failed:', qrData.substring(0, 100) + '...')
+
         if (!isCancelled) {
           setQrImageUrl('')
           setQrSvg('')
+          showNotification('فشل في توليد رمز QR. يرجى المحاولة مرة أخرى.', 'error')
         }
       }
     }
+
     generate()
     return () => { isCancelled = true }
   }, [qrData])
@@ -415,22 +543,22 @@ window.electronAPI?.whatsappReminders?.getStatus) {
           // @ts-ignore
           // @ts-ignore
           if (window.electronAPI?.whatsappReminders?.setSettings) {
-            console.log('🧪 [DEBUG] About to save settings to database:', settingsPayload)
+            // console.log('🧪 [DEBUG] About to save settings to database:', settingsPayload)
             // @ts-ignore
             const saveResult = await window.electronAPI.whatsappReminders.setSettings(settingsPayload)
-            console.log('🧪 [DEBUG] Save result from database:', saveResult)
-            console.log('📱 Auto-saved WhatsApp settings:', settingsPayload)
+            // console.log('🧪 [DEBUG] Save result from database:', saveResult)
+            // console.log('📱 Auto-saved WhatsApp settings:', settingsPayload)
             
             // Test: Immediately reload settings to verify they were saved
             setTimeout(async () => {
               try {
                 // @ts-ignore
                 const testReload = await window.electronAPI.whatsappReminders.getSettings()
-                console.log('🧪 [TEST] Settings reloaded from database after save:', testReload)
+                // console.log('🧪 [TEST] Settings reloaded from database after save:', testReload)
               } catch (error) {
-                console.error('🧪 [TEST] Failed to reload settings for verification:', error)
+                // console.error('🧪 [TEST] Failed to reload settings for verification:', error)
               }
-            }, 1000)
+            }, 3000)
           }
         } catch (error) {
           console.error('Error auto-saving WhatsApp settings:', error)
@@ -1261,18 +1389,112 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                           try {
                             setQrData('')
                             setShowQRModal(true)
-                        console.log('📱 QR modal opened, checking existing QR...')
-                        // First try to reuse any existing QR
-                        // @ts-ignore
-                        const st = await window.electronAPI?.whatsappReminders?.getStatus?.()
-                        if (st?.qr) {
-                          setQrData(st.qr)
-                        } else {
-                          // Request a new QR only if none exists
-                            // @ts-ignore
-                            const result = await window.electronAPI?.whatsappReminders?.resetSession?.()
-                            console.log('🔄 Reset session result:', result)
-                        }
+                            console.log('📱 QR modal opened, initializing WhatsApp service...')
+
+                            // Use the IPC handler to generate new QR
+                            try {
+                              console.log('🔄 Starting QR generation process...')
+
+                              // Add detailed debugging for IPC call
+                              console.log('🔍 Debug: Checking electronAPI availability:', {
+                                hasElectronAPI: !!window.electronAPI,
+                                hasWhatsappReminders: !!(window.electronAPI as any)?.whatsappReminders,
+                                hasGenerateNewQR: !!(window.electronAPI as any)?.whatsappReminders?.generateNewQR,
+                                generateNewQRType: typeof (window.electronAPI as any)?.whatsappReminders?.generateNewQR
+                              })
+
+                              const generateNewQRFunction = (window.electronAPI as any)?.whatsappReminders?.generateNewQR
+                              if (!generateNewQRFunction) {
+                                console.error('❌ generateNewQR function not available')
+                                showNotification('خدمة توليد رمز QR غير متاحة', 'error')
+                                return
+                              }
+
+                              console.log('🔄 Calling generateNewQR function...')
+                              let generateResult
+                              try {
+                                generateResult = await generateNewQRFunction()
+                                console.log('🔄 IPC call completed, result type:', typeof generateResult)
+                                console.log('🔄 IPC call completed, result value:', generateResult)
+                              } catch (ipcError: any) {
+                                console.error('❌ IPC call failed:', ipcError)
+                                console.error('❌ IPC error details:', {
+                                  message: ipcError?.message,
+                                  stack: ipcError?.stack,
+                                  type: ipcError?.constructor?.name
+                                })
+                                throw ipcError
+                              }
+
+                              if (generateResult?.success) {
+                                console.log('✅ QR generation initiated successfully')
+                                showNotification('تم بدء عملية توليد رمز QR جديد', 'info')
+
+                                // Check for QR after generation with multiple attempts
+                                let attempts = 0
+                                const maxAttempts = 10
+                                const checkForQr = async () => {
+                                  attempts++
+                                  try {
+                                    // @ts-ignore
+                                    const status = await window.electronAPI?.whatsappReminders?.getStatus?.()
+                                    if (status?.qr && status.qr.trim() !== '') {
+                                      console.log('🔍 Found QR data after generation attempt', attempts)
+                                      setQrData(status.qr)
+                                      showNotification('تم توليد رمز QR بنجاح!', 'success')
+                                      return
+                                    } else if (attempts < maxAttempts) {
+                                      console.log('📱 No QR found, retrying... (attempt', attempts, 'of', maxAttempts, ')')
+                                      setTimeout(checkForQr, 1000)
+                                    } else {
+                                      console.log('📱 No QR found after', maxAttempts, 'attempts')
+                                      showNotification('لم يتم توليد رمز QR. يرجى المحاولة مرة أخرى.', 'error')
+                                    }
+                                  } catch (statusError) {
+                                    console.warn('Failed to check status after QR generation:', statusError)
+                                    if (attempts < maxAttempts) {
+                                      setTimeout(checkForQr, 1000)
+                                    } else {
+                                      showNotification('تعذر التحقق من حالة رمز QR', 'error')
+                                    }
+                                  }
+                                }
+
+                                setTimeout(checkForQr, 1500)
+                              } else {
+                                console.warn('⚠️ QR generation failed:', generateResult?.error || 'Unknown error')
+                                const errorDetails = (generateResult as any)?.details
+
+                                let errorMessage = 'فشل في توليد رمز QR'
+                                if (generateResult?.error && generateResult.error !== 'Unknown error') {
+                                  errorMessage += `: ${generateResult.error}`
+                                } else if (errorDetails) {
+                                  errorMessage += `: ${errorDetails.type}`
+                                  if (errorDetails.code !== 'N/A') {
+                                    errorMessage += ` (${errorDetails.code})`
+                                  }
+                                } else {
+                                  errorMessage += `: خطأ غير معروف`
+                                }
+
+                                showNotification(errorMessage, 'error')
+
+                                // Log detailed error for debugging
+                                if (errorDetails) {
+                                  console.error('📊 Detailed error info:', {
+                                    type: errorDetails.type,
+                                    code: errorDetails.code,
+                                    stack: errorDetails.stack
+                                  })
+                                }
+
+                                console.error('📊 Full generateResult object:', generateResult)
+                              }
+                            } catch (initError) {
+                              console.error('❌ QR generation failed:', initError)
+                              showNotification(`تعذر توليد رمز QR: ${(initError as any)?.message || 'خطأ غير معروف'}`, 'error')
+                            }
+
                             showNotification('تم طلب رمز QR جديد. امسح الرمز على هاتفك.', 'info')
                           } catch (error) {
                             console.error('❌ Failed to start QR flow:', error)
@@ -1382,14 +1604,14 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
               className="bg-destructive hover:bg-destructive/90"
               onClick={async () => {
                 try {
-                  // @ts-ignore
-const res = await window.electronAPI?.whatsappReminders?.resetSession?.()
+                  const res = await window.electronAPI?.whatsappReminders?.resetSession?.()
                   if (res?.success) {
                     showNotification('تم حذف الجلسة بنجاح. سيظهر رمز QR لإعادة الربط.', 'success')
                   } else {
                     showNotification(res?.error || 'فشل في حذف الجلسة', 'error')
                   }
                 } catch (error) {
+                  console.error('Error resetting WhatsApp session:', error)
                   showNotification('حدث خطأ أثناء حذف الجلسة', 'error')
                 }
               }}
@@ -1423,8 +1645,7 @@ const res = await window.electronAPI?.whatsappReminders?.resetSession?.()
               className="bg-destructive hover:bg-destructive/90"
               onClick={async () => {
                 try {
-                  // @ts-ignore
-const res = await window.electronAPI?.whatsappReminders?.resetSession?.()
+                  const res = await window.electronAPI?.whatsappReminders?.resetSession?.()
                   if (res?.success) {
                     showNotification('تمت إعادة تهيئة جلسة واتساب بنجاح. قد تحتاج لإعادة ربط الحساب.', 'success')
                   } else {
@@ -1658,107 +1879,7 @@ const res = await window.electronAPI?.whatsappReminders?.resetSession?.()
             </div>
           </div>
 
-          {/* External Estimate Settings */}
-          <div className="bg-card rounded-lg shadow border border-border">
-            <div className="p-6 border-b border-border">
-              <h3 className="text-lg font-medium text-foreground">إعدادات الفاتورة التقديرية</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                إعدادات خاصة بالفواتير التقديرية الخارجية
-              </p>
-            </div>
-            <div className="p-6">
-              <form className="space-y-6" onSubmit={(e) => {
-                e.preventDefault()
-                const formData = new FormData(e.currentTarget)
-                const estimateData = {
-                  estimate_default_validity_days: parseInt(formData.get('estimate_default_validity_days') as string) || 30,
-                  estimate_default_tax_rate: parseFloat(formData.get('estimate_default_tax_rate') as string) || 0,
-                  estimate_default_notes: formData.get('estimate_default_notes') as string || '',
-                  estimate_show_clinic_stamp: formData.get('estimate_show_clinic_stamp') === 'on',
-                }
-                handleUpdateSettings(estimateData)
-              }}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label htmlFor="estimate_default_validity_days" className="text-sm font-medium text-foreground">
-                      مدة صلاحية التقدير (بالأيام)
-                    </label>
-                    <input
-                      type="number"
-                      id="estimate_default_validity_days"
-                      name="estimate_default_validity_days"
-                      defaultValue={settings?.estimate_default_validity_days || 30}
-                      min="1"
-                      max="365"
-                      className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      عدد الأيام التي يكون فيها التقدير صالحاً (افتراضي: 30 يوم)
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label htmlFor="estimate_default_tax_rate" className="text-sm font-medium text-foreground">
-                      معدل الضريبة الافتراضي (%)
-                    </label>
-                    <input
-                      type="number"
-                      id="estimate_default_tax_rate"
-                      name="estimate_default_tax_rate"
-                      defaultValue={settings?.estimate_default_tax_rate || 0}
-                      min="0"
-                      max="100"
-                      step="0.1"
-                      className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      معدل الضريبة الذي سيتم تطبيقه افتراضياً على التقديرات
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label htmlFor="estimate_default_notes" className="text-sm font-medium text-foreground">
-                    الملاحظات الافتراضية
-                  </label>
-                  <textarea
-                    id="estimate_default_notes"
-                    name="estimate_default_notes"
-                    defaultValue={settings?.estimate_default_notes || ''}
-                    placeholder="ملاحظات تظهر في جميع التقديرات..."
-                    rows={3}
-                    className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    نص افتراضي يظهر في قسم الملاحظات لجميع التقديرات الجديدة
-                  </p>
-                </div>
-
-                <div className="flex items-center space-x-2 space-x-reverse">
-                  <input
-                    type="checkbox"
-                    id="estimate_show_clinic_stamp"
-                    name="estimate_show_clinic_stamp"
-                    defaultChecked={settings?.estimate_show_clinic_stamp !== false}
-                    className="w-4 h-4 text-primary bg-background border-input rounded focus:ring-primary focus:ring-2"
-                  />
-                  <label htmlFor="estimate_show_clinic_stamp" className="text-sm font-medium text-foreground">
-                    إظهار منطقة ختم العيادة في التقديرات
-                  </label>
-                </div>
-
-                <div className="flex justify-end">
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="px-6 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isLoading ? 'جاري الحفظ...' : 'حفظ إعدادات التقدير'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
+        
 
         </div>
       )}
@@ -1949,28 +2070,61 @@ const res = await window.electronAPI?.whatsappReminders?.resetSession?.()
                 <button onClick={() => setShowQRModal(false)} className="px-2 py-1 text-sm text-muted-foreground hover:text-foreground">✕</button>
               </div>
               <div className="flex items-center justify-center p-4 bg-white border border-border rounded-xl min-h-[512px]">
-                {qrData ? (
+                {qrData && qrData.trim() !== '' ? (
                   qrSvg ? (
-                    <div
-                      aria-label="WhatsApp QR"
-                      style={{ width: 512, height: 512, lineHeight: 0, shapeRendering: 'crispEdges' as any }}
-                      className="block rounded-md shadow-xl select-none"
-                      dangerouslySetInnerHTML={{ __html: qrSvg }}
-                    />
+                    <div className="relative">
+                      <div
+                        aria-label="WhatsApp QR Code"
+                        style={{ width: 512, height: 512, lineHeight: 0, shapeRendering: 'crispEdges' as any }}
+                        className="block rounded-md shadow-xl select-none"
+                        dangerouslySetInnerHTML={{ __html: qrSvg }}
+                      />
+                      {qrData.length > 0 && (
+                        <div className="absolute -bottom-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+                          ✓ صالح
+                        </div>
+                      )}
+                    </div>
                   ) : qrImageUrl ? (
-                    <img
-                      alt="WhatsApp QR"
-                      src={qrImageUrl}
-                      width={512}
-                      height={512}
-                      style={{ imageRendering: 'pixelated' as any }}
-                      className="block w-[512px] h-[512px] rounded-md shadow-xl select-none"
-                    />
+                    <div className="relative">
+                      <img
+                        alt="WhatsApp QR Code"
+                        src={qrImageUrl}
+                        width={512}
+                        height={512}
+                        style={{ imageRendering: 'pixelated' as any }}
+                        className="block w-[512px] h-[512px] rounded-md shadow-xl select-none"
+                        onError={(e) => {
+                          console.error('❌ QR image failed to load:', e)
+                          console.error('Image URL:', qrImageUrl.substring(0, 100) + '...')
+                          showNotification('فشل في تحميل صورة رمز QR', 'error')
+                        }}
+                        onLoad={() => {
+                          console.log('✅ QR image loaded successfully')
+                        }}
+                      />
+                      {qrData.length > 0 && (
+                        <div className="absolute -bottom-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+                          ✓ صالح
+                        </div>
+                      )}
+                    </div>
                   ) : (
-                    <div className="text-sm text-muted-foreground">جاري انتظار رمز QR...</div>
+                    <div className="flex flex-col items-center justify-center space-y-3">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      <div className="text-sm text-muted-foreground">جاري توليد رمز QR...</div>
+                    </div>
                   )
                 ) : (
-                  <div className="text-sm text-muted-foreground">جاري انتظار رمز QR...</div>
+                  <div className="flex flex-col items-center justify-center space-y-3">
+                    <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                      <svg className="w-8 h-8 text-muted-foreground" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                      </svg>
+                    </div>
+                    <div className="text-sm text-muted-foreground">جاري انتظار رمز QR...</div>
+                    <div className="text-xs text-muted-foreground">اضغط على "ربط عبر QR" لبدء العملية</div>
+                  </div>
                 )}
               </div>
               <ul className="text-xs text-muted-foreground list-disc pr-5 space-y-1">
@@ -1983,12 +2137,80 @@ const res = await window.electronAPI?.whatsappReminders?.resetSession?.()
                   onClick={async () => {
                     try {
                       setQrData('')
+                      console.log('🔄 Regenerating QR code...')
+
+                      // Use the IPC handler to generate new QR
                       // @ts-ignore
-                      const status = await window.electronAPI?.whatsappReminders?.getStatus?.()
-                      if (status?.qr) setQrData(status.qr)
-                      // @ts-ignore
-                      await window.electronAPI?.whatsappReminders?.resetSession?.()
-                    } catch {}
+                      const generateResult = await window.electronAPI?.whatsappReminders?.generateNewQR?.()
+
+                      if (generateResult?.success) {
+                        console.log('✅ QR regeneration initiated successfully')
+                        showNotification('تم بدء عملية إعادة توليد رمز QR', 'info')
+
+                        // Check for new QR with multiple attempts
+                        let attempts = 0
+                        const maxAttempts = 8
+                        const checkForQr = async () => {
+                          attempts++
+                          try {
+                            // @ts-ignore
+                            const status = await window.electronAPI?.whatsappReminders?.getStatus?.()
+                            if (status?.qr && status.qr.trim() !== '') {
+                              console.log('🔍 New QR found after regeneration attempt', attempts)
+                              setQrData(status.qr)
+                              showNotification('تم إعادة توليد رمز QR بنجاح!', 'success')
+                              return
+                            } else if (attempts < maxAttempts) {
+                              console.log('📱 No QR found, retrying... (attempt', attempts, 'of', maxAttempts, ')')
+                              setTimeout(checkForQr, 1500)
+                            } else {
+                              console.log('📱 No QR found after', maxAttempts, 'regeneration attempts')
+                              showNotification('لم يتم إعادة توليد رمز QR. يرجى المحاولة مرة أخرى.', 'error')
+                            }
+                          } catch (statusError) {
+                            console.warn('Failed to check status after regeneration:', statusError)
+                            if (attempts < maxAttempts) {
+                              setTimeout(checkForQr, 1500)
+                            } else {
+                              showNotification('تعذر التحقق من حالة رمز QR', 'error')
+                            }
+                          }
+                        }
+
+                        setTimeout(checkForQr, 2000)
+                      } else {
+                        console.warn('⚠️ QR regeneration failed:', generateResult?.error || 'Unknown error')
+                        const errorDetails = (generateResult as any)?.details
+
+                        let errorMessage = 'فشل في إعادة توليد رمز QR'
+                        if (generateResult?.error && generateResult.error !== 'Unknown error') {
+                          errorMessage += `: ${generateResult.error}`
+                        } else if (errorDetails) {
+                          errorMessage += `: ${errorDetails.type}`
+                          if (errorDetails.code !== 'N/A') {
+                            errorMessage += ` (${errorDetails.code})`
+                          }
+                        } else {
+                          errorMessage += `: خطأ غير معروف`
+                        }
+
+                        showNotification(errorMessage, 'error')
+
+                        // Log detailed error for debugging
+                        if (errorDetails) {
+                          console.error('📊 Regeneration detailed error info:', {
+                            type: errorDetails.type,
+                            code: errorDetails.code,
+                            stack: errorDetails.stack
+                          })
+                        }
+
+                        console.error('📊 Full regeneration generateResult object:', generateResult)
+                      }
+                    } catch (error) {
+                      console.error('Error regenerating QR:', error)
+                      showNotification(`حدث خطأ أثناء إعادة توليد رمز QR: ${(error as any)?.message || 'خطأ غير معروف'}`, 'error')
+                    }
                   }}
                   className="px-4 py-2 bg-primary text-white rounded-lg shadow-sm hover:bg-primary/90"
                 >

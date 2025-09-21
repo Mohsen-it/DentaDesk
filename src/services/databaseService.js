@@ -695,6 +695,39 @@ class DatabaseService {
           CREATE INDEX IF NOT EXISTS idx_payments_tooth_treatment ON payments(tooth_treatment_id);
           CREATE INDEX IF NOT EXISTS idx_payments_patient_treatment ON payments(patient_id, tooth_treatment_id);
         `
+      },
+      {
+        version: 11,
+        sql: `
+          -- Add WhatsApp reminder fields to settings table
+          -- This migration adds support for WhatsApp reminder settings
+
+          -- Add WhatsApp reminder columns to settings table
+          ALTER TABLE settings ADD COLUMN whatsapp_reminder_enabled INTEGER DEFAULT 0;
+          ALTER TABLE settings ADD COLUMN whatsapp_reminder_hours_before INTEGER DEFAULT 3;
+          ALTER TABLE settings ADD COLUMN whatsapp_reminder_minutes_before INTEGER DEFAULT 180;
+          ALTER TABLE settings ADD COLUMN whatsapp_reminder_message TEXT DEFAULT 'مرحبًا {{patient_name}}، تذكير بموعدك في عيادة الأسنان بتاريخ {{appointment_date}} الساعة {{appointment_time}}. نشكرك على التزامك.';
+          ALTER TABLE settings ADD COLUMN whatsapp_reminder_custom_enabled INTEGER DEFAULT 0;
+
+          -- Create whatsapp_reminders table
+          CREATE TABLE IF NOT EXISTS whatsapp_reminders (
+            id TEXT PRIMARY KEY,
+            appointment_id TEXT NOT NULL,
+            patient_id TEXT NOT NULL,
+            sent_at DATETIME,
+            status TEXT DEFAULT 'pending',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE CASCADE,
+            FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE
+          );
+
+          -- Create indexes for better performance
+          CREATE INDEX IF NOT EXISTS idx_whatsapp_reminders_appointment ON whatsapp_reminders(appointment_id);
+          CREATE INDEX IF NOT EXISTS idx_whatsapp_reminders_patient ON whatsapp_reminders(patient_id);
+          CREATE INDEX IF NOT EXISTS idx_whatsapp_reminders_status ON whatsapp_reminders(status);
+          CREATE INDEX IF NOT EXISTS idx_whatsapp_reminders_sent_at ON whatsapp_reminders(sent_at);
+        `
       }
     ]
 

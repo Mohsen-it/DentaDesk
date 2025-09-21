@@ -73,8 +73,8 @@ const NewDashboardLayout = memo(function NewDashboardLayout({
 
   return (
     <div className="min-h-screen bg-background rtl relative overflow-hidden animate-fade-in" dir="rtl">
-      {/* Responsive CSS Grid Layout with improved spacing and visual hierarchy */}
-      <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] lg:grid-cols-[340px_1fr] xl:grid-cols-[380px_1fr] rtl:md:grid-cols-[1fr_300px] rtl:lg:grid-cols-[1fr_340px] rtl:xl:grid-cols-[1fr_380px] grid-rows-[auto_1fr] h-screen gap-0 md:gap-3 lg:gap-4 xl:gap-5">
+        {/* Responsive CSS Grid Layout with improved spacing and visual hierarchy */}
+        <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] lg:grid-cols-[340px_1fr] xl:grid-cols-[380px_1fr] rtl:md:grid-cols-[1fr_300px] rtl:lg:grid-cols-[1fr_340px] rtl:xl:grid-cols-[1fr_380px] grid-rows-[auto_1fr] h-screen gap-0 md:gap-3 lg:gap-4 xl:gap-5">
         {/* Header - spans full width on mobile, top row on desktop with enhanced shadow */}
         <div className="col-span-1 lg:col-span-2 row-start-1 shadow-lg" role="banner" data-testid="dashboard-header">
          
@@ -113,16 +113,17 @@ const NewDashboardLayout = memo(function NewDashboardLayout({
             onAddPayment={onAddPayment}
           />
         </div>
-      </div>
 
-    <FloatingQuickActions
-        onAddPatient={onAddPatient}
-        onAddAppointment={onAddAppointment}
-        onAddPayment={onAddPayment}
-      />
-      {/* Subtle background pattern for visual enhancement */}
-      <div className="fixed inset-0 pointer-events-none z-0 opacity-20">
-        <div className="absolute inset-0 bg-gradient-to-br from-muted/30 via-transparent to-accent/20" />
+        <FloatingQuickActions
+          onAddPatient={onAddPatient}
+          onAddAppointment={onAddAppointment}
+          onAddPayment={onAddPayment}
+        />
+
+        {/* Subtle background pattern for visual enhancement */}
+        <div className="fixed inset-0 pointer-events-none z-0 opacity-20">
+          <div className="absolute inset-0 bg-gradient-to-br from-muted/30 via-transparent to-accent/20" />
+        </div>
       </div>
     </div>
   )

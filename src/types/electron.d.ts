@@ -176,6 +176,33 @@ export interface ElectronAPI {
   auth: {
     clearSession: () => Promise<{ success: boolean; error?: string }>
   }
+
+  // WhatsApp reminders operations
+  whatsappReminders: {
+    getSettings: () => Promise<{
+      whatsapp_reminder_enabled: number;
+      hours_before: number;
+      minutes_before: number;
+      message: string;
+      custom_enabled: number;
+    }>
+    setSettings: (settings: any) => Promise<{ success: boolean; settings?: any; error?: string }>
+    testSendReminder: (phoneNumber: string, message: string) => Promise<{ success: boolean; error?: string }>
+    resetSession: () => Promise<{ success: boolean; error?: string }>
+    generateNewQR: () => Promise<{ success: boolean; error?: string }>
+    getStatus: () => Promise<{
+      isReady: boolean;
+      hasQr: boolean;
+      qr: string | null;
+      lastReadyAt: number | null;
+      state: string;
+    }>
+    logoutOtherDevices: () => Promise<{ success: boolean; error?: string }>
+  }
+
+  // WhatsApp event listeners
+  onWhatsAppQR: (callback: (qr: string) => void) => (() => void)
+  on: (event: string, callback: (event: any, data: any) => void) => (() => void)
 }
 
 declare global {

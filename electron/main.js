@@ -330,12 +330,46 @@ if (!gotTheLock) {
 
   // Initialize WhatsApp client and start reminder scheduler (non-blocking)
   setTimeout(async () => {
+    console.log('🔍 DEBUG: Starting WhatsApp initialization timeout...')
   try {
-    const { initializeClient, getWhatsAppStatus, sendMessage } = require('./services/whatsapp')
+    console.log('🔍 DEBUG: About to require WhatsApp service...')
+    const { initializeClient, getWhatsAppStatus, sendMessage, isClientReady } = require('./services/whatsapp')
+    console.log('✅ DEBUG: WhatsApp service required successfully')
     const cron = require('node-cron');
+    console.log('✅ DEBUG: Node-cron required successfully')
 
       console.log('📱 Starting WhatsApp initialization in background...')
+    console.log('🔍 DEBUG: About to call initializeClient()...')
     await initializeClient()
+    console.log('✅ DEBUG: initializeClient() completed successfully')
+
+    // Wait for WhatsApp client to be ready before starting reminder scheduler
+    console.log('🔍 DEBUG: Waiting for WhatsApp client to be ready...')
+    let attempts = 0
+    const maxAttempts = 30 // Wait up to 30 seconds
+
+    while (attempts < maxAttempts) {
+      const status = getWhatsAppStatus()
+      const isReady = isClientReady()
+      console.log(`🔍 DEBUG: WhatsApp status check ${attempts + 1}/${maxAttempts}: isReady=${isReady}, status=`, status)
+
+      if (isReady) {
+        console.log('✅ DEBUG: WhatsApp client is ready, starting reminder scheduler')
+        break
+      }
+
+      if (attempts === 0) {
+        console.log('📱 WhatsApp client is initializing... Please scan the QR code when it appears.')
+      }
+
+      attempts++
+      await new Promise(resolve => setTimeout(resolve, 1000)) // Wait 1 second
+    }
+
+    if (attempts >= maxAttempts) {
+      console.warn('⚠️ DEBUG: WhatsApp client did not become ready within timeout period')
+      console.log('📱 Reminder scheduler will start but WhatsApp may not be ready yet')
+    }
 
     // Inlined logic from whatsappReminderScheduler.ts
     let cronJob = null;
@@ -547,9 +581,43 @@ if (!gotTheLock) {
     // Start the cron job that runs every minute
     cronJob = cron.schedule('* * * * *', async () => {
       try {
+        console.log('⏰ Reminder scheduler running (inlined cron job)');
         await checkAndSendReminders();
+        console.log('✅ Reminder scheduler completed successfully');
       } catch (error) {
-        console.error('Error in reminder scheduler (inlined cron job):', error);
+        console.error('❌ Error in reminder scheduler (inlined cron job):', error);
+
+        // Enhanced error handling for cron job
+        if (error.message && error.message.includes('Maximum initialization attempts reached')) {
+          console.error('🚨 WhatsApp service critical failure - stopping cron job temporarily');
+
+          // Stop the cron job temporarily and attempt to reinitialize
+          if (cronJob) {
+            cronJob.stop();
+            console.log('⏸️ Cron job stopped due to critical WhatsApp failure');
+
+            // Attempt to reinitialize after a delay
+            setTimeout(async () => {
+              try {
+                console.log('🔄 Attempting to reinitialize WhatsApp and restart scheduler...');
+                const { initializeClient } = require('./services/whatsapp');
+                await initializeClient();
+
+                // Restart the cron job
+                cronJob.start();
+                console.log('✅ Scheduler restarted after reinitialization');
+              } catch (reinitError) {
+                console.error('❌ Failed to reinitialize and restart scheduler:', reinitError);
+
+                // Restart cron job anyway to try again later
+                cronJob.start();
+                console.log('⚠️ Scheduler restarted but WhatsApp may still have issues');
+              }
+            }, 10000); // Wait 10 seconds before attempting reinitialization
+          }
+        } else {
+          console.log('🔄 Continuing scheduler despite error');
+        }
       }
     });
 
@@ -583,12 +651,24 @@ if (!gotTheLock) {
   }
   // --- End of moved schema checks ---
 
-  // Optional: log WhatsApp status shortly after startup
+  // Optional: log WhatsApp status shortly after startup with enhanced diagnostics
   setTimeout(() => {
     try {
-      const status = getWhatsAppStatus ? getWhatsAppStatus() : { isReady: false }
-      console.log('ℹ️ WhatsApp status after init (inlined):', status)
-    } catch (_) {}
+      const { getWhatsAppStatus, getWhatsAppDiagnosticInfo } = require('./services/whatsapp');
+      const status = getWhatsAppStatus ? getWhatsAppStatus() : { isReady: false };
+      const diagnostic = getWhatsAppDiagnosticInfo ? getWhatsAppDiagnosticInfo() : {};
+
+      console.log('ℹ️ WhatsApp status after init (inlined):', status);
+      console.log('🔍 WhatsApp diagnostic info:', {
+        socketExists: diagnostic.socketExists,
+        socketType: diagnostic.socketType,
+        hasSendMessage: diagnostic.hasSendMessageMethod,
+        initializationAttempts: diagnostic.initializationAttempts,
+        sessionPath: diagnostic.sessionPath
+      });
+    } catch (error) {
+      console.warn('⚠️ Could not get WhatsApp diagnostic info:', error.message);
+    }
   }, 3000)
 
   // Hide default menu bar
@@ -3322,14 +3402,14 @@ try {
         custom_enabled: settings.whatsapp_reminder_custom_enabled || 0,
       };
       
-      console.log('🧪 [DEBUG] Raw settings from database:', {
-        whatsapp_reminder_enabled: settings.whatsapp_reminder_enabled,
-        whatsapp_reminder_hours_before: settings.whatsapp_reminder_hours_before,
-        whatsapp_reminder_minutes_before: settings.whatsapp_reminder_minutes_before,
-        whatsapp_reminder_message: settings.whatsapp_reminder_message,
-        whatsapp_reminder_custom_enabled: settings.whatsapp_reminder_custom_enabled
-      });
-      console.log('🧪 [DEBUG] Processed result for frontend:', result);
+      // console.log('🧪 [DEBUG] Raw settings from database:', {
+      //   whatsapp_reminder_enabled: settings.whatsapp_reminder_enabled,
+      //   whatsapp_reminder_hours_before: settings.whatsapp_reminder_hours_before,
+      //   whatsapp_reminder_minutes_before: settings.whatsapp_reminder_minutes_before,
+      //   whatsapp_reminder_message: settings.whatsapp_reminder_message,
+      //   whatsapp_reminder_custom_enabled: settings.whatsapp_reminder_custom_enabled
+      // });
+      // console.log('🧪 [DEBUG] Processed result for frontend:', result);
       
       return result;
     } catch (error) {
@@ -3356,62 +3436,25 @@ try {
           updatedSettings.whatsapp_reminder_minutes_before = updatedSettings.whatsapp_reminder_hours_before * 60;
         }
 
-        console.log('🧪 [DEBUG] About to save to database:', updatedSettings);
-        
-        // Ensure WhatsApp columns exist before saving
-        try {
-          console.log('🧪 [DEBUG] Ensuring WhatsApp columns exist...');
-          const columns = databaseService.db.prepare(`PRAGMA table_info(settings)`).all();
-          const existingColumns = columns.map(c => c.name);
-          
-          const requiredColumns = [
-            'whatsapp_reminder_enabled',
-            'whatsapp_reminder_hours_before', 
-            'whatsapp_reminder_minutes_before',
-            'whatsapp_reminder_message',
-            'whatsapp_reminder_custom_enabled'
-          ];
-          
-          for (const columnName of requiredColumns) {
-            if (!existingColumns.includes(columnName)) {
-              console.log(`🧪 [DEBUG] Adding missing column: ${columnName}`);
-              databaseService.db.prepare(`ALTER TABLE settings ADD COLUMN ${columnName} INTEGER DEFAULT 0`).run();
-            }
-          }
-          
-          console.log('🧪 [DEBUG] WhatsApp columns ensured');
-        } catch (error) {
-          console.error('🧪 [DEBUG] Error ensuring columns:', error);
-        }
-        
+        // console.log('🧪 [DEBUG] About to save to database:', updatedSettings);
         await databaseService.updateSettings(updatedSettings);
-        console.log('✅ WhatsApp settings saved:', updatedSettings);
+        // console.log('✅ WhatsApp settings saved:', updatedSettings);
         
         // Test: Immediately reload from database to verify save
-        setTimeout(async () => {
-          try {
-            const testReload = await databaseService.getSettings();
-            console.log('🧪 [TEST] Database reload after save:', {
-              whatsapp_reminder_enabled: testReload.whatsapp_reminder_enabled,
-              whatsapp_reminder_hours_before: testReload.whatsapp_reminder_hours_before,
-              whatsapp_reminder_minutes_before: testReload.whatsapp_reminder_minutes_before,
-              whatsapp_reminder_message: testReload.whatsapp_reminder_message,
-              whatsapp_reminder_custom_enabled: testReload.whatsapp_reminder_custom_enabled
-            });
-            
-            // Check if columns exist in database
-            console.log('🧪 [DEBUG] Checking database schema...');
-            const columns = databaseService.db.prepare(`PRAGMA table_info(settings)`).all();
-            console.log('🧪 [DEBUG] Available columns in settings table:', columns.map(c => c.name));
-            
-            // Check if WhatsApp columns exist
-            const whatsappColumns = columns.filter(c => c.name.startsWith('whatsapp_reminder'));
-            console.log('🧪 [DEBUG] WhatsApp columns found:', whatsappColumns.map(c => c.name));
-            
-          } catch (error) {
-            console.error('🧪 [TEST] Failed to reload from database:', error);
-          }
-        }, 500);
+        // setTimeout(async () => {
+        //   try {
+        //     const testReload = await databaseService.getSettings();
+        //     console.log('🧪 [TEST] Database reload after save:', {
+        //       whatsapp_reminder_enabled: testReload.whatsapp_reminder_enabled,
+        //       whatsapp_reminder_hours_before: testReload.whatsapp_reminder_hours_before,
+        //       whatsapp_reminder_minutes_before: testReload.whatsapp_reminder_minutes_before,
+        //       whatsapp_reminder_message: testReload.whatsapp_reminder_message,
+        //       whatsapp_reminder_custom_enabled: testReload.whatsapp_reminder_custom_enabled
+        //     });
+        //   } catch (error) {
+        //     console.error('🧪 [TEST] Failed to reload from database:', error);
+        //   }
+        // }, 500);
         
         return { success: true };
       } else {
@@ -3451,6 +3494,64 @@ try {
       return { success: false, error: (error && error.message) ? error.message : 'failed' }
     }
   })
+
+  ipcMain.handle('whatsapp-reminders:generate-new-qr', async () => {
+    try {
+      console.log('🔧 Main: Starting QR generation IPC handler...');
+
+      // Try to require the WhatsApp service with explicit error handling
+      let whatsappService;
+      try {
+        whatsappService = require('./services/whatsapp');
+        console.log('🔧 Main: WhatsApp service loaded successfully');
+      } catch (requireError) {
+        console.error('❌ Main: Failed to load WhatsApp service:', requireError);
+        throw new Error(`Failed to load WhatsApp service: ${requireError.message}`);
+      }
+
+      // Check if generateNewQR function exists
+      if (!whatsappService || typeof whatsappService.generateNewQR !== 'function') {
+        console.error('❌ Main: generateNewQR function not found:', {
+          whatsappService: !!whatsappService,
+          hasGenerateNewQR: whatsappService ? typeof whatsappService.generateNewQR : 'N/A',
+          availableExports: whatsappService ? Object.keys(whatsappService) : 'None'
+        });
+        throw new Error('generateNewQR function not available in WhatsApp service');
+      }
+
+      console.log('🔧 Main: Calling generateNewQR function...');
+      const result = await whatsappService.generateNewQR();
+
+      console.log('🔧 Main: QR generation result:', result);
+
+      // Return the detailed result from generateNewQR function
+      return {
+        success: result.success,
+        message: result.success ? 'QR code generated successfully' : (result.error || 'Failed to generate QR code'),
+        timestamp: Date.now(),
+        details: result.details || {},
+        error: result.error || null
+      };
+    } catch (error) {
+      console.error('❌ Main: Error in QR generation IPC handler:', error);
+      console.error('❌ Main: Error details:', {
+        message: error?.message || 'Unknown error',
+        stack: error?.stack || 'No stack trace',
+        type: error?.constructor?.name || 'Unknown'
+      });
+
+      return {
+        success: false,
+        error: error?.message || 'Failed to generate QR code',
+        timestamp: Date.now(),
+        details: {
+          type: error?.constructor?.name || 'Unknown',
+          code: error?.code || 'N/A',
+          stack: error?.stack?.substring(0, 500) || 'No stack trace'
+        }
+      };
+    }
+  });
 
   ipcMain.handle('whatsapp-reminders:run-diagnostic', async () => {
     try {
@@ -3712,16 +3813,74 @@ try {
               console.log(`Generated message for ${appointment.id}: ${message.substring(0, 50)}...`);
 
               console.log('Sending WhatsApp reminder to (inlined from scheduler):', normalizedPhone, 'appointmentId:', appointment.id);
-              await sendMessage(normalizedPhone, message);
-              await recordReminderSent(appointment.id, appointment.patient_id);
-              console.log(`Reminder sent to ${appointment.patient_name} for appointment ${appointment.id} (inlined from scheduler)`);
+  
+              let sendResult;
+              try {
+                sendResult = await sendMessage(normalizedPhone, message);
+                console.log(`✅ Reminder sent successfully to ${appointment.patient_name} for appointment ${appointment.id}`);
+              } catch (sendError) {
+                console.error(`❌ Failed to send reminder to ${appointment.patient_name} for appointment ${appointment.id}:`, sendError);
+  
+                // Check if this is a critical error that should stop the scheduler
+                const isCriticalError = sendError.message && (
+                  sendError.message.includes('WhatsApp client is not initialized') ||
+                  sendError.message.includes('not ready') ||
+                  sendError.message.includes('Maximum initialization attempts reached')
+                );
+  
+                if (isCriticalError) {
+                  console.error('🚨 Critical WhatsApp error detected, stopping reminder scheduler');
+                  // Don't continue with other appointments if WhatsApp is not working
+                  break;
+                }
+  
+                // For non-critical errors, continue with other appointments
+                continue;
+              }
+  
+              // Only record as sent if the message was actually sent successfully
+              if (sendResult && sendResult.success) {
+                try {
+                  await recordReminderSent(appointment.id, appointment.patient_id);
+                  console.log(`✅ Reminder recorded as sent for ${appointment.patient_name} (appointment ${appointment.id})`);
+                } catch (recordError) {
+                  console.error(`❌ Failed to record reminder as sent for ${appointment.id}:`, recordError);
+                  // Continue processing even if recording fails
+                }
+              } else {
+                console.warn(`⚠️ Message send result was not successful for ${appointment.id}:`, sendResult);
+              }
             } catch (appointmentError) {
-              console.error(`Error processing reminder for appointment ${appointment.id} (inlined from scheduler):`, appointmentError);
+              console.error(`❌ Error processing reminder for appointment ${appointment.id} (inlined from scheduler):`, appointmentError);
+  
+              // Enhanced error handling for appointment processing
+              if (appointmentError.message && appointmentError.message.includes('Maximum initialization attempts reached')) {
+                console.error('🚨 WhatsApp service is critically failing, stopping reminder processing');
+                break; // Stop processing other appointments
+              }
+  
+              // For other errors, continue with next appointment
+              console.log(`🔄 Continuing with next appointment despite error in ${appointment.id}`);
             }
           }
         } catch (error) {
-          console.error('Error in checkAndSendReminders (inlined from scheduler):', error);
-          throw error;
+          console.error('❌ Error in checkAndSendReminders (inlined from scheduler):', error);
+  
+          // Enhanced error handling for the entire scheduler
+          if (error.message && (
+            error.message.includes('Maximum initialization attempts reached') ||
+            error.message.includes('WhatsApp client is not initialized')
+          )) {
+            console.error('🚨 WhatsApp service is critically failing - scheduler will continue but WhatsApp reminders are disabled');
+  
+            // Don't throw the error to prevent scheduler from stopping
+            // Just log it and let the scheduler continue for next cycle
+            return;
+          }
+  
+          // For other errors, log and continue
+          console.log('🔄 Scheduler will continue despite error');
+          return;
         }
       };
 
@@ -5313,4 +5472,5 @@ ipcMain.handle('db:clinicExpenses:getStatistics', async () => {
     throw error
   }
 })
+
 

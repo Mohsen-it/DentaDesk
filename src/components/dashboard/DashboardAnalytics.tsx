@@ -1,23 +1,23 @@
  import React, { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import {
-  BarChart3,
-  TrendingUp,
-  TrendingDown,
-  Users,
-  Calendar,
-  DollarSign,
-  Activity,
-  PieChart,
-  LineChart,
-  ArrowUpRight,
-  ArrowDownRight,
-  Eye,
-  RefreshCw
-} from 'lucide-react'
+ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+ import { Button } from '@/components/ui/button'
+ import { Badge } from '@/components/ui/badge'
+ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+ import {
+   BarChart3,
+   TrendingUp,
+   TrendingDown,
+   Users,
+   Calendar,
+   DollarSign,
+   Activity,
+   PieChart,
+   LineChart,
+   ArrowUpRight,
+   ArrowDownRight,
+   Eye,
+   RefreshCw
+ } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart as RechartsLineChart, Line, PieChart as RechartsPieChart, Pie, Cell, AreaChart, Area } from 'recharts'
 import { usePatientStore } from '@/store/patientStore'
 import { useAppointmentStore } from '@/store/appointmentStore'

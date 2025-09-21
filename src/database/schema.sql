@@ -159,6 +159,12 @@ CREATE TABLE IF NOT EXISTS settings (
     password_enabled INTEGER DEFAULT 0, -- 0 = disabled, 1 = enabled
     security_question TEXT, -- Security question for password recovery
     security_answer TEXT, -- Security answer (hashed)
+    -- WhatsApp reminder settings
+    whatsapp_reminder_enabled INTEGER DEFAULT 0,
+    whatsapp_reminder_hours_before INTEGER DEFAULT 3,
+    whatsapp_reminder_minutes_before INTEGER DEFAULT 180,
+    whatsapp_reminder_message TEXT DEFAULT 'مرحبًا {{patient_name}}، تذكير بموعدك في عيادة الأسنان بتاريخ {{appointment_date}} الساعة {{appointment_time}}. نشكرك على التزامك.',
+    whatsapp_reminder_custom_enabled INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -182,6 +188,25 @@ CREATE TABLE IF NOT EXISTS smart_alerts (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE
 );
+
+-- WhatsApp reminders table
+CREATE TABLE IF NOT EXISTS whatsapp_reminders (
+    id TEXT PRIMARY KEY,
+    appointment_id TEXT NOT NULL,
+    patient_id TEXT NOT NULL,
+    sent_at DATETIME,
+    status TEXT DEFAULT 'pending',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE CASCADE,
+    FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE
+);
+
+-- Create indexes for whatsapp_reminders table
+CREATE INDEX IF NOT EXISTS idx_whatsapp_reminders_appointment ON whatsapp_reminders(appointment_id);
+CREATE INDEX IF NOT EXISTS idx_whatsapp_reminders_patient ON whatsapp_reminders(patient_id);
+CREATE INDEX IF NOT EXISTS idx_whatsapp_reminders_status ON whatsapp_reminders(status);
+CREATE INDEX IF NOT EXISTS idx_whatsapp_reminders_sent_at ON whatsapp_reminders(sent_at);
 
 -- Insert default settings
 INSERT OR IGNORE INTO settings (id) VALUES ('clinic_settings');
@@ -648,3 +673,145 @@ END;
 -- Prescription medications indexes for relationship queries
 CREATE INDEX IF NOT EXISTS idx_prescription_medications_prescription ON prescription_medications(prescription_id);
 CREATE INDEX IF NOT EXISTS idx_prescription_medications_medication ON prescription_medications(medication_id);
+
+-- ============================================
+-- ENHANCED PERFORMANCE INDEXES
+-- ============================================
+
+-- Critical Performance Indexes for Common Queries
+-- Dashboard and Reports Optimization
+CREATE INDEX IF NOT EXISTS idx_patients_created_at ON patients(created_at);
+CREATE INDEX IF NOT EXISTS idx_appointments_created_at ON appointments(created_at);
+CREATE INDEX IF NOT EXISTS idx_payments_created_at ON payments(created_at);
+
+-- Multi-column indexes for complex queries
+CREATE INDEX IF NOT EXISTS idx_patients_full_name_gender ON patients(full_name, gender);
+CREATE INDEX IF NOT EXISTS idx_patients_age_gender ON patients(age, gender);
+CREATE INDEX IF NOT EXISTS idx_patients_date_added_age ON patients(date_added, age);
+
+-- Appointment performance indexes
+CREATE INDEX IF NOT EXISTS idx_appointments_start_time_end_time ON appointments(start_time, end_time);
+CREATE INDEX IF NOT EXISTS idx_appointments_patient_start_time ON appointments(patient_id, start_time);
+CREATE INDEX IF NOT EXISTS idx_appointments_status_start_time ON appointments(status, start_time);
+
+-- Payment performance indexes for financial reports
+CREATE INDEX IF NOT EXISTS idx_payments_payment_method_date ON payments(payment_method, payment_date);
+CREATE INDEX IF NOT EXISTS idx_payments_amount_date ON payments(amount, payment_date);
+CREATE INDEX IF NOT EXISTS idx_payments_patient_amount ON payments(patient_id, amount);
+
+-- Treatment performance indexes
+CREATE INDEX IF NOT EXISTS idx_tooth_treatments_patient_date ON tooth_treatments(patient_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_tooth_treatments_status_date ON tooth_treatments(treatment_status, created_at);
+CREATE INDEX IF NOT EXISTS idx_tooth_treatments_category_status ON tooth_treatments(treatment_category, treatment_status);
+
+-- Lab orders performance indexes
+CREATE INDEX IF NOT EXISTS idx_lab_orders_expected_delivery ON lab_orders(expected_delivery_date);
+CREATE INDEX IF NOT EXISTS idx_lab_orders_actual_delivery ON lab_orders(actual_delivery_date);
+CREATE INDEX IF NOT EXISTS idx_lab_orders_cost_date ON lab_orders(cost, order_date);
+CREATE INDEX IF NOT EXISTS idx_lab_orders_patient_status_date ON lab_orders(patient_id, status, order_date);
+
+-- Inventory performance indexes for low stock alerts
+CREATE INDEX IF NOT EXISTS idx_inventory_quantity_minimum ON inventory(quantity, minimum_stock);
+CREATE INDEX IF NOT EXISTS idx_inventory_expiry_quantity ON inventory(expiry_date, quantity);
+CREATE INDEX IF NOT EXISTS idx_inventory_category_quantity ON inventory(category, quantity);
+
+-- Smart alerts performance indexes
+CREATE INDEX IF NOT EXISTS idx_smart_alerts_type_priority ON smart_alerts(type, priority);
+CREATE INDEX IF NOT EXISTS idx_smart_alerts_patient_type ON smart_alerts(patient_id, type);
+CREATE INDEX IF NOT EXISTS idx_smart_alerts_due_date_priority ON smart_alerts(due_date, priority);
+CREATE INDEX IF NOT EXISTS idx_smart_alerts_is_read_due_date ON smart_alerts(is_read, due_date);
+
+-- Treatment sessions performance indexes
+CREATE INDEX IF NOT EXISTS idx_treatment_sessions_date_status ON treatment_sessions(session_date, session_status);
+CREATE INDEX IF NOT EXISTS idx_treatment_sessions_treatment_date ON treatment_sessions(tooth_treatment_id, session_date);
+
+-- Patient timeline performance indexes
+CREATE INDEX IF NOT EXISTS idx_patient_timeline_patient_type_date ON patient_treatment_timeline(patient_id, timeline_type, event_date);
+CREATE INDEX IF NOT EXISTS idx_patient_timeline_status_priority ON patient_treatment_timeline(status, priority);
+CREATE INDEX IF NOT EXISTS idx_patient_timeline_due_date ON patient_treatment_timeline(due_date);
+
+-- Treatment plans performance indexes
+CREATE INDEX IF NOT EXISTS idx_treatment_plans_patient_status ON treatment_plans(patient_id, status);
+CREATE INDEX IF NOT EXISTS idx_treatment_plans_start_completion ON treatment_plans(start_date, target_completion_date);
+
+-- Full-text search indexes for better search performance
+CREATE INDEX IF NOT EXISTS idx_patients_search ON patients(full_name, phone, email, address, notes);
+CREATE INDEX IF NOT EXISTS idx_appointments_search ON appointments(title, description, notes);
+CREATE INDEX IF NOT EXISTS idx_payments_search ON payments(description, notes, receipt_number);
+CREATE INDEX IF NOT EXISTS idx_lab_orders_search ON lab_orders(service_name, notes, lab_instructions);
+CREATE INDEX IF NOT EXISTS idx_inventory_search ON inventory(name, description, category, supplier);
+
+-- Date range performance indexes
+CREATE INDEX IF NOT EXISTS idx_appointments_date_range ON appointments(start_time, end_time);
+CREATE INDEX IF NOT EXISTS idx_payments_date_range ON payments(payment_date, created_at);
+CREATE INDEX IF NOT EXISTS idx_patient_timeline_date_range ON patient_treatment_timeline(event_date, created_at);
+
+-- Status-based performance indexes for filtering
+CREATE INDEX IF NOT EXISTS idx_appointments_status_patient ON appointments(status, patient_id);
+CREATE INDEX IF NOT EXISTS idx_payments_status_patient ON payments(status, patient_id);
+CREATE INDEX IF NOT EXISTS idx_lab_orders_status_patient ON lab_orders(status, patient_id);
+CREATE INDEX IF NOT EXISTS idx_smart_alerts_status_type ON smart_alerts(is_read, is_dismissed, type);
+
+-- Priority-based indexes for urgent items
+CREATE INDEX IF NOT EXISTS idx_smart_alerts_priority_due ON smart_alerts(priority, due_date);
+CREATE INDEX IF NOT EXISTS idx_lab_orders_priority_date ON lab_orders(priority, order_date);
+CREATE INDEX IF NOT EXISTS idx_clinic_needs_priority_status ON clinic_needs(priority, status);
+
+-- Patient-centric composite indexes for patient details pages
+CREATE INDEX IF NOT EXISTS idx_patient_appointments ON appointments(patient_id, start_time, status);
+CREATE INDEX IF NOT EXISTS idx_patient_payments ON payments(patient_id, payment_date, status);
+CREATE INDEX IF NOT EXISTS idx_patient_tooth_treatments ON tooth_treatments(patient_id, tooth_number, treatment_status);
+CREATE INDEX IF NOT EXISTS idx_patient_lab_orders ON lab_orders(patient_id, order_date, status);
+CREATE INDEX IF NOT EXISTS idx_patient_prescriptions ON prescriptions(patient_id, prescription_date);
+CREATE INDEX IF NOT EXISTS idx_patient_timeline ON patient_treatment_timeline(patient_id, event_date, timeline_type);
+
+-- Financial reporting indexes
+CREATE INDEX IF NOT EXISTS idx_payments_month_year ON payments(strftime('%Y-%m', payment_date));
+CREATE INDEX IF NOT EXISTS idx_appointments_month_year ON appointments(strftime('%Y-%m', start_time));
+CREATE INDEX IF NOT EXISTS idx_clinic_expenses_month_year ON clinic_expenses(strftime('%Y-%m', payment_date));
+
+-- WhatsApp reminders optimization
+CREATE INDEX IF NOT EXISTS idx_whatsapp_reminders_status_date ON whatsapp_reminders(status, created_at);
+CREATE INDEX IF NOT EXISTS idx_whatsapp_reminders_patient_status ON whatsapp_reminders(patient_id, status);
+
+-- Optimized indexes for common dashboard queries
+CREATE INDEX IF NOT EXISTS idx_dashboard_recent_appointments ON appointments(start_time DESC);
+CREATE INDEX IF NOT EXISTS idx_dashboard_recent_payments ON payments(payment_date DESC);
+CREATE INDEX IF NOT EXISTS idx_dashboard_upcoming_appointments ON appointments(start_time ASC);
+CREATE INDEX IF NOT EXISTS idx_dashboard_pending_payments ON payments(status, payment_date);
+CREATE INDEX IF NOT EXISTS idx_dashboard_low_stock ON inventory(quantity, minimum_stock);
+
+-- Performance monitoring indexes
+CREATE INDEX IF NOT EXISTS idx_performance_check ON (
+  SELECT 1 FROM patients p
+  LEFT JOIN appointments a ON p.id = a.patient_id
+  LEFT JOIN payments pay ON p.id = pay.patient_id
+  WHERE p.created_at > datetime('now', '-30 days')
+  LIMIT 1
+);
+
+-- Partial indexes for better performance on active records
+CREATE INDEX IF NOT EXISTS idx_appointments_active ON appointments(start_time, patient_id) WHERE status != 'cancelled';
+CREATE INDEX IF NOT EXISTS idx_payments_completed ON payments(payment_date, patient_id) WHERE status = 'completed';
+CREATE INDEX IF NOT EXISTS idx_lab_orders_active ON lab_orders(order_date, patient_id) WHERE status != 'ملغي';
+CREATE INDEX IF NOT EXISTS idx_smart_alerts_unread ON smart_alerts(due_date, priority) WHERE is_read = 0 AND is_dismissed = 0;
+
+-- Covering indexes for frequently accessed data
+CREATE INDEX IF NOT EXISTS idx_patients_covering ON patients(id, full_name, phone, age, gender);
+CREATE INDEX IF NOT EXISTS idx_appointments_covering ON appointments(id, patient_id, start_time, end_time, status, title);
+CREATE INDEX IF NOT EXISTS idx_payments_covering ON payments(id, patient_id, amount, payment_date, status, payment_method);
+
+-- Final optimization: ANALYZE all tables for query planner
+ANALYZE;
+
+-- Performance analysis query for monitoring
+-- This query can be used to monitor index usage and query performance
+/*
+SELECT
+  name as table_name,
+  COUNT(*) as row_count
+FROM sqlite_master
+CROSS JOIN pragma_table_info(name)
+GROUP BY name
+ORDER BY row_count DESC;
+*/

@@ -68,25 +68,26 @@ contextBridge.exposeInMainWorld('electronAPI', {
     update: (settings) => ipcRenderer.invoke('settings:update', settings)
   },
 
-  // WhatsApp reminders operations
-  whatsappReminders: {
-    getSettings: () => ipcRenderer.invoke('whatsapp-reminders:get-settings'),
-    setSettings: (settings) => ipcRenderer.invoke('whatsapp-reminders:set-settings', settings),
-    testSendReminder: (phoneNumber, message) => ipcRenderer.invoke('whatsapp-reminders:test-send', phoneNumber, message),
-    resetSession: () => ipcRenderer.invoke('whatsapp-reminders:reset-session'),
-    getStatus: () => ipcRenderer.invoke('whatsapp-reminders:get-status'),
-    logoutOtherDevices: () => ipcRenderer.invoke('whatsapp-reminders:logout-other-devices')
-  },
-
   // Temporary diagnostic runner
   runWhatsAppReminderDiagnostic: () => ipcRenderer.invoke('whatsapp-reminders:run-diagnostic'),
   runWhatsAppSchedulerOnce: () => ipcRenderer.invoke('whatsapp-reminders:run-scheduler-once'),
 
-  // WhatsApp QR events
+  // WhatsApp QR events - Updated to use electronAPI pattern
   onWhatsAppQR: (callback) => {
-    const listener = (_event, qr) => callback(qr)
+    const listener = (_event, qr) => {
+      console.log('📱 QR received in preload:', qr?.substring(0, 50) + '...')
+      callback(qr)
+    }
     ipcRenderer.on('whatsapp:qr', listener)
     return () => ipcRenderer.removeListener('whatsapp:qr', listener)
+  },
+
+  // Alternative method for QR events using the on method
+  onWhatsAppQROld: (callback) => {
+    return ipcRenderer.on('whatsapp:qr', (_event, qr) => {
+      console.log('📱 QR received in preload (old method):', qr?.substring(0, 50) + '...')
+      callback(qr)
+    })
   },
 
   // WhatsApp session events
@@ -332,7 +333,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     testSendReminder: (phoneNumber, message) => ipcRenderer.invoke('whatsapp-reminders:test-send', phoneNumber, message),
     resetSession: () => ipcRenderer.invoke('whatsapp-reminders:reset-session'),
     getStatus: () => ipcRenderer.invoke('whatsapp-reminders:get-status'),
-    logoutOtherDevices: () => ipcRenderer.invoke('whatsapp-reminders:logout-other-devices')
+    logoutOtherDevices: () => ipcRenderer.invoke('whatsapp-reminders:logout-other-devices'),
+    generateNewQR: () => ipcRenderer.invoke('whatsapp-reminders:generate-new-qr'),
+    runDiagnostic: () => ipcRenderer.invoke('whatsapp-reminders:run-diagnostic'),
+    runSchedulerOnce: () => ipcRenderer.invoke('whatsapp-reminders:run-scheduler-once')
   }
 })
 

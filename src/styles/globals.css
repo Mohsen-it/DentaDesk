@@ -6,7 +6,48 @@
 
 @layer base {
   :root {
-    /* Light mode colors - Enhanced Sky Theme */
+    /* Medical-focused Color System - Light Mode */
+    /* Primary colors - Medical blue theme for professional appearance */
+    --primary-50: #f0f9ff;      /* Lightest blue - backgrounds */
+    --primary-100: #e0f2fe;     /* Light blue - secondary backgrounds */
+    --primary-500: #0ea5e9;     /* Main blue - primary actions */
+    --primary-600: #0284c7;     /* Darker blue - hover states */
+    --primary-700: #0369a1;     /* Darkest blue - active states */
+
+    /* Background colors - Calming medical environment */
+    --bg-primary: #ffffff;      /* Main background - clean white */
+    --bg-secondary: #f8fafc;    /* Secondary background - light gray */
+    --bg-tertiary: #f1f5f9;     /* Tertiary background - lighter gray */
+    --bg-card: #ffffff;         /* Card backgrounds - pure white */
+    --bg-hover: #f1f5f9;        /* Hover states - subtle gray */
+
+    /* Text colors - High contrast for medical readability */
+    --text-primary: #0f172a;    /* Main text - very dark gray (16.07:1 contrast) */
+    --text-secondary: #475569;  /* Secondary text - dark gray (7.25:1 contrast) */
+    --text-tertiary: #64748b;   /* Tertiary text - medium gray (5.74:1 contrast) */
+    --text-muted: #94a3b8;      /* Muted text - light gray (3.85:1 contrast) */
+
+    /* Border colors - Subtle separation */
+    --border-light: #e2e8f0;    /* Light borders */
+    --border-medium: #cbd5e1;   /* Medium borders */
+    --border-strong: #94a3b8;   /* Strong borders */
+
+    /* Status colors - Dark colors on light backgrounds for maximum contrast */
+    --success: #065f46;         /* Success - very dark green for 7:1+ contrast */
+    --success-bg: #f0fdf4;      /* Success background - very light green */
+    --warning: #7c2d12;         /* Warning - very dark orange for 7:1+ contrast */
+    --warning-bg: #fff7ed;      /* Warning background - very light orange */
+    --error: #991b1b;           /* Error - darker red for better contrast */
+    --error-bg: #fef2f2;        /* Error background - very light red */
+    --info: #1e40af;            /* Info - darker blue for better contrast */
+    --info-bg: #eff6ff;         /* Info background - very light blue */
+
+    /* Shadow variables - Subtle depth */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);  /* Light shadow */
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1); /* Medium shadow */
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1); /* Large shadow */
+
+    /* Legacy variable mappings for compatibility */
     --background: 0 0% 100%;
     --foreground: 201.3 96.3% 15%;
     --card: 0 0% 100%;
@@ -34,7 +75,7 @@
     --text-low-contrast: 201.3 96.3% 45%;
     --text-subtle: 201.3 96.3% 60%;
 
-    /* Dental clinic specific variables - Sky Theme */
+    /* Dental clinic specific variables - Medical Theme */
     --dental-primary: 198.6 88.7% 48.4%;
     --dental-secondary: 200.4 98% 39.4%;
     --medical-success: 142 76% 36%;
@@ -72,16 +113,57 @@
     --outline-variant: 186.2 83.5% 85%;
 
     /* Professional medical status colors - Light mode */
-    --status-scheduled: 200.4 98% 39.4%;
-    --status-completed: 142 76% 36%;
-    --status-cancelled: 0 84% 60%;
+    --status-scheduled: 200.4 98% 48%;
+    --status-completed: 142 76% 46%;
+    --status-cancelled: 0 84% 70%;
     --status-no-show: 220 13% 69%;
-    --status-in-progress: 38 92% 50%;
-    --status-confirmed: 142 76% 36%;
+    --status-in-progress: 38 92% 60%;
+    --status-confirmed: 142 76% 46%;
   }
 
-  .dark {
-    /* Dark mode colors - Enhanced Sky Theme */
+  [data-theme="dark"] {
+    /* Medical-focused Color System - Dark Mode */
+    /* Primary colors - Light blue for comfort in low light */
+    --primary-50: #0c1929;      /* Darkest blue - dark backgrounds */
+    --primary-100: #1e293b;     /* Dark blue - secondary backgrounds */
+    --primary-500: #38bdf8;     /* Light blue - primary actions */
+    --primary-600: #0ea5e9;     /* Medium blue - hover states */
+    --primary-700: #0284c7;     /* Darker blue - active states */
+
+    /* Background colors - Dark theme for reduced eye strain */
+    --bg-primary: #0f172a;      /* Main background - dark blue-gray */
+    --bg-secondary: #1e293b;    /* Secondary background - darker */
+    --bg-tertiary: #334155;     /* Tertiary background - medium dark */
+    --bg-card: #1e293b;         /* Card backgrounds - dark */
+    --bg-hover: #334155;        /* Hover states - lighter dark */
+
+    /* Text colors - Optimized for dark mode readability */
+    --text-primary: #f8fafc;    /* Main text - near white (15.8:1 contrast) */
+    --text-secondary: #cbd5e1;  /* Secondary text - light gray (9.2:1 contrast) */
+    --text-tertiary: #94a3b8;   /* Tertiary text - medium gray (5.4:1 contrast) */
+    --text-muted: #64748b;      /* Muted text - darker gray (3.2:1 contrast) */
+
+    /* Border colors - Visible in dark mode */
+    --border-light: #334155;    /* Light borders - subtle */
+    --border-medium: #475569;   /* Medium borders - more visible */
+    --border-strong: #64748b;   /* Strong borders - clear */
+
+    /* Status colors - Maximum contrast colors for dark mode */
+    --success: #00ff00;         /* Success - pure green for maximum contrast */
+    --success-bg: #064e3b;      /* Success background - darker green */
+    --warning: #ffff00;         /* Warning - pure yellow for maximum contrast */
+    --warning-bg: #78350f;      /* Warning background - darker orange */
+    --error: #ffffff;           /* Error - white text for maximum contrast */
+    --error-bg: #7f1d1d;        /* Error background - darker red */
+    --info: #ffffff;            /* Info - white text for maximum contrast */
+    --info-bg: #1e3a8a;         /* Info background - darker blue */
+
+    /* Enhanced shadows for dark mode depth */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);  /* Light shadow - enhanced */
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4); /* Medium shadow */
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5); /* Large shadow */
+
+    /* Legacy variable mappings for compatibility */
     --background: 201.3 96.3% 4%;
     --foreground: 186.2 83.5% 92%;
     --card: 201.3 96.3% 6%;
@@ -108,7 +190,7 @@
     --text-low-contrast: 197.4 71.1% 70%;
     --text-subtle: 197.4 71.1% 55%;
 
-    /* Dark mode dental clinic colors - Sky Theme */
+    /* Dark mode dental clinic colors - Medical Theme */
     --dental-primary: 198.6 88.7% 58.4%;
     --dental-secondary: 200.4 98% 49.4%;
     --medical-success: 142 76% 46%;
@@ -146,12 +228,12 @@
     --outline-variant: 201.3 96.3% 20%;
 
     /* Professional medical status colors - Dark mode */
-    --status-scheduled: 200.4 98% 55%;
-    --status-completed: 142 76% 50%;
-    --status-cancelled: 0 84% 70%;
-    --status-no-show: 220 13% 60%;
-    --status-in-progress: 38 92% 65%;
-    --status-confirmed: 142 76% 50%;
+    --status-scheduled: 200.4 98% 60%;
+    --status-completed: 142 76% 55%;
+    --status-cancelled: 0 84% 75%;
+    --status-no-show: 220 13% 65%;
+    --status-in-progress: 38 92% 70%;
+    --status-confirmed: 142 76% 55%;
   }
 }
 
@@ -528,6 +610,86 @@
     z-index: 1;
   }
 
+  /* Enhanced Typography System - Medical Theme */
+  /* Font families - Modern, readable fonts for medical use */
+  .font-display {
+    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.2; /* Comfortable line height for readability */
+  }
+
+  .font-body {
+    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    font-weight: 400;
+    color: var(--text-secondary);
+    line-height: 1.5; /* Optimal line height for long text */
+  }
+
+  /* Headings - Clear hierarchy */
+  .text-h1 {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.1;
+  }
+
+  .text-h2 {
+    font-size: 1.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.2;
+  }
+
+  .text-h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.3;
+  }
+
+  .text-h4 {
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.4;
+  }
+
+  /* Body text - Consistent sizing with accessibility */
+  .text-body-lg {
+    font-size: 1.125rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  .text-body {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  .text-body-sm {
+    font-size: 0.875rem;
+    color: var(--text-tertiary);
+    line-height: 1.4;
+  }
+
+  .text-caption {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    line-height: 1.3;
+  }
+
+  /* Special text - Interactive elements */
+  .text-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    line-height: 1.2;
+  }
+
   /* Custom scrollbar for dark mode */
   ::-webkit-scrollbar {
     width: 8px;
@@ -886,29 +1048,108 @@
     }
   }
 
-  /* Enhanced Status indicators - Sky Theme */
+  /* Enhanced Medical Status indicators */
   .status-scheduled {
-    @apply bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary border border-primary/20 dark:border-primary/30 rounded-full px-2 py-1 text-xs font-medium;
+    background: var(--primary-100);
+    color: var(--primary-700);
+    border: 1px solid var(--primary-500);
+    border-radius: 9999px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1;
   }
 
   .status-completed {
-    @apply bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 border border-green-200 dark:border-green-800 rounded-full px-2 py-1 text-xs font-medium;
+    background: var(--success-bg);
+    color: var(--success);
+    border: 1px solid var(--success);
+    border-radius: 9999px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1;
   }
 
   .status-cancelled {
-    @apply bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive border border-destructive/20 dark:border-destructive/30 rounded-full px-2 py-1 text-xs font-medium;
+    background: var(--error-bg);
+    color: var(--error);
+    border: 1px solid var(--error);
+    border-radius: 9999px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1;
   }
 
   .status-no-show {
-    @apply bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground border border-border dark:border-border rounded-full px-2 py-1 text-xs font-medium;
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+    border: 1px solid var(--border-medium);
+    border-radius: 9999px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1;
   }
 
   .status-in-progress {
-    @apply bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-full px-2 py-1 text-xs font-medium;
+    background: var(--warning-bg);
+    color: var(--warning);
+    border: 1px solid var(--warning);
+    border-radius: 9999px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1;
   }
 
   .status-confirmed {
-    @apply bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-full px-2 py-1 text-xs font-medium;
+    background: var(--info-bg);
+    color: var(--info);
+    border: 1px solid var(--info);
+    border-radius: 9999px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1;
+  }
+
+  /* Dark mode status indicators */
+  [data-theme="dark"] .status-scheduled {
+    background: var(--primary-50);
+    color: var(--primary-500);
+    border-color: var(--primary-600);
+  }
+
+  [data-theme="dark"] .status-completed {
+    background: var(--success-bg);
+    color: var(--success);
+    border-color: var(--success);
+  }
+
+  [data-theme="dark"] .status-cancelled {
+    background: var(--error-bg);
+    color: var(--error);
+    border-color: var(--error);
+  }
+
+  [data-theme="dark"] .status-no-show {
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+    border-color: var(--border-light);
+  }
+
+  [data-theme="dark"] .status-in-progress {
+    background: var(--warning-bg);
+    color: var(--warning);
+    border-color: var(--warning);
+  }
+
+  [data-theme="dark"] .status-confirmed {
+    background: var(--info-bg);
+    color: var(--info);
+    border-color: var(--info);
   }
 
   /* Calendar specific dark mode styles */
@@ -938,14 +1179,71 @@
     @apply bg-primary text-primary-foreground;
   }
 
+  /* Enhanced Medical Notification System */
+  .notification {
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    border-left: 4px solid;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s ease;
+  }
+
+  .notification:hover {
+    transform: translateY(-1px);
+  }
+
+  .notification-success {
+    background: var(--success-bg);
+    color: var(--success);
+    border-left-color: var(--success);
+  }
+
+  .notification-warning {
+    background: var(--warning-bg);
+    color: var(--warning);
+    border-left-color: var(--warning);
+  }
+
+  .notification-error {
+    background: var(--error-bg);
+    color: var(--error);
+    border-left-color: var(--error);
+    animation: shake 0.5s ease-in-out;
+  }
+
+  .notification-info {
+    background: var(--info-bg);
+    color: var(--info);
+    border-left-color: var(--info);
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+  }
+
+  /* Dark mode notifications */
+  [data-theme="dark"] .notification {
+    box-shadow: var(--shadow-md);
+  }
+
+  [data-theme="dark"] .notification-error {
+    animation: shake 0.5s ease-in-out;
+  }
+
   /* Form validation styles */
   .form-error {
-    @apply text-destructive text-sm mt-1;
+    color: var(--error);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
   }
 
   .form-success {
-    @apply text-sm mt-1;
-    color: hsl(var(--medical-success));
+    color: var(--success);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
   }
 
   /* Table center alignment styles - Simple and effective */
@@ -2020,4 +2318,274 @@
       line-height: 1.4;
     }
   }
+}
+
+/* ============================================
+  THEME TRANSITIONS & FOUC PREVENTION
+  ============================================ */
+
+@layer base {
+  /* Prevent FOUC (Flash of Unstyled Content) */
+  html {
+    /* Apply theme immediately without transition */
+    --theme-transition: none;
+  }
+
+  /* CSS Containment for Better Performance */
+  .theme-container {
+    contain: layout style paint;
+    will-change: auto;
+  }
+
+  .theme-container.theme-transitioning {
+    will-change: background-color, color, border-color;
+    contain: layout style paint;
+  }
+
+  /* Optimized theme-aware elements with containment */
+  .theme-aware,
+  [data-theme-aware],
+  .theme-transition {
+    contain: style;
+    transition:
+      background-color var(--theme-transition-duration, 0.15s) ease,
+      color var(--theme-transition-duration, 0.15s) ease,
+      border-color var(--theme-transition-duration, 0.15s) ease;
+  }
+
+  /* Theme transitions enabled class */
+  .theme-transitions-enabled {
+    --theme-transition-duration: 0.15s;
+  }
+
+  .theme-transitions-enabled .theme-aware,
+  .theme-transitions-enabled [data-theme-aware],
+  .theme-transitions-enabled .theme-transition {
+    transition:
+      background-color var(--theme-transition-duration) ease,
+      color var(--theme-transition-duration) ease,
+      border-color var(--theme-transition-duration) ease;
+  }
+
+  /* High-performance theme elements */
+  .theme-element {
+    contain: style layout;
+    will-change: auto;
+  }
+
+  .theme-element.theme-changing {
+    will-change: background-color, color;
+  }
+
+ /* Optimized theme switching with data attributes */
+ html[data-theme="light"] {
+   color-scheme: light;
+ }
+
+ html[data-theme="dark"] {
+   color-scheme: dark;
+ }
+
+ /* Theme-specific variables for better performance */
+ html[data-theme="light"] {
+   --theme-bg-primary: #ffffff;
+   --theme-bg-secondary: #f8f9fa;
+   --theme-bg-tertiary: #e9ecef;
+   --theme-text-primary: #212529;
+   --theme-text-secondary: #6c757d;
+   --theme-text-muted: #868e96;
+   --theme-border: #dee2e6;
+   --theme-shadow: rgba(0, 0, 0, 0.1);
+   --theme-shadow-hover: rgba(0, 0, 0, 0.15);
+   /* Optimized CSS custom properties */
+   --theme-transition: background-color 0.15s ease, color 0.15s ease;
+   --theme-contain: style;
+ }
+
+ html[data-theme="dark"] {
+   --theme-bg-primary: #1a1a1a;
+   --theme-bg-secondary: #2d2d2d;
+   --theme-bg-tertiary: #404040;
+   --theme-text-primary: #ffffff;
+   --theme-text-secondary: #b0b0b0;
+   --theme-text-muted: #888888;
+   --theme-border: #404040;
+   --theme-shadow: rgba(0, 0, 0, 0.3);
+   --theme-shadow-hover: rgba(0, 0, 0, 0.4);
+   /* Optimized CSS custom properties */
+   --theme-transition: background-color 0.15s ease, color 0.15s ease;
+   --theme-contain: style;
+ }
+
+ /* Smooth theme transitions for specific elements */
+ .theme-bg-primary {
+   background-color: var(--theme-bg-primary);
+ }
+
+ .theme-bg-secondary {
+   background-color: var(--theme-bg-secondary);
+ }
+
+ .theme-bg-tertiary {
+   background-color: var(--theme-bg-tertiary);
+ }
+
+ .theme-text-primary {
+   color: var(--theme-text-primary);
+ }
+
+ .theme-text-secondary {
+   color: var(--theme-text-secondary);
+ }
+
+ .theme-text-muted {
+   color: var(--theme-text-muted);
+ }
+
+ .theme-border {
+   border-color: var(--theme-border);
+ }
+
+ /* Theme transition containment for performance */
+ .theme-container {
+   contain: layout style paint;
+   will-change: auto;
+ }
+
+ .theme-container.theme-transitioning {
+   will-change: background-color, color, border-color;
+   contain: layout style paint;
+ }
+
+ /* Optimized theme switching for large containers */
+ .large-theme-container {
+   contain: layout style paint;
+   content-visibility: auto;
+ }
+
+ .large-theme-container.theme-transitioning {
+   will-change: background-color, color, border-color;
+   content-visibility: visible;
+ }
+
+ /* Performance-optimized theme elements */
+ .theme-optimized {
+   contain: style;
+   transform: translateZ(0); /* Force hardware acceleration */
+   backface-visibility: hidden;
+   perspective: 1000px;
+ }
+
+ /* Theme batching for reduced layout thrashing */
+ .theme-batch {
+   contain: layout style;
+   will-change: transform;
+ }
+
+ .theme-batch.theme-changing {
+   will-change: transform, background-color, color;
+ }
+}
+
+/* ============================================
+  THEME PERFORMANCE OPTIMIZATIONS
+  ============================================ */
+
+@layer components {
+  /* High-performance theme transitions */
+  .theme-transition-fast {
+    transition: background-color 0.1s ease, color 0.1s ease, border-color 0.1s ease;
+    contain: style;
+  }
+
+  .theme-transition-medium {
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    contain: style;
+  }
+
+  .theme-transition-slow {
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    contain: style;
+  }
+
+  /* Optimized theme-aware components */
+  .theme-aware-card {
+    @apply bg-card text-card-foreground border border-border rounded-lg shadow-sm;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    contain: layout style paint;
+    will-change: auto;
+  }
+
+  .theme-aware-button {
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    will-change: auto;
+    contain: style;
+  }
+
+  .theme-aware-button:hover {
+    will-change: background-color, color, border-color;
+  }
+
+  .theme-aware-input {
+    @apply bg-background text-foreground border-input;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    contain: style;
+  }
+
+ /* Theme-aware components with optimized rendering */
+ .theme-aware-card {
+   @apply bg-card text-card-foreground border border-border rounded-lg shadow-sm;
+   transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+   contain: layout style paint;
+ }
+
+ .theme-aware-button {
+   transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+   will-change: auto;
+ }
+
+ .theme-aware-button:hover {
+   will-change: background-color, color, border-color;
+ }
+
+ .theme-aware-input {
+   @apply bg-background text-foreground border-input;
+   transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+   contain: style;
+ }
+
+ /* Reduce motion for better performance */
+ @media (prefers-reduced-motion: reduce) {
+   .theme-aware,
+   [data-theme-aware],
+   .theme-transition,
+   .theme-aware-card,
+   .theme-aware-button,
+   .theme-aware-input {
+     transition: none !important;
+   }
+ }
+
+ /* Theme transition states */
+ .theme-entering {
+   opacity: 0;
+   transform: translateY(-10px);
+ }
+
+ .theme-entered {
+   opacity: 1;
+   transform: translateY(0);
+   transition: opacity 0.2s ease, transform 0.2s ease;
+ }
+
+ .theme-exiting {
+   opacity: 1;
+   transform: translateY(0);
+ }
+
+ .theme-exited {
+   opacity: 0;
+   transform: translateY(-10px);
+   transition: opacity 0.2s ease, transform 0.2s ease;
+ }
 }

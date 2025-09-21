@@ -41,6 +41,7 @@ let mainWindow = null
 let databaseService = null
 let backupService = null
 let reportsService = null
+let whatsAppService = null
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -203,54 +204,97 @@ if (!gotTheLock) {
     // Create window first for faster UI startup
     createWindow()
 
-    // Initialize database service with migration support
-    console.log('🚀 Starting database service initialization...')
-    try {
-      console.log('📦 Importing DatabaseService...')
-      const { DatabaseService } = require('../src/services/databaseService.js')
-      console.log('✅ DatabaseService imported successfully')
+    // Initialize critical services only (lazy load heavy services)
+    console.log('🚀 Starting critical services initialization...')
 
-      // Initialize SQLite database service
-      const dbPath = join(app.getPath('userData'), 'dental_clinic.db')
-      console.log('🗄️ Database will be created at:', dbPath)
+    // Initialize database service asynchronously with lazy loading
+    initializeDatabaseService().catch(error => {
+      console.error('❌ Critical database service initialization failed:', error)
+    })
 
-      // Ensure userData directory exists
-      const userDataPath = app.getPath('userData')
-      console.log('📁 User data path:', userDataPath)
+    // Initialize other heavy services lazily with staggered loading
+    setTimeout(() => {
+      initializeHeavyServices().catch(error => {
+        console.error('❌ Heavy services initialization failed:', error)
+      })
+    }, 500) // Reduced delay to 500ms for faster startup
 
-      if (!require('fs').existsSync(userDataPath)) {
-        require('fs').mkdirSync(userDataPath, { recursive: true })
-        console.log('✅ Created userData directory:', userDataPath)
-      }
+    // Initialize WhatsApp service when app is ready
+    initializeWhatsAppService().catch(error => {
+      console.error('❌ WhatsApp service initialization failed:', error)
+    })
 
-      console.log('🏗️ Creating DatabaseService instance...')
-      try {
-        databaseService = new DatabaseService() // Remove dbPath parameter since constructor doesn't accept it
-        console.log('✅ DatabaseService instance created successfully')
-      } catch (dbError: any) {
-        console.error('❌ Failed to create DatabaseService instance:', dbError.message)
-        console.error('Stack trace:', dbError.stack)
-        databaseService = null
-      }
+    // Listen for WhatsApp QR events and forward them to renderer
+    const { ipcMain } = require('electron')
+    ipcMain.on('whatsapp:qr', (event, qr) => {
+      console.log('📱 Main: Received QR event, forwarding to renderer:', qr.substring(0, 50) + '...')
+      // Forward QR to all renderer windows
+      BrowserWindow.getAllWindows().forEach(window => {
+        if (window.webContents && !window.webContents.isDestroyed()) {
+          window.webContents.send('whatsapp:qr', qr)
+        }
+      })
+    })
 
-      // Check if database file was created
-      if (require('fs').existsSync(dbPath)) {
-        const stats = require('fs').statSync(dbPath)
-        console.log('📊 Database file exists, size:', stats.size, 'bytes')
-      } else {
-        console.log('❌ Database file was not created')
-      }
+    // Listen for WhatsApp ready events
+    ipcMain.on('whatsapp:ready', (event, data) => {
+      console.log('📱 Main: WhatsApp client is ready')
+      BrowserWindow.getAllWindows().forEach(window => {
+        if (window.webContents && !window.webContents.isDestroyed()) {
+          window.webContents.send('whatsapp:ready', data)
+        }
+      })
+    })
 
-      console.log('✅ SQLite database service initialized successfully')
+    // Listen for WhatsApp auth failure events
+    ipcMain.on('whatsapp:auth_failure', (event, data) => {
+      console.log('📱 Main: WhatsApp authentication failed')
+      BrowserWindow.getAllWindows().forEach(window => {
+        if (window.webContents && !window.webContents.isDestroyed()) {
+          window.webContents.send('whatsapp:auth_failure', data)
+        }
+      })
+    })
 
-    } catch (error) {
-      console.error('❌ Failed to initialize database service:', error)
-      console.error('Error details:', error.message)
-      console.error('Stack trace:', error.stack)
-      databaseService = null
-    }
+    // Listen for WhatsApp session cleared events
+    ipcMain.on('whatsapp:session_cleared', (event, data) => {
+      console.log('📱 Main: WhatsApp session cleared')
+      BrowserWindow.getAllWindows().forEach(window => {
+        if (window.webContents && !window.webContents.isDestroyed()) {
+          window.webContents.send('whatsapp:session_cleared', data)
+        }
+      })
+    })
 
-    console.log('📋 Final database service status:', databaseService ? 'ACTIVE' : 'NULL')
+    // Listen for WhatsApp connection failure events
+    ipcMain.on('whatsapp:connection_failure', (event, data) => {
+      console.log('📱 Main: WhatsApp connection failure')
+      BrowserWindow.getAllWindows().forEach(window => {
+        if (window.webContents && !window.webContents.isDestroyed()) {
+          window.webContents.send('whatsapp:connection_failure', data)
+        }
+      })
+    })
+
+    // Listen for WhatsApp initialization failure events
+    ipcMain.on('whatsapp:init_failure', (event, data) => {
+      console.log('📱 Main: WhatsApp initialization failure')
+      BrowserWindow.getAllWindows().forEach(window => {
+        if (window.webContents && !window.webContents.isDestroyed()) {
+          window.webContents.send('whatsapp:init_failure', data)
+        }
+      })
+    })
+
+    // Listen for WhatsApp session auto-cleared events (for 401 errors)
+    ipcMain.on('whatsapp:session_auto_cleared', (event, data) => {
+      console.log('📱 Main: WhatsApp session auto-cleared due to 401 error')
+      BrowserWindow.getAllWindows().forEach(window => {
+        if (window.webContents && !window.webContents.isDestroyed()) {
+          window.webContents.send('whatsapp:session_auto_cleared', data)
+        }
+      })
+    })
 
     // WhatsApp reminders aliases for renderer API
     ipcMain.handle('whatsapp-reminders:set-settings', async (_event, newSettings) => {
@@ -267,61 +311,39 @@ if (!gotTheLock) {
         });
 
         if (databaseService) {
-          // Ensure all WhatsApp reminder columns exist before update
           try {
-            console.log('🔧 Checking database schema for WhatsApp columns...');
-            const cols = databaseService.db.prepare(`PRAGMA table_info(settings)`).all()
-            console.log('🔧 Current settings table columns:', cols?.map((c: any) => c.name) || [])
+            const currentSettings = await databaseService.getSettings();
+            console.log('🔧 Current settings from database:', currentSettings);
 
-            // Check for all required WhatsApp columns
-            const requiredColumns = [
-              'whatsapp_reminder_enabled',
-              'whatsapp_reminder_hours_before',
-              'whatsapp_reminder_minutes_before',
-              'whatsapp_reminder_message',
-              'whatsapp_reminder_custom_enabled'
-            ]
+            // Calculate minutes from hours if minutes not provided
+            const minutesBefore = newSettings.minutes_before !== undefined ? newSettings.minutes_before :
+              (newSettings.hours_before !== undefined ? newSettings.hours_before * 60 : 180);
 
-            for (const columnName of requiredColumns) {
-              const hasColumn = cols?.some((c: any) => c.name === columnName)
-              if (!hasColumn) {
-                console.log(`🔧 Adding missing column: ${columnName}`);
-                let defaultValue = '0'
-                if (columnName === 'whatsapp_reminder_message') {
-                  defaultValue = "'مرحبًا {{patient_name}}، تذكير بموعدك في عيادة الأسنان بتاريخ {{appointment_date}} الساعة {{appointment_time}}. نشكرك على التزامك.'"
-                }
-                databaseService.db.prepare(`ALTER TABLE settings ADD COLUMN ${columnName} ${columnName === 'whatsapp_reminder_message' ? 'TEXT' : 'INTEGER'} DEFAULT ${defaultValue}`).run()
-                console.log(`✅ Column ${columnName} added successfully`);
-              }
-            }
-          } catch (schemaErr) {
-            console.warn('⚠️ Schema check failed:', schemaErr.message)
+            const updatedSettings = {
+              ...currentSettings,
+              whatsapp_reminder_enabled: newSettings.whatsapp_reminder_enabled !== undefined ? newSettings.whatsapp_reminder_enabled : currentSettings.whatsapp_reminder_enabled,
+              whatsapp_reminder_hours_before: newSettings.hours_before !== undefined ? newSettings.hours_before : currentSettings.whatsapp_reminder_hours_before,
+              whatsapp_reminder_minutes_before: minutesBefore,
+              whatsapp_reminder_message: newSettings.message !== undefined ? newSettings.message : currentSettings.whatsapp_reminder_message,
+              whatsapp_reminder_custom_enabled: newSettings.custom_enabled !== undefined ? newSettings.custom_enabled : currentSettings.whatsapp_reminder_custom_enabled,
+            };
+
+            console.log('🔧 Updated settings to save:', updatedSettings);
+
+            await databaseService.updateSettings(updatedSettings);
+
+            // Verify the update was successful
+            const verifySettings = await databaseService.getSettings();
+            console.log('🔍 Verification - settings after update:', verifySettings);
+
+            // console.log('✅ WhatsApp settings saved successfully');
+            return { success: true, settings: verifySettings };
+          } catch (dbError) {
+            console.error('❌ Database error while saving WhatsApp settings:', dbError);
+            return { success: false, error: 'Database error: ' + dbError.message };
           }
-
-          const currentSettings = await databaseService.getSettings();
-          const updatedSettings = {
-            ...currentSettings,
-            whatsapp_reminder_enabled: newSettings.whatsapp_reminder_enabled !== undefined ? newSettings.whatsapp_reminder_enabled : currentSettings.whatsapp_reminder_enabled,
-            whatsapp_reminder_hours_before: newSettings.hours_before !== undefined ? newSettings.hours_before : currentSettings.whatsapp_reminder_hours_before,
-            whatsapp_reminder_minutes_before: newSettings.minutes_before !== undefined ? newSettings.minutes_before : (currentSettings.whatsapp_reminder_minutes_before || newSettings.hours_before * 60),
-            whatsapp_reminder_message: newSettings.message !== undefined ? newSettings.message : currentSettings.whatsapp_reminder_message,
-            whatsapp_reminder_custom_enabled: newSettings.custom_enabled !== undefined ? newSettings.custom_enabled : currentSettings.whatsapp_reminder_custom_enabled,
-          };
-
-          // Apply default minutes if not explicitly set and custom_enabled is off
-          if (updatedSettings.whatsapp_reminder_minutes_before === 0 && updatedSettings.whatsapp_reminder_hours_before > 0) {
-            updatedSettings.whatsapp_reminder_minutes_before = updatedSettings.whatsapp_reminder_hours_before * 60;
-          }
-
-          await databaseService.updateSettings(updatedSettings);
-
-          // Verify the update was successful
-          const verifySettings = await databaseService.getSettings();
-          console.log('🔍 Verification - whatsapp_reminder_enabled after update:', verifySettings?.whatsapp_reminder_enabled);
-
-          console.log('✅ WhatsApp settings saved successfully');
-          return { success: true };
         } else {
+          console.error('❌ Database service not available');
           return { success: false, error: 'Database service not available' };
         }
       } catch (error) {
@@ -335,16 +357,21 @@ if (!gotTheLock) {
         if (databaseService) {
           const settings = await databaseService.getSettings();
           console.log('🔧 Main: Retrieved settings from databaseService.getSettings():', settings);
+
           const hours = settings.whatsapp_reminder_hours_before || 3;
           const minutesRaw = settings.whatsapp_reminder_minutes_before;
           const minutesResolved = (typeof minutesRaw === 'number' && minutesRaw > 0) ? minutesRaw : (hours * 60);
-          return {
+
+          const result = {
             whatsapp_reminder_enabled: settings.whatsapp_reminder_enabled || 0,
             hours_before: hours,
             minutes_before: minutesResolved,
             message: settings.whatsapp_reminder_message || '',
             custom_enabled: settings.whatsapp_reminder_custom_enabled || 0,
           };
+
+          console.log('🔧 Main: Returning WhatsApp settings:', result);
+          return result;
         } else {
           console.warn('🔧 Main: databaseService not available, returning default WhatsApp reminder settings.');
           return {
@@ -357,7 +384,14 @@ if (!gotTheLock) {
         }
       } catch (error) {
         console.error('❌ Error getting WhatsApp settings:', error);
-        return null;
+        return {
+          whatsapp_reminder_enabled: 0,
+          hours_before: 3,
+          minutes_before: 180,
+          message: '',
+          custom_enabled: 0,
+          error: 'Failed to load settings'
+        };
       }
     });
 
@@ -372,6 +406,216 @@ if (!gotTheLock) {
       }
     })
 
+    // WhatsApp service handlers
+    ipcMain.handle('whatsapp-reminders:reset-session', async () => {
+      try {
+        console.log('🔧 Main: Handling whatsapp-reminders:reset-session request')
+
+        // Ensure WhatsApp service is initialized
+        if (!global.whatsappClient) {
+          await initializeWhatsAppService()
+        }
+
+        if (global.whatsappClient) {
+          const { resetSession } = require('./services/whatsapp.ts')
+          await resetSession()
+          return { success: true, message: 'WhatsApp session reset successfully' }
+        } else {
+          return { success: false, error: 'WhatsApp service not initialized' }
+        }
+      } catch (error) {
+        console.error('❌ Error resetting WhatsApp session:', error)
+        return { success: false, error: error.message || 'Failed to reset session' }
+      }
+    })
+
+    ipcMain.handle('whatsapp-reminders:get-status', async () => {
+      try {
+        console.log('🔧 Main: Handling whatsapp-reminders:get-status request')
+
+        if (global.whatsappClient) {
+          const { getIsReady, getLastQr, getLastReadyAt } = require('./services/whatsapp.ts')
+
+          const status = {
+            isReady: getIsReady(),
+            hasQr: !!getLastQr(),
+            qr: getLastQr(),
+            lastReadyAt: getLastReadyAt(),
+            state: getIsReady() ? 'connected' : 'disconnected'
+          }
+
+          console.log('🔧 Main: Returning WhatsApp status:', status)
+          return status
+        } else {
+          return {
+            isReady: false,
+            hasQr: false,
+            qr: null,
+            lastReadyAt: null,
+            state: 'disconnected'
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error getting WhatsApp status:', error)
+        return {
+          isReady: false,
+          hasQr: false,
+          qr: null,
+          lastReadyAt: null,
+          state: 'error'
+        }
+      }
+    })
+
+    ipcMain.handle('whatsapp-reminders:test-send', async (_event, phoneNumber, message) => {
+      try {
+        console.log('🔧 Main: Handling whatsapp-reminders:test-send request')
+
+        if (global.whatsappClient) {
+          const { sendMessage } = require('./services/whatsapp.ts')
+          await sendMessage(phoneNumber, message)
+          return { success: true, message: 'Test message sent successfully' }
+        } else {
+          return { success: false, error: 'WhatsApp service not initialized' }
+        }
+      } catch (error) {
+        console.error('❌ Error sending test message:', error)
+        return { success: false, error: error.message || 'Failed to send test message' }
+      }
+    })
+
+    ipcMain.handle('whatsapp-reminders:logout-other-devices', async () => {
+      try {
+        console.log('🔧 Main: Handling whatsapp-reminders:logout-other-devices request')
+
+        if (global.whatsappClient) {
+          const { getClient } = require('./services/whatsapp.ts')
+          const sock = getClient()
+
+          if (!sock) {
+            return { success: false, error: 'WhatsApp client not initialized' }
+          }
+
+          // Use Baileys logout function
+          await sock.logout()
+          return { success: true, message: 'Logged out from other devices successfully' }
+        } else {
+          return { success: false, error: 'WhatsApp service not initialized' }
+        }
+      } catch (error) {
+        console.error('❌ Error logging out from other devices:', error)
+        return { success: false, error: error.message || 'Failed to logout from other devices' }
+      }
+    })
+
+    // Run diagnostic
+    ipcMain.handle('whatsapp-reminders:run-diagnostic', async () => {
+      try {
+        console.log('🔧 Main: Running WhatsApp diagnostic')
+
+        if (global.whatsappClient) {
+          const { getIsReady, getLastQr } = require('./services/whatsapp.ts')
+
+          const diagnostic = {
+            isReady: getIsReady(),
+            hasQr: !!getLastQr(),
+            sessionPath: app.getPath('userData') + '/baileys-session',
+            lastQrTimestamp: getLastQr() ? new Date().toISOString() : null,
+            timestamp: new Date().toISOString()
+          }
+
+          console.log('🔧 Main: Diagnostic result:', diagnostic)
+          return diagnostic
+        } else {
+          return {
+            isReady: false,
+            hasQr: false,
+            sessionPath: app.getPath('userData') + '/baileys-session',
+            lastQrTimestamp: null,
+            timestamp: new Date().toISOString(),
+            error: 'WhatsApp service not initialized'
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error running diagnostic:', error)
+        return { success: false, error: error.message || 'Failed to run diagnostic' }
+      }
+    })
+
+    // Run scheduler once
+    ipcMain.handle('whatsapp-reminders:run-scheduler-once', async () => {
+      try {
+        console.log('🔧 Main: Running WhatsApp scheduler once')
+
+        if (global.whatsappClient) {
+          // Import and use WhatsApp reminder scheduler
+          const { runSchedulerOnce } = require('./services/whatsappReminderScheduler.js')
+
+          // Run scheduler once
+          await runSchedulerOnce()
+
+          return { success: true, message: 'Scheduler run completed' }
+        } else {
+          return { success: false, error: 'WhatsApp service not initialized' }
+        }
+      } catch (error) {
+        console.error('❌ Error running scheduler once:', error)
+        return { success: false, error: error.message || 'Failed to run scheduler' }
+      }
+    })
+
+    // Generate new QR code
+    ipcMain.handle('whatsapp-reminders:generate-new-qr', async () => {
+      try {
+        console.log('🔧 Main: Handling whatsapp-reminders:generate-new-qr request')
+
+        // Ensure WhatsApp service is initialized
+        if (!global.whatsappClient) {
+          console.log('🔧 Main: WhatsApp client not available, initializing...')
+          await initializeWhatsAppService()
+        }
+
+        if (global.whatsappClient) {
+          const { generateNewQR } = require('./services/whatsapp.ts')
+          const result = await generateNewQR()
+
+          console.log('🔧 Main: QR generation result:', result)
+
+          // Return the detailed result from generateNewQR function
+          return {
+            success: result.success,
+            message: result.success ? 'QR code generated successfully' : (result.error || 'Failed to generate QR code'),
+            timestamp: Date.now(),
+            details: result.details || {},
+            error: result.error || null
+          }
+        } else {
+          console.error('🔧 Main: WhatsApp service still not available after initialization')
+          return {
+            success: false,
+            error: 'WhatsApp service failed to initialize',
+            timestamp: Date.now(),
+            details: {
+              type: 'ServiceNotInitialized',
+              code: 'SERVICE_UNAVAILABLE'
+            }
+          }
+        }
+      } catch (error: any) {
+        console.error('❌ Error generating new QR:', error)
+        return {
+          success: false,
+          error: error?.message || 'Failed to generate QR code',
+          timestamp: Date.now(),
+          details: {
+            type: error?.constructor?.name || 'Unknown',
+            code: error?.code || 'N/A',
+            stack: error?.stack?.substring(0, 500) || 'No stack trace'
+          }
+        }
+      }
+    })
+
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow()
     })
@@ -383,3 +627,127 @@ app.on('window-all-closed', () => {
     app.quit()
   }
 })
+
+// Lazy loading functions for better startup performance
+async function initializeDatabaseService() {
+  console.log('🚀 Starting database service initialization...')
+  try {
+    console.log('📦 Importing DatabaseService...')
+    const { DatabaseService } = require('../src/services/databaseService.js')
+    console.log('✅ DatabaseService imported successfully')
+
+    // Initialize SQLite database service
+    const dbPath = join(app.getPath('userData'), 'dental_clinic.db')
+    console.log('🗄️ Database will be created at:', dbPath)
+
+    // Ensure userData directory exists
+    const userDataPath = app.getPath('userData')
+    console.log('📁 User data path:', userDataPath)
+
+    const fs = require('fs')
+    if (!fs.existsSync(userDataPath)) {
+      fs.mkdirSync(userDataPath, { recursive: true })
+      console.log('✅ Created userData directory:', userDataPath)
+    }
+
+    console.log('🏗️ Creating DatabaseService instance...')
+    try {
+      databaseService = new DatabaseService()
+      console.log('✅ DatabaseService instance created successfully')
+
+      // Initialize database asynchronously to ensure WhatsApp tables are created
+      console.log('🔄 Initializing database asynchronously...')
+      if (databaseService && typeof databaseService.initializeAsync === 'function') {
+        databaseService.initializeAsync()
+          .then(() => {
+            console.log('✅ Database async initialization completed successfully')
+          })
+          .catch((initError) => {
+            console.error('❌ Database async initialization failed:', initError)
+          })
+      } else {
+        console.warn('⚠️ DatabaseService does not have initializeAsync method')
+      }
+    } catch (dbError: any) {
+      console.error('❌ Failed to create DatabaseService instance:', dbError.message)
+      console.error('Stack trace:', dbError.stack)
+      databaseService = null
+    }
+
+    // Check if database file was created
+    if (fs.existsSync(dbPath)) {
+      const stats = fs.statSync(dbPath)
+      console.log('📊 Database file exists, size:', stats.size, 'bytes')
+    } else {
+      console.log('❌ Database file was not created')
+    }
+
+    console.log('✅ SQLite database service initialized successfully')
+
+  } catch (error) {
+    console.error('❌ Failed to initialize database service:', error)
+    console.error('Error details:', error.message)
+    console.error('Stack trace:', error.stack)
+    databaseService = null
+  }
+
+  console.log('📋 Final database service status:', databaseService ? 'ACTIVE' : 'NULL')
+}
+
+async function initializeHeavyServices() {
+  console.log('🚀 Initializing heavy services (lazy loaded)...')
+
+  try {
+    // Initialize backup service
+    if (!backupService) {
+      console.log('📦 Importing BackupService...')
+      const { BackupService } = require('../src/services/backupService.js')
+      backupService = new BackupService()
+      console.log('✅ BackupService initialized')
+    }
+
+    // Initialize reports service
+    if (!reportsService) {
+      console.log('📦 Importing ReportsService...')
+      const { ReportsService } = require('../src/services/reportsService.js')
+      reportsService = new ReportsService()
+      console.log('✅ ReportsService initialized')
+    }
+
+    // Initialize other heavy services as needed
+    console.log('✅ All heavy services initialized successfully')
+
+  } catch (error) {
+    console.error('❌ Failed to initialize heavy services:', error)
+    console.error('Error details:', error.message)
+  }
+}
+
+async function initializeWhatsAppService() {
+  console.log('🚀 Initializing WhatsApp service (lazy loaded)...')
+
+  try {
+    // Import WhatsApp service modules
+    console.log('📦 Importing WhatsApp service modules...')
+    const { initializeClient, getClient, getIsReady, getLastQr } = require('./services/whatsapp.ts')
+
+    // Initialize the WhatsApp client
+    console.log('🔄 Initializing WhatsApp client...')
+    await initializeClient()
+
+    console.log('✅ WhatsApp service initialized successfully')
+
+    // Make functions available globally for IPC handlers
+    global.whatsappClient = {
+      getClient,
+      getIsReady,
+      getLastQr,
+      initializeClient
+    }
+
+  } catch (error) {
+    console.error('❌ Failed to initialize WhatsApp service:', error)
+    console.error('Error details:', error.message)
+    global.whatsappClient = null
+  }
+}

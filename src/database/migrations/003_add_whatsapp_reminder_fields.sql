@@ -5,6 +5,7 @@
 -- Add WhatsApp reminder fields to settings table
 ALTER TABLE settings ADD COLUMN whatsapp_reminder_enabled INTEGER DEFAULT 0; -- BOOLEAN stored as INTEGER (0 or 1)
 ALTER TABLE settings ADD COLUMN whatsapp_reminder_hours_before INTEGER DEFAULT 3;
+ALTER TABLE settings ADD COLUMN whatsapp_reminder_minutes_before INTEGER DEFAULT 180;
 ALTER TABLE settings ADD COLUMN whatsapp_reminder_message TEXT DEFAULT 'مرحبًا {{patient_name}}، تذكير بموعدك في عيادة الأسنان بتاريخ {{appointment_date}} الساعة {{appointment_time}}. نشكرك على التزامك.';
 ALTER TABLE settings ADD COLUMN whatsapp_reminder_custom_enabled INTEGER DEFAULT 0; -- BOOLEAN stored as INTEGER (0 or 1)
 
