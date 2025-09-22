@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useRef, useState, useEffect, memo } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -20,8 +20,9 @@ interface PaymentReceiptDialogProps {
   payment: Payment
 }
 
-export default function PaymentReceiptDialog({ open, onOpenChange, payment }: PaymentReceiptDialogProps) {
-  const { settings, loadSettings } = useSettingsStore()
+function PaymentReceiptDialogComponent({ open, onOpenChange, payment }: PaymentReceiptDialogProps) {
+  const settings = useSettingsStore(state => state.settings)
+  const loadSettings = useSettingsStore(state => state.loadSettings)
   const { formatAmount } = useCurrency()
   const clinicName = useStableClinicName()
   const doctorName = useStableDoctorName()
@@ -113,7 +114,7 @@ ${address ? `📍 العنوان: ${address}` : ''}
         })
         setQrCodeDataURL(dataURL)
       } catch (error) {
-        console.error('Error generating QR code:', error)
+        if (process.env.NODE_ENV !== 'production') console.error('Error generating QR code:', error)
       }
     }
 
@@ -134,7 +135,7 @@ ${address ? `📍 العنوان: ${address}` : ''}
 
         setBarcodeDataURL(canvas.toDataURL())
       } catch (error) {
-        console.error('Error generating barcode:', error)
+        if (process.env.NODE_ENV !== 'production') console.error('Error generating barcode:', error)
       }
     }
 
@@ -667,7 +668,7 @@ ${address ? `📍 العنوان: ${address}` : ''}
   const getStatusLabel = (status: string) => {
     const statuses = {
       completed: 'مكتمل',
-      pending: 'معلق',
+      pending: 'آجل',
       partial: 'جزئي',
       overdue: 'متأخر',
       failed: 'فاشل',
@@ -1117,3 +1118,5 @@ ${address ? `📍 العنوان: ${address}` : ''}
     </Dialog>
   )
 }
+
+export default memo(PaymentReceiptDialogComponent)

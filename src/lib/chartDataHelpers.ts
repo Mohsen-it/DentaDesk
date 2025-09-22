@@ -346,7 +346,7 @@ export function formatArabicLabel(label: string): string {
     'male': 'ذكر',
     'female': 'أنثى',
     'completed': 'مكتمل',
-    'pending': 'معلق',
+    'pending': 'آجل',
     'cancelled': 'ملغي',
     'scheduled': 'مجدول',
     'no_show': 'لم يحضر',

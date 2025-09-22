@@ -481,7 +481,7 @@ export class ExportService {
           <div class="number">${formatCurrency(data.completedPayments || 0)}</div>
         </div>
         <div class="summary-card">
-          <h3>المدفوعات المعلقة</h3>
+          <h3>المدفوعات الآجلة</h3>
           <div class="number">${formatCurrency(data.pendingPayments || 0)}</div>
         </div>
         <div class="summary-card">
@@ -631,7 +631,7 @@ export class ExportService {
     const statusMap: { [key: string]: string } = {
       'completed': 'مكتمل',
       'partial': 'جزئي',
-      'pending': 'معلق',
+      'pending': 'آجل',
       'overdue': 'متأخر',
       'cancelled': 'ملغي'
     }
@@ -803,7 +803,7 @@ export class ExportService {
     doc.text(`إجمالي الإيرادات: ${formatCurrency(data.totalRevenue || 0)}`, 20, yPosition)
     doc.text(`المدفوعات المكتملة: ${formatCurrency(data.completedPayments || 0)}`, 150, yPosition)
     yPosition += 10
-    doc.text(`المدفوعات المعلقة: ${formatCurrency(data.pendingPayments || 0)}`, 20, yPosition)
+    doc.text(`المدفوعات الآجلة: ${formatCurrency(data.pendingPayments || 0)}`, 20, yPosition)
     doc.text(`المدفوعات المتأخرة: ${formatCurrency(data.overduePayments || 0)}`, 150, yPosition)
     yPosition += 20
 
@@ -1051,7 +1051,7 @@ export class ExportService {
     worksheet.getCell('B4').value = `${formatCurrency(data.totalRevenue || 0)}`
     worksheet.getCell('A5').value = 'المدفوعات المكتملة:'
     worksheet.getCell('B5').value = `${formatCurrency(data.completedPayments || 0)}`
-    worksheet.getCell('A6').value = 'المدفوعات المعلقة:'
+    worksheet.getCell('A6').value = 'المدفوعات الآجلة:'
     worksheet.getCell('B6').value = `${formatCurrency(data.pendingPayments || 0)}`
     worksheet.getCell('A7').value = 'المدفوعات المتأخرة:'
     worksheet.getCell('B7').value = `${formatCurrency(data.overduePayments || 0)}`
@@ -1240,7 +1240,7 @@ export class ExportService {
 
       const statusMapping: { [key: string]: string } = {
         'paid': 'مدفوع',
-        'pending': 'معلق',
+        'pending': 'آجل',
         'overdue': 'متأخر'
       }
 
@@ -1697,7 +1697,7 @@ export class ExportService {
         }
 
         const statusLabels = {
-          pending: 'معلق',
+          pending: 'آجل',
           ordered: 'تم الطلب',
           received: 'تم الاستلام'
         }
@@ -1871,7 +1871,7 @@ export class ExportService {
       worksheet.getCell(currentRow, 1).font = { bold: true }
       currentRow++
 
-      worksheet.getCell(currentRow, 1).value = 'المبالغ المعلقة:'
+      worksheet.getCell(currentRow, 1).value = 'المبالغ الآجلة:'
       worksheet.getCell(currentRow, 2).value = formatCurrency(data.revenue.pendingPayments || 0)
       worksheet.getCell(currentRow, 1).font = { bold: true }
       currentRow++
@@ -2033,7 +2033,7 @@ export class ExportService {
           remainingAmount = payment.remaining_balance || payment.treatment_remaining_balance || 0
         }
       } else if (payment.status === 'pending') {
-        // للدفعات المعلقة: المبلغ الإجمالي هو المبلغ المطلوب والمتبقي هو نفس المبلغ
+        // للدفعات الآجلة: المبلغ الإجمالي هو المبلغ المطلوب والمتبقي هو نفس المبلغ
         treatmentTotalCost = payment.total_amount_due || payment.treatment_total_cost || paidAmount
         remainingAmount = treatmentTotalCost
       } else {
@@ -2047,7 +2047,7 @@ export class ExportService {
       worksheet.getCell(row, 3).value = formatCurrency(treatmentTotalCost)
       worksheet.getCell(row, 4).value = formatCurrency(remainingAmount)
       worksheet.getCell(row, 5).value = payment.status === 'completed' ? 'مكتمل' :
-                                       payment.status === 'partial' ? 'جزئي' : 'معلق'
+                                       payment.status === 'partial' ? 'جزئي' : 'آجل'
       worksheet.getCell(row, 6).value = payment.payment_method || ''
       // Use Gregorian date format instead of Arabic
       worksheet.getCell(row, 7).value = payment.payment_date ? new Date(payment.payment_date).toLocaleDateString('en-GB') : ''
@@ -2056,11 +2056,11 @@ export class ExportService {
 
     // Add summary rows for pending and remaining balances
     const summaryStartRow = payments.length + 4
-    worksheet.getCell(summaryStartRow, 1).value = 'ملخص المدفوعات المعلقة والمتبقية'
+    worksheet.getCell(summaryStartRow, 1).value = 'ملخص المدفوعات الآجلة والمتبقية'
     worksheet.getCell(summaryStartRow, 1).font = { bold: true, size: 14 }
     worksheet.mergeCells(summaryStartRow, 1, summaryStartRow, 8)
 
-    worksheet.getCell(summaryStartRow + 2, 1).value = 'إجمالي المدفوعات المعلقة:'
+    worksheet.getCell(summaryStartRow + 2, 1).value = 'إجمالي المدفوعات الآجلة:'
     worksheet.getCell(summaryStartRow + 2, 2).value = formatCurrency(totalPendingAmount)
     worksheet.getCell(summaryStartRow + 2, 1).font = { bold: true }
     worksheet.getCell(summaryStartRow + 2, 2).font = { bold: true }
@@ -2131,7 +2131,7 @@ export class ExportService {
       worksheet.getCell(row, 5).value = formatCurrency(order.paid_amount || 0)
       worksheet.getCell(row, 6).value = formatCurrency((order.cost || 0) - (order.paid_amount || 0))
       worksheet.getCell(row, 7).value = order.status === 'completed' ? 'مكتمل' :
-                                       order.status === 'pending' ? 'معلق' : 'ملغي'
+                                       order.status === 'pending' ? 'آجل' : 'ملغي'
       // Use Gregorian date format instead of Arabic
       worksheet.getCell(row, 8).value = order.order_date ? new Date(order.order_date).toLocaleDateString('en-GB') : ''
     })
@@ -2168,7 +2168,7 @@ export class ExportService {
                                        need.priority === 'high' ? 'عالي' :
                                        need.priority === 'medium' ? 'متوسط' : 'منخفض'
       worksheet.getCell(row, 6).value = need.status === 'received' ? 'مستلم' :
-                                       need.status === 'ordered' ? 'مطلوب' : 'معلق'
+                                       need.status === 'ordered' ? 'مطلوب' : 'آجل'
       // Use Gregorian date format instead of Arabic
       worksheet.getCell(row, 7).value = need.date_needed ? new Date(need.date_needed).toLocaleDateString('en-GB') : ''
       worksheet.getCell(row, 8).value = need.date_received ? new Date(need.date_received).toLocaleDateString('en-GB') : ''
@@ -2568,7 +2568,7 @@ export class ExportService {
     csv += 'ملخص الإحصائيات المالية\n'
     csv += `إجمالي الإيرادات,${formatCurrency(data.totalRevenue || 0)}\n`
     csv += `المدفوعات المكتملة,${formatCurrency(data.completedPayments || 0)}\n`
-    csv += `المدفوعات المعلقة,${formatCurrency(data.pendingPayments || 0)}\n`
+    csv += `المدفوعات الآجلة,${formatCurrency(data.pendingPayments || 0)}\n`
     csv += `المدفوعات المتأخرة,${formatCurrency(data.overduePayments || 0)}\n`
     csv += `إجمالي المصروفات,${formatCurrency(data.totalExpenses || 0)}\n`
     csv += `صافي الربح,${formatCurrency(data.netProfit || 0)}\n`
@@ -2863,7 +2863,7 @@ export class ExportService {
 
   private static getStatusLabel(status: string): string {
     const labels = {
-      pending: 'معلق',
+      pending: 'آجل',
       ordered: 'مطلوب',
       received: 'مستلم',
       cancelled: 'ملغي'
@@ -3364,7 +3364,7 @@ export class ExportService {
       revenueTrend: [],
       topTreatments: [],
       outstandingBalance: pendingPayments + overduePayments + totalRemainingFromPartialPayments,
-      filterInfo: `البيانات المصدرة: ${payments.length} دفعة (مكتملة: ${payments.filter(p => p.status === 'completed').length}, جزئية: ${payments.filter(p => p.status === 'partial').length}, معلقة: ${payments.filter(p => p.status === 'pending').length}, متأخرة: ${overduePayments > 0 ? payments.filter(p => p.status === 'pending' && new Date(p.payment_date || p.created_at) < thirtyDaysAgo).length : 0}, مبلغ متبقي من الجزئية: ${formatCurrency(totalRemainingFromPartialPayments)})`,
+      filterInfo: `البيانات المصدرة: ${payments.length} دفعة (مكتملة: ${payments.filter(p => p.status === 'completed').length}, جزئية: ${payments.filter(p => p.status === 'partial').length}, آجلة: ${payments.filter(p => p.status === 'pending').length}, متأخرة: ${overduePayments > 0 ? payments.filter(p => p.status === 'pending' && new Date(p.payment_date || p.created_at) < thirtyDaysAgo).length : 0}, مبلغ متبقي من الجزئية: ${formatCurrency(totalRemainingFromPartialPayments)})`,
       dataCount: payments.length
     }
 
@@ -3495,7 +3495,7 @@ export class ExportService {
       revenueTrend: [],
       topTreatments: [],
       outstandingBalance: pendingPayments + overduePayments + totalRemainingFromPartialPayments,
-      filterInfo: `البيانات المصدرة: ${payments.length} دفعة (مكتملة: ${payments.filter(p => p.status === 'completed').length}, جزئية: ${payments.filter(p => p.status === 'partial').length}, معلقة: ${payments.filter(p => p.status === 'pending').length}, متأخرة: ${overduePayments > 0 ? payments.filter(p => p.status === 'pending' && new Date(p.payment_date || p.created_at) < thirtyDaysAgo).length : 0}, مبلغ متبقي من الجزئية: ${formatCurrency(totalRemainingFromPartialPayments)})`,
+      filterInfo: `البيانات المصدرة: ${payments.length} دفعة (مكتملة: ${payments.filter(p => p.status === 'completed').length}, جزئية: ${payments.filter(p => p.status === 'partial').length}, آجلة: ${payments.filter(p => p.status === 'pending').length}, متأخرة: ${overduePayments > 0 ? payments.filter(p => p.status === 'pending' && new Date(p.payment_date || p.created_at) < thirtyDaysAgo).length : 0}, مبلغ متبقي من الجزئية: ${formatCurrency(totalRemainingFromPartialPayments)})`,
       dataCount: payments.length,
       // Add the actual payments data for detailed export
       payments: payments
@@ -3561,7 +3561,7 @@ export class ExportService {
     const needsData = {
       summary: {
         'إجمالي الاحتياجات': totalNeeds,
-        'احتياجات معلقة': pendingNeeds,
+        'احتياجات آجلة': pendingNeeds,
         'احتياجات مطلوبة': orderedNeeds,
         'احتياجات مستلمة': receivedNeeds,
         'احتياجات عاجلة': urgentNeeds,
@@ -3659,7 +3659,7 @@ export class ExportService {
         'إجمالي المصروفات': expenses.length,
         'إجمالي المبلغ': formatCurrency(totalAmount),
         'المبلغ المدفوع': formatCurrency(paidAmount),
-        'المبلغ المعلق': formatCurrency(pendingAmount),
+        'المبلغ الآجل': formatCurrency(pendingAmount),
         'المبلغ المتأخر': formatCurrency(overdueAmount),
         'تاريخ التقرير': formatDate(new Date())
       },
@@ -3843,7 +3843,7 @@ export class ExportService {
       csv += 'رقم المريض,اسم المريض,المبلغ,الحالة,طريقة الدفع,تاريخ الدفع,ملاحظات\n'
       data.payments.forEach((payment: any) => {
         const status = payment.status === 'completed' ? 'مكتمل' :
-                      payment.status === 'partial' ? 'جزئي' : 'معلق'
+                      payment.status === 'partial' ? 'جزئي' : 'آجل'
         const paymentDate = payment.payment_date ? formatDate(payment.payment_date) : ''
         csv += `${payment.patient_id || ''},${payment.patient_name || ''},${formatCurrency(payment.amount || 0)},${status},${payment.payment_method || ''},${paymentDate},"${payment.notes || ''}"\n`
       })
@@ -3856,7 +3856,7 @@ export class ExportService {
       csv += 'رقم الطلب,اسم المختبر,اسم المريض,التكلفة,المدفوع,المتبقي,الحالة,تاريخ الطلب\n'
       data.labOrders.forEach((order: any) => {
         const status = order.status === 'completed' ? 'مكتمل' :
-                      order.status === 'pending' ? 'معلق' : 'ملغي'
+                      order.status === 'pending' ? 'آجل' : 'ملغي'
         const orderDate = order.order_date ? formatDate(order.order_date) : ''
         const remaining = (order.cost || 0) - (order.paid_amount || 0)
         csv += `${order.id || ''},${order.lab?.name || ''},${order.patient?.full_name || ''},${formatCurrency(order.cost || 0)},${formatCurrency(order.paid_amount || 0)},${formatCurrency(remaining)},${status},${orderDate}\n`
@@ -3872,7 +3872,7 @@ export class ExportService {
         const priority = need.priority === 'urgent' ? 'عاجل' :
                         need.priority === 'high' ? 'عالي' : 'عادي'
         const status = need.status === 'received' ? 'مستلم' :
-                      need.status === 'ordered' ? 'مطلوب' : 'معلق'
+                      need.status === 'ordered' ? 'مطلوب' : 'آجل'
         const dateNeeded = need.date_needed ? formatDate(need.date_needed) : ''
         const dateReceived = need.date_received ? formatDate(need.date_received) : ''
         csv += `${need.item_name || ''},${need.quantity || 0},${priority},${status},${dateNeeded},${dateReceived},"${need.notes || ''}"\n`

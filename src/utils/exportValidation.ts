@@ -41,7 +41,7 @@ export class ExportValidation {
         return sum + amount
       }, 0)
 
-    // المدفوعات المعلقة
+    // المدفوعات الآجلة
     const pendingAmount = payments
       .filter(p => p.status === 'pending')
       .reduce((sum, payment) => {
@@ -54,7 +54,7 @@ export class ExportValidation {
         return sum + pendingAmount
       }, 0)
 
-    // المدفوعات المتأخرة (المدفوعات المعلقة التي تجاوز تاريخ دفعها 30 يوماً)
+    // المدفوعات المتأخرة (المدفوعات الآجلة التي تجاوز تاريخ دفعها 30 يوماً)
     const overdueAmount = payments
       .filter(p => {
         if (p.status !== 'pending') return false

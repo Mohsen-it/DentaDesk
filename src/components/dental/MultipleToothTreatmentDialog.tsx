@@ -92,7 +92,7 @@ export default function MultipleToothTreatmentDialog({
     }))
   }
 
-  // دالة إنشاء دفعة معلقة للعلاج
+  // دالة إنشاء دفعة آجلة للعلاج
   const createPendingPaymentForTreatment = async (treatmentId: string, toothNumber: number) => {
     console.log('💰 [DEBUG] createPendingPaymentForTreatment called:', {
       treatmentId,
@@ -122,16 +122,16 @@ export default function MultipleToothTreatmentDialog({
       const treatmentTypeInfo = getTreatmentByValue(treatmentData.treatment_type!)
       const description = `${treatmentTypeInfo?.label || treatmentData.treatment_type} - السن ${toothNumber}`
 
-      // بيانات الدفعة المعلقة
+      // بيانات الدفعة الآجلة
       const paymentData = {
         patient_id: patientId,
         tooth_treatment_id: treatmentId, // ربط مباشر بالعلاج
-        amount: 0, // مبلغ مدفوع = 0 لجعل الحالة معلقة
+        amount: 0, // مبلغ مدفوع = 0 لجعل الحالة آجلة
         payment_method: 'cash' as const,
         payment_date: new Date().toISOString().split('T')[0],
         description: description, // وصف نظيف بدون معرف العلاج
         status: 'pending' as const,
-        notes: `دفعة معلقة للمريض: ${patient.full_name} - السن ${toothNumber} - العلاج: ${treatmentTypeInfo?.label || treatmentData.treatment_type}`,
+        notes: `دفعة آجلة للمريض: ${patient.full_name} - السن ${toothNumber} - العلاج: ${treatmentTypeInfo?.label || treatmentData.treatment_type}`,
         total_amount_due: treatmentData.cost,
         amount_paid: 0,
         remaining_balance: treatmentData.cost,
@@ -149,7 +149,7 @@ export default function MultipleToothTreatmentDialog({
     } catch (error) {
       console.error('❌ [DEBUG] Payment creation failed:', error)
       const errorMessage = error instanceof Error ? error.message : 'خطأ غير معروف'
-      notify.error(`فشل في إنشاء الدفعة المعلقة للسن ${toothNumber}: ${errorMessage}`)
+      notify.error(`فشل في إنشاء الدفعة الآجلة للسن ${toothNumber}: ${errorMessage}`)
       throw error
     }
   }
@@ -181,7 +181,7 @@ export default function MultipleToothTreatmentDialog({
         service_name: `${treatmentType?.label || 'علاج تعويضات'} - السن ${toothNumber}`,
         cost: labCost,
         order_date: new Date().toISOString().split('T')[0],
-        status: 'معلق' as const,
+        status: 'آجل' as const,
         notes: `طلب مخبر للمريض: ${patient.full_name} - السن ${toothNumber} - العلاج: ${treatmentType?.label || treatmentData.treatment_type}`,
         paid_amount: 0,
         remaining_balance: labCost
@@ -250,7 +250,7 @@ export default function MultipleToothTreatmentDialog({
 
             console.log(`✅ [DEBUG] Treatment created successfully for tooth ${toothNumber}:`, treatmentId)
 
-            // الخطوة 2: إنشاء دفعة معلقة إذا تم تعبئة التكلفة
+            // الخطوة 2: إنشاء دفعة آجلة إذا تم تعبئة التكلفة
             if (treatmentData.cost && treatmentData.cost > 0) {
               console.log(`💰 [DEBUG] Creating payment for tooth ${toothNumber}`)
               try {
@@ -291,7 +291,7 @@ export default function MultipleToothTreatmentDialog({
         let successMessage = `تم إضافة العلاج بنجاح لـ ${successCount} سن`
 
         if (paymentSuccessCount > 0) {
-          successMessage += ` مع ${paymentSuccessCount} دفعة معلقة`
+          successMessage += ` مع ${paymentSuccessCount} دفعة آجلة`
         }
 
         if (labOrderSuccessCount > 0) {

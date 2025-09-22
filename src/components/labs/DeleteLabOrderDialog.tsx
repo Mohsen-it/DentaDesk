@@ -36,10 +36,10 @@ export default function DeleteLabOrderDialog({ open, onOpenChange, labOrder }: D
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'معلق':
+      case 'آجل':
         return (
           <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-            معلق
+            آجل
           </Badge>
         )
       case 'مكتمل':

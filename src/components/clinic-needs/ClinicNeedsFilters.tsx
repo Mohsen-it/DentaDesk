@@ -123,7 +123,7 @@ const ClinicNeedsFilters: React.FC<ClinicNeedsFiltersProps> = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">جميع الحالات</SelectItem>
-              <SelectItem value="pending">معلق</SelectItem>
+              <SelectItem value="pending">آجل</SelectItem>
               <SelectItem value="ordered">مطلوب</SelectItem>
               <SelectItem value="received">مستلم</SelectItem>
               <SelectItem value="cancelled">ملغي</SelectItem>
@@ -176,7 +176,7 @@ const getPriorityLabel = (priority: string) => {
 
 const getStatusLabel = (status: string) => {
   const labels = {
-    pending: 'معلق',
+    pending: 'آجل',
     ordered: 'مطلوب',
     received: 'مستلم',
     cancelled: 'ملغي'

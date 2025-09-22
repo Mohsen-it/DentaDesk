@@ -131,7 +131,7 @@ export default function MultipleToothTreatments({
     return statusOption?.color || '#6b7280'
   }
 
-  // دالة إنشاء دفعة معلقة للعلاج
+  // دالة إنشاء دفعة آجلة للعلاج
   const createPendingPaymentForTreatment = async (treatmentId: string) => {
     console.log('💰 [DEBUG] createPendingPaymentForTreatment called:', {
       treatmentId,
@@ -161,16 +161,16 @@ export default function MultipleToothTreatments({
       const treatmentTypeInfo = getTreatmentByValue(newTreatment.treatment_type!)
       const description = `علاج ${treatmentTypeInfo?.label || newTreatment.treatment_type} - سن ${toothName || toothNumber}`
 
-      // بيانات الدفعة المعلقة
+      // بيانات الدفعة الآجلة
       const paymentData = {
         patient_id: patientId,
         tooth_treatment_id: treatmentId, // ربط مباشر بالعلاج
-        amount: 0, // مبلغ مدفوع = 0 لجعل الحالة معلقة
+        amount: 0, // مبلغ مدفوع = 0 لجعل الحالة آجلة
         payment_method: 'cash' as const,
         payment_date: new Date().toISOString().split('T')[0],
         description: description, // وصف نظيف بدون معرف العلاج
         status: 'pending' as const,
-        notes: `دفعة معلقة للمريض: ${patient.full_name} - السن: ${toothName} - العلاج: ${treatmentTypeInfo?.label || newTreatment.treatment_type}`,
+        notes: `دفعة آجلة للمريض: ${patient.full_name} - السن: ${toothName} - العلاج: ${treatmentTypeInfo?.label || newTreatment.treatment_type}`,
         total_amount_due: newTreatment.cost,
         amount_paid: 0,
         remaining_balance: newTreatment.cost,
@@ -184,12 +184,12 @@ export default function MultipleToothTreatments({
       await createPayment(paymentData)
 
       console.log('✅ [DEBUG] Payment created successfully for treatment:', treatmentId)
-      notify.success('تم إنشاء دفعة معلقة في جدول المدفوعات')
+      notify.success('تم إنشاء دفعة آجلة في جدول المدفوعات')
 
     } catch (error) {
       console.error('❌ [DEBUG] Payment creation failed:', error)
       const errorMessage = error instanceof Error ? error.message : 'خطأ غير معروف'
-      notify.error(`فشل في إنشاء الدفعة المعلقة: ${errorMessage}`)
+      notify.error(`فشل في إنشاء الدفعة الآجلة: ${errorMessage}`)
       throw error // إعادة رمي الخطأ للمعالجة في المستوى الأعلى
     }
   }
@@ -222,7 +222,7 @@ export default function MultipleToothTreatments({
         service_name: `${treatmentType?.label || 'علاج تعويضات'} - السن ${toothNumber}`,
         cost: addLabCost,
         order_date: new Date().toISOString().split('T')[0],
-        status: 'معلق' as const,
+        status: 'آجل' as const,
         notes: `طلب مخبر للمريض: ${patient.full_name} - السن: ${toothName} - العلاج: ${treatmentType?.label || newTreatment.treatment_type}`,
         paid_amount: 0,
         remaining_balance: addLabCost
@@ -287,7 +287,7 @@ export default function MultipleToothTreatments({
       createdTreatmentId = newTreatmentResult.id
       console.log('✅ [DEBUG] Treatment created successfully:', createdTreatmentId)
 
-      // الخطوة 2: إنشاء دفعة معلقة إذا تم تعبئة التكلفة
+      // الخطوة 2: إنشاء دفعة آجلة إذا تم تعبئة التكلفة
       if (newTreatment.cost && newTreatment.cost > 0) {
         console.log('💰 [DEBUG] Creating payment for treatment:', createdTreatmentId)
         try {
@@ -1040,7 +1040,7 @@ export default function MultipleToothTreatments({
                     "text-xs",
                     isDarkMode ? "text-blue-300" : "text-blue-600"
                   )}>
-                    💡 سيتم إنشاء دفعة معلقة في جدول المدفوعات
+                    💡 سيتم إنشاء دفعة آجلة في جدول المدفوعات
                   </p>
                 )}
               </div>
@@ -1567,7 +1567,7 @@ function EditTreatmentFormContent({ treatment, onSave, onCancel }: EditTreatment
         }
         notify.success('تم تحديث المدفوعات المرتبطة بالعلاج')
       } else if ((editData.cost || 0) > 0) {
-        // إنشاء دفعة معلقة جديدة إذا لم توجد مدفوعات سابقة وكانت التكلفة أكبر من صفر
+        // إنشاء دفعة آجلة جديدة إذا لم توجد مدفوعات سابقة وكانت التكلفة أكبر من صفر
         const paymentData = {
           patient_id: treatment.patient_id,
           tooth_treatment_id: treatment.id,
@@ -1576,7 +1576,7 @@ function EditTreatmentFormContent({ treatment, onSave, onCancel }: EditTreatment
           payment_date: new Date().toISOString().split('T')[0],
           description: description,
           status: 'pending' as const,
-          notes: `دفعة معلقة لعلاج سن ${treatment.tooth_name || treatment.tooth_number} (تم تعديل التكلفة)`,
+          notes: `دفعة آجلة لعلاج سن ${treatment.tooth_name || treatment.tooth_number} (تم تعديل التكلفة)`,
           total_amount_due: editData.cost || 0,
           amount_paid: 0,
           remaining_balance: editData.cost || 0,
@@ -1586,7 +1586,7 @@ function EditTreatmentFormContent({ treatment, onSave, onCancel }: EditTreatment
         }
 
         await createPayment(paymentData)
-        notify.success('تم إنشاء دفعة معلقة في جدول المدفوعات')
+        notify.success('تم إنشاء دفعة آجلة في جدول المدفوعات')
       }
     } catch (error) {
       console.error('خطأ في تحديث المدفوعات:', error)
@@ -1654,7 +1654,7 @@ function EditTreatmentFormContent({ treatment, onSave, onCancel }: EditTreatment
                 service_name: serviceName,
                 cost: labCost,
                 order_date: new Date().toISOString().split('T')[0],
-                status: 'معلق' as const,
+                status: 'آجل' as const,
                 paid_amount: 0,
                 remaining_balance: labCost
               })
@@ -2004,7 +2004,7 @@ function EditTreatmentFormContent({ treatment, onSave, onCancel }: EditTreatment
               "text-xs",
               isDarkMode ? "text-orange-300" : "text-orange-600"
             )}>
-              💡 سيتم إنشاء دفعة معلقة عند تعديل التكلفة
+              💡 سيتم إنشاء دفعة آجلة عند تعديل التكلفة
             </p>
           )}
         </div>

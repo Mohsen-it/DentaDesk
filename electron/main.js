@@ -4266,7 +4266,7 @@ ipcMain.handle('reports:exportReport', async (_, type, filter, options) => {
           content += `إجمالي المواعيد\t${reportData.appointments?.totalAppointments || 0}\tجميع المواعيد المجدولة\n`
           content += `المواعيد المكتملة\t${reportData.appointments?.completedAppointments || 0}\tالمواعيد التي تم إنجازها\n`
           content += `إجمالي الإيرادات\t$${reportData.financial?.totalRevenue || 0}\tالإيرادات المحققة بالدولار\n`
-          content += `المدفوعات المعلقة\t${reportData.financial?.pendingPayments || 0}\tالمدفوعات غير المكتملة\n`
+          content += `المدفوعات الآجلة\t${reportData.financial?.pendingPayments || 0}\tالمدفوعات غير المكتملة\n`
           content += `عناصر المخزون\t${reportData.inventory?.totalItems || 0}\tإجمالي عناصر المخزون\n`
           content += `تنبيهات المخزون\t${reportData.inventory?.lowStockItems || 0}\tعناصر تحتاج إعادة تموين\n`
         }
@@ -4393,7 +4393,7 @@ ipcMain.handle('reports:exportReport', async (_, type, filter, options) => {
               `العلاجات قيد التنفيذ: ${reportData.inProgressTreatments || 0}`,
               `إجمالي الإيرادات: $${reportData.totalRevenue || 0}`,
               `معدل الإنجاز: ${reportData.completionRate || 0}%`,
-              `العلاجات المعلقة: ${reportData.pendingTreatments?.length || 0}`,
+              `العلاجات الآجلة: ${reportData.pendingTreatments?.length || 0}`,
               `العلاجات المتأخرة: ${reportData.overdueTreatments?.length || 0}`
             ]
 

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, memo } from 'react'
 // Removed react-window import due to build issues
 import { Patient } from '@/types'
 import {
@@ -41,6 +41,7 @@ import { formatDate } from '@/lib/utils'
 import { PatientIntegrationService } from '@/services/patientIntegrationService'
 import { PdfService } from '@/services/pdfService'
 import { useSettingsStore } from '@/store/settingsStore'
+import { shallow } from 'zustand/shallow'
 import { useToast } from '@/hooks/use-toast'
 
 interface PatientTableProps {
@@ -55,7 +56,7 @@ interface PatientTableProps {
 type SortField = 'full_name' | 'gender' | 'age' | 'phone' | 'patient_condition' | 'date_added'
 type SortDirection = 'asc' | 'desc' | null
 
-export default function PatientTable({
+function PatientTableComponent({
   patients,
   isLoading,
   onEdit,
@@ -68,7 +69,7 @@ export default function PatientTable({
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
 
-  const { settings } = useSettingsStore()
+  const settings = useSettingsStore(state => state.settings)
   const { toast } = useToast()
 
   // دالة طباعة سجل المريض الشامل (تصدير PDF)
@@ -574,7 +575,7 @@ export default function PatientTable({
                                 className="dropdown-item"
                               >
                                 <FileText className="w-4 h-4" />
-                                <span className="arabic-enhanced">فاتورة المعلقات</span>
+                                <span className="arabic-enhanced">فاتورة الآجلات</span>
                               </DropdownMenuItem>
                             )}
                           </DropdownMenuContent>
@@ -666,3 +667,5 @@ export default function PatientTable({
     </div>
   )
 }
+
+export default memo(PatientTableComponent)

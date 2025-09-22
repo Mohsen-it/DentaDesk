@@ -220,7 +220,7 @@ const ClinicNeeds: React.FC = () => {
           color="green"
         />
         <StatCard
-          title="معلق"
+          title="آجل"
           value={pendingCount}
           icon={<Clock />}
           color="yellow"

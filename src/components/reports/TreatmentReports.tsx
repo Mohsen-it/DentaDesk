@@ -95,7 +95,7 @@ function StatCard({ title, value, icon: Icon, color, description, trend }: StatC
   )
 }
 
-export default function TreatmentReports() {
+function TreatmentReportsComponent() {
   const { treatmentReports, isLoading, isExporting, generateReport, clearCache } = useReportsStore()
   const { toothTreatments, loadToothTreatments } = useDentalTreatmentStore()
   const { patients, loadPatients } = usePatientStore()
@@ -427,7 +427,7 @@ export default function TreatmentReports() {
           description={`متوسط التكلفة: ${formatCurrency(filteredTreatmentStats.averageTreatmentCost, currency)}`}
         />
         <StatCard
-          title="العلاجات المعلقة"
+          title="العلاجات الآجلة"
           value={filteredTreatmentStats.pendingTreatments.length}
           icon={Clock}
           color="yellow"
@@ -474,6 +474,8 @@ export default function TreatmentReports() {
                         outerRadius={80}
                         fill="#8884d8"
                         dataKey="count"
+                        isAnimationActive={false}
+                        animationDuration={0}
                       >
                         {filteredTreatmentStats.treatmentsByStatus.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
@@ -522,7 +524,7 @@ export default function TreatmentReports() {
                         formatter={(value, name) => [value, 'عدد العلاجات']}
                         labelFormatter={(label) => `الفئة: ${label}`}
                       />
-                      <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} isAnimationActive={false} animationDuration={0} />
                     </BarChart>
                   </ResponsiveContainer>
                 )}
@@ -620,6 +622,8 @@ export default function TreatmentReports() {
                         name="مكتمل"
                         strokeWidth={2}
                         dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
+                        isAnimationActive={false}
+                        animationDuration={0}
                       />
                       <Line
                         type="monotone"
@@ -628,6 +632,8 @@ export default function TreatmentReports() {
                         name="مخطط"
                         strokeWidth={2}
                         dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+                        isAnimationActive={false}
+                        animationDuration={0}
                       />
                     </LineChart>
                   </ResponsiveContainer>
@@ -670,7 +676,7 @@ export default function TreatmentReports() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Clock className="h-5 w-5" />
-                  العلاجات المعلقة ({filteredTreatmentStats.pendingTreatments.length})
+                  العلاجات الآجلة ({filteredTreatmentStats.pendingTreatments.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -679,7 +685,7 @@ export default function TreatmentReports() {
                     <div className="flex items-center justify-center h-40 text-muted-foreground">
                       <div className="text-center">
                         <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">لا توجد علاجات معلقة</p>
+                        <p className="text-sm">لا توجد علاجات آجلة</p>
                       </div>
                     </div>
                   ) : (

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { memo } from 'react'
 import { Appointment } from '../types'
 import {
   Calendar,
@@ -26,7 +26,7 @@ interface AppointmentCardProps {
   onDelete?: (appointment: Appointment) => void
 }
 
-export default function AppointmentCard({ appointment, onClick, onEdit, onDelete }: AppointmentCardProps) {
+function AppointmentCardComponent({ appointment, onClick, onEdit, onDelete }: AppointmentCardProps) {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -177,3 +177,5 @@ export default function AppointmentCard({ appointment, onClick, onEdit, onDelete
     </Card>
   )
 }
+
+export default memo(AppointmentCardComponent)

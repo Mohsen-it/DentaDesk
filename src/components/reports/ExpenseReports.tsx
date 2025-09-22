@@ -351,7 +351,7 @@ export default function ExpenseReports() {
 
         <Card className={getCardStyles("yellow")}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground text-right">المصروفات المعلقة</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground text-right">المصروفات الآجلة</CardTitle>
             <Clock className={`h-4 w-4 ${getIconStyles("yellow")}`} />
           </CardHeader>
           <CardContent>
@@ -668,7 +668,7 @@ export default function ExpenseReports() {
 
                       const statusLabels = {
                         'paid': 'مدفوع',
-                        'pending': 'معلق',
+                        'pending': 'آجل',
                         'overdue': 'متأخر',
                         'cancelled': 'ملغي'
                       }

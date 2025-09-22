@@ -23,7 +23,7 @@ CREATE TABLE lab_orders (
     order_date TEXT NOT NULL,
     expected_delivery_date TEXT, -- تاريخ التسليم المتوقع
     actual_delivery_date TEXT, -- تاريخ التسليم الفعلي
-    status TEXT NOT NULL CHECK (status IN ('معلق', 'مكتمل', 'ملغي')),
+    status TEXT NOT NULL CHECK (status IN ('آجل', 'مكتمل', 'ملغي')),
     notes TEXT,
     paid_amount REAL DEFAULT 0,
     remaining_balance REAL,

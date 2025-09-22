@@ -281,7 +281,7 @@ const AddClinicNeedDialog: React.FC<AddClinicNeedDialogProps> = ({
                   <SelectValue placeholder="اختر الحالة" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="pending">معلق</SelectItem>
+                  <SelectItem value="pending">آجل</SelectItem>
                   <SelectItem value="ordered">مطلوب</SelectItem>
                   <SelectItem value="received">مستلم</SelectItem>
                   <SelectItem value="cancelled">ملغي</SelectItem>

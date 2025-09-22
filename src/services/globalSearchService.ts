@@ -358,7 +358,7 @@ export class GlobalSearchService {
     const statusMap: { [key: string]: string } = {
       'completed': '🟢 مكتمل',
       'partial': '🟡 جزئي',
-      'pending': '🔴 معلق'
+      'pending': '🔴 آجل'
     }
     return statusMap[status] || status
   }

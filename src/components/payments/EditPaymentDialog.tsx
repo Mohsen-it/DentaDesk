@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, memo } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -30,12 +30,13 @@ interface EditPaymentDialogProps {
   payment: Payment
 }
 
-export default function EditPaymentDialog({ open, onOpenChange, payment }: EditPaymentDialogProps) {
+function EditPaymentDialogComponent({ open, onOpenChange, payment }: EditPaymentDialogProps) {
   const { toast } = useToast()
   const { updatePayment, isLoading, getPaymentsByPatient, getPaymentsByAppointment, getPaymentsByToothTreatment } = usePaymentStore()
-  const { patients } = usePatientStore()
-  const { appointments } = useAppointmentStore()
-  const { toothTreatments, loadToothTreatmentsByPatient } = useDentalTreatmentStore()
+  const patients = usePatientStore(state => state.patients)
+  const appointments = useAppointmentStore(state => state.appointments)
+  const toothTreatments = useDentalTreatmentStore(state => state.toothTreatments)
+  const loadToothTreatmentsByPatient = useDentalTreatmentStore(state => state.loadToothTreatmentsByPatient)
   const { formatAmount } = useCurrency()
 
   const [formData, setFormData] = useState({
@@ -305,7 +306,7 @@ export default function EditPaymentDialog({ open, onOpenChange, payment }: EditP
         remaining_balance: remainingBalance,
       }
 
-      console.log('🔄 Submitting payment update:', paymentData)
+      if (process.env.NODE_ENV !== 'production') console.log('🔄 Submitting payment update:', paymentData)
       await updatePayment(payment.id, paymentData)
 
       toast({
@@ -315,7 +316,7 @@ export default function EditPaymentDialog({ open, onOpenChange, payment }: EditP
 
       onOpenChange(false)
     } catch (error) {
-      console.error('❌ Failed to update payment:', error)
+      if (process.env.NODE_ENV !== 'production') console.error('❌ Failed to update payment:', error)
       toast({
         title: 'خطأ',
         description: error instanceof Error ? error.message : 'فشل في تحديث الدفعة',
@@ -578,7 +579,7 @@ export default function EditPaymentDialog({ open, onOpenChange, payment }: EditP
                     {formData.amount && parseFloat(formData.amount) > 0 && (
                       <span className="text-xs text-muted-foreground mr-2">
                         (مقترح: {getSuggestedStatus() === 'completed' ? 'مكتمل' :
-                                getSuggestedStatus() === 'partial' ? 'جزئي' : 'معلق'})
+                                getSuggestedStatus() === 'partial' ? 'جزئي' : 'آجل'})
                       </span>
                     )}
                   </Label>
@@ -608,7 +609,7 @@ export default function EditPaymentDialog({ open, onOpenChange, payment }: EditP
                       </SelectItem>
                       <SelectItem value="pending">
                         <div className="flex items-center gap-2">
-                          <span>معلق</span>
+                          <span>آجل</span>
                           {getSuggestedStatus() === 'pending' && (
                             <span className="text-xs text-blue-600">✓ مقترح</span>
                           )}
@@ -913,3 +914,5 @@ export default function EditPaymentDialog({ open, onOpenChange, payment }: EditP
     </Dialog>
   )
 }
+
+export default memo(EditPaymentDialogComponent)

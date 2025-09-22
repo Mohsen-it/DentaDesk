@@ -33,7 +33,7 @@ export class CalculationValidator {
         return sum + amount
       }, 0)
 
-      // حساب المبالغ المعلقة
+      // حساب المبالغ الآجلة
       const pendingAmount = pendingPayments.reduce((sum, payment) => {
         const amount = typeof payment.amount === 'number' ? payment.amount : 0
         return sum + amount

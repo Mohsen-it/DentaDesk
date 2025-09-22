@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, memo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -16,6 +16,8 @@ interface DatabaseStatus {
   error?: string
 }
 
+const __DEV__ = process.env.NODE_ENV !== 'production'
+
 export function DatabaseDiagnostics() {
   const [status, setStatus] = useState<DatabaseStatus | null>(null)
   const [loading, setLoading] = useState(false)
@@ -32,7 +34,7 @@ export function DatabaseDiagnostics() {
       setStatus(result)
 
       // Log result for debugging
-      console.log('Database status:', result)
+      __DEV__ && console.log('Database status:', result)
     } catch (error) {
       console.error('Database status check failed:', error)
       setStatus({

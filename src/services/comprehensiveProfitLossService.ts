@@ -119,7 +119,7 @@ export class ComprehensiveProfitLossService {
         }, 0)
     )
 
-    // حساب المبالغ المعلقة (غير المدفوعة)
+    // حساب المبالغ الآجلة (غير المدفوعة)
     const pendingAmount = this.validateAmount(
       payments
         .filter(p => p.status === 'pending')

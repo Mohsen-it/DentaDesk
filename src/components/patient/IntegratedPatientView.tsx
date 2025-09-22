@@ -236,7 +236,7 @@ export default function IntegratedPatientView({
                 <p className="text-sm font-medium text-muted-foreground">العلاجات</p>
                 <p className="text-2xl font-bold">{stats.completedTreatments + stats.pendingTreatments}</p>
                 <p className="text-xs text-muted-foreground">
-                  مكتمل: {stats.completedTreatments} | معلق: {stats.pendingTreatments}
+                  مكتمل: {stats.completedTreatments} | آجل: {stats.pendingTreatments}
                 </p>
               </div>
               <div className="p-2 bg-red-100 rounded-lg">
@@ -388,7 +388,7 @@ export default function IntegratedPatientView({
                     </div>
                     <Badge className={getStatusColor(payment.status)}>
                       {payment.status === 'completed' ? 'مكتمل' :
-                       payment.status === 'pending' ? 'معلق' :
+                       payment.status === 'pending' ? 'آجل' :
                        payment.status === 'partial' ? 'جزئي' : payment.status}
                     </Badge>
                   </div>
@@ -472,7 +472,7 @@ export default function IntegratedPatientView({
                       <h4 className="font-medium">{formatCurrency(payment.amount)}</h4>
                       <Badge className={getStatusColor(payment.status)}>
                         {payment.status === 'completed' ? 'مكتمل' :
-                         payment.status === 'pending' ? 'معلق' :
+                         payment.status === 'pending' ? 'آجل' :
                          payment.status === 'partial' ? 'جزئي' : payment.status}
                       </Badge>
                     </div>

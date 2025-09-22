@@ -224,7 +224,7 @@ export class PatientIntegrationService {
     // حساب إجمالي المواعيد
     const totalAppointments = appointments.length
 
-    // حساب العلاجات المكتملة والمعلقة باستخدام Set للأداء الأفضل
+    // حساب العلاجات المكتملة والآجلة باستخدام Set للأداء الأفضل
     const treatmentStatusCounts = treatments.reduce((acc, t) => {
       acc[t.treatment_status] = (acc[t.treatment_status] || 0) + 1
       return acc

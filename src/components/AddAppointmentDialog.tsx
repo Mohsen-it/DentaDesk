@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, memo } from 'react'
 import { X, Calendar, Clock, User } from 'lucide-react'
 import { Appointment, Patient, Treatment } from '../types'
 import { useThemeClasses } from '../contexts/ThemeContext'
@@ -35,7 +35,7 @@ interface AddAppointmentDialogProps {
   preSelectedPatientId?: string
 }
 
-export default function AddAppointmentDialog({
+function AddAppointmentDialogComponent({
   isOpen,
   onClose,
   onSave,
@@ -468,3 +468,5 @@ export default function AddAppointmentDialog({
     </Dialog>
   )
 }
+
+export default memo(AddAppointmentDialogComponent)

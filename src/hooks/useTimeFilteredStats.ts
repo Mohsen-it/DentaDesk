@@ -182,7 +182,7 @@ export function useTimeFilteredStats<T extends FilterableData>({
                      (item as any).price || 0
         const totalAmountDue = (item as any).total_amount_due || 0
 
-        // للمدفوعات المعلقة، استخدم المبلغ الإجمالي المطلوب أو المتبقي إذا كان متوفراً
+        // للمدفوعات الآجلة، استخدم المبلغ الإجمالي المطلوب أو المتبقي إذا كان متوفراً
         let pendingAmount = amount
 
         if (item.tooth_treatment_id) {
@@ -203,7 +203,7 @@ export function useTimeFilteredStats<T extends FilterableData>({
 
     const overdueAmount = filteredData
       .filter((item: any) => {
-        // المدفوعات المتأخرة هي المدفوعات المعلقة التي تجاوز تاريخ دفعها 30 يوماً
+        // المدفوعات المتأخرة هي المدفوعات الآجلة التي تجاوز تاريخ دفعها 30 يوماً
         if (item.status !== 'pending') return false
 
         const paymentDate = new Date(item.payment_date || item.date || item.created_at)

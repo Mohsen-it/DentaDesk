@@ -384,7 +384,7 @@ export const usePaymentStore = create<PaymentStore>()(
             const amount = validateAmount(payment.amount)
             const totalAmountDue = validateAmount(payment.total_amount_due)
 
-            // للمدفوعات المعلقة، استخدم المبلغ الإجمالي المطلوب أو المتبقي إذا كان متوفراً
+            // للمدفوعات الآجلة، استخدم المبلغ الإجمالي المطلوب أو المتبقي إذا كان متوفراً
             let pendingAmount = amount
 
             if (payment.tooth_treatment_id) {

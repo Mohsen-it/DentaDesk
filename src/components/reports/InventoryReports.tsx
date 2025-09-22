@@ -55,7 +55,7 @@ interface StatCardProps {
   description?: string
 }
 
-export default function InventoryReports() {
+function InventoryReportsComponent() {
   const { currency, settings } = useSettingsStore()
   const { inventoryReports, isLoading, isExporting, generateReport, exportReport, clearCache } = useReportsStore()
   const { isDarkMode } = useTheme()
@@ -425,6 +425,8 @@ export default function InventoryReports() {
                   stroke={isDarkMode ? '#1f2937' : '#ffffff'}
                   strokeWidth={2}
                   paddingAngle={2}
+                  isAnimationActive={false}
+                  animationDuration={0}
                 >
                   {inventoryReports.itemsByCategory.filter(item => item.count > 0).map((entry, index) => (
                     <Cell
@@ -488,6 +490,8 @@ export default function InventoryReports() {
                   radius={[4, 4, 0, 0]}
                   minPointSize={5}
                   maxBarSize={100}
+                  isAnimationActive={false}
+                  animationDuration={0}
                 />
               </BarChart>
             </ResponsiveContainer>
@@ -533,6 +537,8 @@ export default function InventoryReports() {
                 fill={primaryColors[3]}
                 fillOpacity={0.3}
                 strokeWidth={3}
+                isAnimationActive={false}
+                animationDuration={0}
               />
             </AreaChart>
           </ResponsiveContainer>

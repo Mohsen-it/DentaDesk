@@ -312,7 +312,7 @@ export class TreatmentWorkflowService {
         activePrescriptions: prescriptions.filter(p => 
           new Date(p.prescription_date) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // آخر 30 يوم
         ).length,
-        pendingLabOrders: labOrders.filter(lo => lo.status === 'معلق').length
+        pendingLabOrders: labOrders.filter(lo => lo.status === 'آجل').length
       }
     } catch (error) {
       console.error('خطأ في حساب تقدم العلاج:', error)

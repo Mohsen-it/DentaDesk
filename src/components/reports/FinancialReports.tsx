@@ -2,7 +2,7 @@
  * Financial Reports - التقارير المالية تستخدم التقويم الميلادي فقط
  * All financial charts use ONLY Gregorian calendar system
  */
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, memo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -101,7 +101,7 @@ async function generateComprehensiveFinancialCSV(payments: any[], timeFilter: an
   csv += `المدفوعات المكتملة,${formatCurrency(financialStats.completedPayments)}\n`
   csv += `المدفوعات الجزئية,${formatCurrency(financialStats.partialPayments)}\n`
   csv += `المبالغ المتبقية,${formatCurrency(financialStats.remainingBalances)}\n`
-  csv += `المبالغ المعلقة,${formatCurrency(financialStats.pendingAmount)}\n`
+  csv += `المبالغ الآجلة,${formatCurrency(financialStats.pendingAmount)}\n`
   csv += `إجمالي المصروفات,${formatCurrency(financialStats.totalExpenses || 0)}\n`
   csv += `صافي الربح,${formatCurrency(financialStats.netProfit || 0)}\n`
   csv += `هامش الربح,${(financialStats.profitMargin || 0).toFixed(2)}%\n`
@@ -131,7 +131,7 @@ async function generateComprehensiveFinancialCSV(payments: any[], timeFilter: an
   csv += `إجمالي المعاملات,${financialStats.totalTransactions}\n`
   csv += `المعاملات المكتملة,${financialStats.completedTransactions}\n`
   csv += `المعاملات الجزئية,${financialStats.partialTransactions}\n`
-  csv += `المعاملات المعلقة,${financialStats.pendingTransactions}\n\n`
+  csv += `المعاملات الآجلة,${financialStats.pendingTransactions}\n\n`
 
   // === تحليل طرق الدفع ===
   csv += 'تحليل طرق الدفع\n'
@@ -239,7 +239,7 @@ async function generateComprehensiveFinancialCSV(payments: any[], timeFilter: an
                            payment.payment_method || 'غير محدد'
       const status = payment.status === 'completed' ? 'مكتمل' :
                     payment.status === 'partial' ? 'جزئي' :
-                    payment.status === 'pending' ? 'معلق' :
+                    payment.status === 'pending' ? 'آجل' :
                     payment.status === 'failed' ? 'فاشل' :
                     payment.status === 'refunded' ? 'مسترد' : payment.status || 'غير محدد'
       const paymentDate = payment.payment_date ? formatDate(payment.payment_date) : 'غير محدد'
@@ -402,7 +402,7 @@ async function generateComprehensiveFinancialData(payments: any[], timeFilter: a
   }
 }
 
-export default function FinancialReports() {
+function FinancialReportsComponent() {
   const { financialReports, isLoading, isExporting, generateReport, clearCache } = useReportsStore()
   const {
     payments,
@@ -613,7 +613,7 @@ export default function FinancialReports() {
   const totalExpenses = directExpenses + inventoryExpenses + clinicNeedsExpenses + labOrdersExpenses
 
   // التحقق من دقة الحسابات المالية مع تسجيل مفصل
-  console.log('💰 Financial System Verification:', {
+  if (process.env.NODE_ENV !== 'production') console.log('💰 Financial System Verification:', {
     revenue: {
       totalRevenue: reportData.totalRevenue,
       completedPayments: (paymentStats?.financialStats?.completedPayments || 0),
@@ -643,7 +643,7 @@ export default function FinancialReports() {
 
   // عرض تحذيرات إذا كانت هناك مشاكل في البيانات
   if (!expenseValidation.isValid && filteredExpenses.length > 0) {
-    console.warn('⚠️ Expense validation errors:', expenseValidation.errors)
+    if (process.env.NODE_ENV !== 'production') console.warn('⚠️ Expense validation errors:', expenseValidation.errors)
   }
 
   // حساب الأرباح والخسائر مع التحقق من الدقة (الإيرادات - جميع المصروفات)
@@ -661,11 +661,11 @@ export default function FinancialReports() {
 
   // عرض تحذيرات إذا كانت هناك مشاكل في التحقق الشامل
   if (!comprehensiveValidation.isValid) {
-    console.error('❌ Comprehensive Financial Validation Failed:', comprehensiveValidation.errors)
+    if (process.env.NODE_ENV !== 'production') console.error('❌ Comprehensive Financial Validation Failed:', comprehensiveValidation.errors)
   }
 
   if (comprehensiveValidation.warnings.length > 0) {
-    console.warn('⚠️ Financial Validation Warnings:', comprehensiveValidation.warnings)
+    if (process.env.NODE_ENV !== 'production') console.warn('⚠️ Financial Validation Warnings:', comprehensiveValidation.warnings)
   }
 
   // التحقق من تطابق الحسابات مع النظام الشامل
@@ -681,13 +681,13 @@ export default function FinancialReports() {
   }
 
   if (!calculationComparison.revenueMatch || !calculationComparison.expensesMatch || !calculationComparison.profitMatch) {
-    console.warn('⚠️ Financial Calculation Mismatch Detected:', {
+    if (process.env.NODE_ENV !== 'production') console.warn('⚠️ Financial Calculation Mismatch Detected:', {
       local: { revenue: reportData.totalRevenue, expenses: totalExpenses, profit: netProfit },
       system: { revenue: systemCalculations.totalRevenue, expenses: systemCalculations.totalExpenses, profit: systemCalculations.netProfit },
       comparison: calculationComparison
     })
   } else {
-    console.log('✅ Financial Calculations Verified - 100% Accuracy Confirmed')
+    if (process.env.NODE_ENV !== 'production') console.log('✅ Financial Calculations Verified - 100% Accuracy Confirmed')
   }
 
   // Update expense stats to match payment filter
@@ -703,7 +703,7 @@ export default function FinancialReports() {
   // Real-time synchronization for financial data changes
   useEffect(() => {
     const handleFinancialDataChange = (event: CustomEvent) => {
-      console.log('🔄 Financial data changed:', event.detail)
+      if (process.env.NODE_ENV !== 'production') console.log('🔄 Financial data changed:', event.detail)
       // Reload all financial data to ensure synchronization
       loadPayments()
       loadExpenses()
@@ -959,7 +959,7 @@ export default function FinancialReports() {
       const data = [
         { name: 'مكتمل', value: completedCount, color: statusColors[0] || '#10b981' },
         { name: 'جزئي', value: partialCount, color: statusColors[1] || '#f59e0b' },
-        { name: 'معلق', value: pendingCount, color: statusColors[2] || '#6b7280' },
+        { name: 'آجل', value: pendingCount, color: statusColors[2] || '#6b7280' },
         { name: 'فاشل', value: failedCount, color: statusColors[3] || '#ef4444' },
         { name: 'مسترد', value: refundedCount, color: statusColors[4] || '#8b5cf6' }
       ]
@@ -1236,7 +1236,7 @@ export default function FinancialReports() {
               />
             </div>
             <p className="text-xs text-muted-foreground text-right">
-              معلقة ومتأخرة ومتبقية
+              آجلة ومتأخرة ومتبقية
             </p>
           </CardContent>
         </Card>
@@ -1799,7 +1799,7 @@ export default function FinancialReports() {
                       const statusLabels = {
                         'completed': 'مكتمل',
                         'partial': 'جزئي',
-                        'pending': 'معلق',
+                        'pending': 'آجل',
                         'failed': 'فاشل',
                         'refunded': 'مسترد'
                       }
@@ -1899,3 +1899,5 @@ export default function FinancialReports() {
     </div>
   )
 }
+
+export default memo(FinancialReportsComponent)

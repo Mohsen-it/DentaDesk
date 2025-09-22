@@ -71,7 +71,7 @@ const COLORS = {
 }
 
 const STATUS_LABELS = {
-  pending: 'معلق',
+  pending: 'آجل',
   ordered: 'مطلوب',
   received: 'مستلم',
   cancelled: 'ملغي'
@@ -370,7 +370,7 @@ export default function ClinicNeedsReports() {
 
         <Card className={getCardStyles("orange")} dir="rtl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground text-right">الاحتياجات المعلقة</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground text-right">الاحتياجات الآجلة</CardTitle>
             <Clock className={`h-4 w-4 ${getIconStyles("orange")}`} />
           </CardHeader>
           <CardContent>
@@ -484,7 +484,7 @@ export default function ClinicNeedsReports() {
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="categories">الفئات</TabsTrigger>
           <TabsTrigger value="expensive">الأغلى سعراً</TabsTrigger>
-          <TabsTrigger value="pending">المعلقة</TabsTrigger>
+          <TabsTrigger value="pending">الآجلة</TabsTrigger>
           <TabsTrigger value="urgent">العاجلة</TabsTrigger>
         </TabsList>
 
@@ -571,7 +571,7 @@ export default function ClinicNeedsReports() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />
-                الاحتياجات المعلقة ({stats.pendingCount})
+                الاحتياجات الآجلة ({stats.pendingCount})
               </CardTitle>
             </CardHeader>
             <CardContent>

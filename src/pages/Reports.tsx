@@ -214,15 +214,15 @@ export default function Reports() {
 
   // Calculate pending payments for the filtered period
   const filteredPendingPayments = filteredPayments.filter((p: any) => {
-    // تحقق من جميع الحالات المحتملة للمدفوعات المعلقة
+    // تحقق من جميع الحالات المحتملة للمدفوعات الآجلة
     const status = p.status?.toLowerCase()
-    return status === 'pending' || status === 'معلق' || status === 'unpaid' ||
+    return status === 'pending' || status === 'آجل' || status === 'unpaid' ||
            (!p.status && p.amount > 0 && !p.amount_paid)
   })
 
   // Calculate total amount for filtered pending payments
   const filteredPendingAmount = filteredPendingPayments.reduce((sum: number, p: any) => {
-    // للمدفوعات المعلقة، استخدم المبلغ الإجمالي المطلوب أو تكلفة العلاج
+    // للمدفوعات الآجلة، استخدم المبلغ الإجمالي المطلوب أو تكلفة العلاج
     let pendingAmount = p.amount || 0
 
     if (p.tooth_treatment_id) {
@@ -255,7 +255,7 @@ export default function Reports() {
       patient: p.patient?.full_name
     })),
     filteredPendingDetails: filteredPendingPayments.map(p => {
-      // حساب المبلغ المعلق لكل دفعة (نفس المنطق المستخدم في الحساب أعلاه)
+      // حساب المبلغ الآجل لكل دفعة (نفس المنطق المستخدم في الحساب أعلاه)
       let calculatedPendingAmount = p.amount || 0
 
       if (p.tooth_treatment_id) {
@@ -850,7 +850,7 @@ export default function Reports() {
                     </span>
                   </div>
                   <div className="flex justify-between items-center p-4 bg-yellow-50/80 dark:bg-yellow-950/50 border border-yellow-200/50 dark:border-yellow-700/50 rounded-lg backdrop-blur-sm">
-                    <span className="text-sm font-medium text-yellow-800 dark:text-yellow-200">المدفوعات المعلقة المفلترة</span>
+                    <span className="text-sm font-medium text-yellow-800 dark:text-yellow-200">المدفوعات الآجلة المفلترة</span>
                     <span className="text-lg font-bold text-yellow-700 dark:text-yellow-100">
                       <CurrencyDisplay
                         amount={filteredPendingAmount}

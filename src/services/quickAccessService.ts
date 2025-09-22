@@ -98,7 +98,7 @@ export class QuickAccessService {
   }
 
   /**
-   * جلب الدفعات المعلقة
+   * جلب الدفعات الآجلة
    */
   private static async getPendingPayments(): Promise<Payment[]> {
     try {
@@ -113,7 +113,7 @@ export class QuickAccessService {
         .sort((a: Payment, b: Payment) =>
           new Date(a.payment_date).getTime() - new Date(b.payment_date).getTime()
         )
-        .slice(0, 10) // أول 10 دفعات معلقة
+        .slice(0, 10) // أول 10 دفعات آجلة
 
     } catch (error) {
       console.error('Error getting pending payments:', error)
@@ -137,7 +137,7 @@ export class QuickAccessService {
             return false
           }
 
-          // العلاجات المعلقة لأكثر من أسبوع
+          // العلاجات الآجلة لأكثر من أسبوع
           const createdDate = new Date(treatment.created_at)
           const daysPending = Math.floor((today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24))
 
@@ -277,7 +277,7 @@ export class QuickAccessService {
         return paymentDate === todayString && payment.status === 'completed'
       }).length
 
-      // تنبيهات اليوم العاجلة (علاجات عاجلة + دفعات معلقة + مواعيد اليوم)
+      // تنبيهات اليوم العاجلة (علاجات عاجلة + دفعات آجلة + مواعيد اليوم)
       const todayUrgentAlerts = (Array.isArray(urgentTreatments) ? urgentTreatments.length : 0) + (todayPayments > 0 ? 1 : 0) + (todayAppointments > 0 ? 1 : 0)
 
       return {

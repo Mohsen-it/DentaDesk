@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, memo, lazy, Suspense } from 'react'
 import { Patient, Appointment, Payment, ToothTreatment, Prescription, LabOrder } from '@/types'
 import { calculatePatientPaymentSummary } from '@/utils/paymentCalculations'
 import {
@@ -40,10 +40,10 @@ import { useAppointmentStore } from '@/store/appointmentStore'
 import { usePaymentStore } from '@/store/paymentStore'
 import { useDentalTreatmentStore } from '@/store/dentalTreatmentStore'
 import { useToast } from '@/hooks/use-toast'
-import AddAppointmentDialog from '@/components/AddAppointmentDialog'
-import AddPaymentDialog from '@/components/payments/AddPaymentDialog'
-import AddPrescriptionDialog from '@/components/medications/AddPrescriptionDialog'
-import ComprehensivePendingInvoiceDialog from '@/components/payments/ComprehensivePendingInvoiceDialog'
+const AddAppointmentDialog = lazy(() => import('@/components/AddAppointmentDialog'))
+const AddPaymentDialog = lazy(() => import('@/components/payments/AddPaymentDialog'))
+const AddPrescriptionDialog = lazy(() => import('@/components/medications/AddPrescriptionDialog'))
+const ComprehensivePendingInvoiceDialog = lazy(() => import('@/components/payments/ComprehensivePendingInvoiceDialog'))
 import { TREATMENT_STATUS_OPTIONS, getTreatmentNameInArabic } from '@/data/teethData'
 import { useTreatmentNames } from '@/hooks/useTreatmentNames'
 import { PatientIntegrationService } from '@/services/patientIntegrationService'
@@ -59,7 +59,7 @@ interface PatientDetailsModalProps {
   onNavigateToPayments?: (tab: string) => void
 }
 
-export default function PatientDetailsModal({
+function PatientDetailsModalComponent({
   patient,
   open,
   onOpenChange,
@@ -293,7 +293,7 @@ export default function PatientDetailsModal({
         setPatientPrescriptions(prescriptions || [])
         setIsLoadingPrescriptions(false)
       }).catch((error) => {
-        console.error('Error loading prescriptions:', error)
+        if (process.env.NODE_ENV !== 'production') console.error('Error loading prescriptions:', error)
         setIsLoadingPrescriptions(false)
       })
 
@@ -301,7 +301,7 @@ export default function PatientDetailsModal({
       window.electronAPI?.labOrders?.getByPatient?.(patient.id).then((labOrders) => {
         setPatientLabOrders(labOrders || [])
       }).catch(() => {
-        console.error('خطأ في تحميل طلبات المختبر')
+        if (process.env.NODE_ENV !== 'production') console.error('خطأ في تحميل طلبات المختبر')
       })
     }
   }, [patient, open, appointments, payments, loadToothTreatmentsByPatient])
@@ -322,7 +322,7 @@ export default function PatientDetailsModal({
     const statusMap = {
       completed: { label: 'مكتمل', variant: 'default' as const },
       partial: { label: 'جزئي', variant: 'outline' as const },
-      pending: { label: 'معلق', variant: 'secondary' as const }
+      pending: { label: 'آجل', variant: 'secondary' as const }
     }
     return statusMap[status as keyof typeof statusMap] || { label: status, variant: 'outline' as const }
   }
@@ -418,7 +418,7 @@ export default function PatientDetailsModal({
                 className="flex items-center gap-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
               >
                 <FileText className="w-4 h-4" />
-                فاتورة المعلقات
+                فاتورة الآجلات
               </Button>
               {onEdit && (
                 <Button
@@ -1032,7 +1032,7 @@ export default function PatientDetailsModal({
                                         جزئي: {partialPayments.length}
                                       </Badge>
                                       <Badge variant="destructive" className="text-xs">
-                                        معلق: {pendingPayments.length}
+                                        آجل: {pendingPayments.length}
                                       </Badge>
                                     </div>
                                   </td>
@@ -1320,75 +1320,77 @@ export default function PatientDetailsModal({
       </DialogContent>
 
       {/* Add Appointment Dialog */}
-      <AddAppointmentDialog
-        isOpen={showAddAppointmentDialog}
-        onClose={() => setShowAddAppointmentDialog(false)}
-        onSave={async (appointmentData) => {
-          try {
-            // Save the appointment using the appointment store
-            const { createAppointment } = useAppointmentStore.getState()
-            await createAppointment(appointmentData)
-
-            // Close the dialog
-            setShowAddAppointmentDialog(false)
-
-            // Reload appointments for this patient
-            const updatedAppointments = appointments.filter(apt => apt.patient_id === patient.id)
-            setPatientAppointments(updatedAppointments)
-
-            // Show success message
-            toast({
-              title: "تم بنجاح",
-              description: "تم إضافة الموعد بنجاح",
-            })
-          } catch (error) {
-            console.error('Error saving appointment:', error)
-            toast({
-              title: "خطأ",
-              description: "فشل في إضافة الموعد",
-              variant: "destructive",
-            })
-          }
-        }}
-        patients={[patient]}
-        treatments={[]}
-        initialData={undefined}
-        preSelectedPatientId={patient.id}
-      />
+      <Suspense fallback={null}>
+        <AddAppointmentDialog
+          isOpen={showAddAppointmentDialog}
+          onClose={() => setShowAddAppointmentDialog(false)}
+          onSave={async (appointmentData) => {
+            try {
+              const { createAppointment } = useAppointmentStore.getState()
+              await createAppointment(appointmentData)
+              setShowAddAppointmentDialog(false)
+              const updatedAppointments = appointments.filter(apt => apt.patient_id === patient.id)
+              setPatientAppointments(updatedAppointments)
+              toast({
+                title: "تم بنجاح",
+                description: "تم إضافة الموعد بنجاح",
+              })
+            } catch (error) {
+              if (process.env.NODE_ENV !== 'production') console.error('Error saving appointment:', error)
+              toast({
+                title: "خطأ",
+                description: "فشل في إضافة الموعد",
+                variant: "destructive",
+              })
+            }
+          }}
+          patients={[patient]}
+          treatments={[]}
+          initialData={undefined}
+          preSelectedPatientId={patient.id}
+        />
+      </Suspense>
 
       {/* Add Payment Dialog */}
-      <AddPaymentDialog
-        open={showAddPaymentDialog}
-        onOpenChange={setShowAddPaymentDialog}
-        preSelectedPatientId={patient.id}
-      />
+      <Suspense fallback={null}>
+        <AddPaymentDialog
+          open={showAddPaymentDialog}
+          onOpenChange={setShowAddPaymentDialog}
+          preSelectedPatientId={patient.id}
+        />
+      </Suspense>
 
       {/* Add Prescription Dialog */}
-      <AddPrescriptionDialog
-        open={showAddPrescriptionDialog}
-        onOpenChange={(open) => {
-          setShowAddPrescriptionDialog(open)
-          if (!open) {
-            // Reload prescriptions when dialog closes
-            setIsLoadingPrescriptions(true)
-            window.electronAPI?.prescriptions?.getByPatient?.(patient.id).then((prescriptions) => {
-              setPatientPrescriptions(prescriptions || [])
-              setIsLoadingPrescriptions(false)
-            }).catch((error) => {
-              console.error('Error reloading prescriptions:', error)
-              setIsLoadingPrescriptions(false)
-            })
-          }
-        }}
-        preSelectedPatientId={patient.id}
-      />
+      <Suspense fallback={null}>
+        <AddPrescriptionDialog
+          open={showAddPrescriptionDialog}
+          onOpenChange={(open) => {
+            setShowAddPrescriptionDialog(open)
+            if (!open) {
+              setIsLoadingPrescriptions(true)
+              window.electronAPI?.prescriptions?.getByPatient?.(patient.id).then((prescriptions) => {
+                setPatientPrescriptions(prescriptions || [])
+                setIsLoadingPrescriptions(false)
+              }).catch((error) => {
+                if (process.env.NODE_ENV !== 'production') console.error('Error reloading prescriptions:', error)
+                setIsLoadingPrescriptions(false)
+              })
+            }
+          }}
+          preSelectedPatientId={patient.id}
+        />
+      </Suspense>
 
       {/* Comprehensive Pending Invoice Dialog */}
-      <ComprehensivePendingInvoiceDialog
-        patient={patient}
-        open={showPendingInvoiceDialog}
-        onOpenChange={setShowPendingInvoiceDialog}
-      />
+      <Suspense fallback={null}>
+        <ComprehensivePendingInvoiceDialog
+          patient={patient}
+          open={showPendingInvoiceDialog}
+          onOpenChange={setShowPendingInvoiceDialog}
+        />
+      </Suspense>
     </Dialog>
   )
 }
+
+export default memo(PatientDetailsModalComponent)

@@ -27,7 +27,7 @@ export function useRealTimeAlerts() {
       cancelAnimationFrame(rafIdRef.current)
     }
 
-    // تحديد أن هناك تحديث معلق
+    // تحديد أن هناك تحديث آجل
     pendingRefreshRef.current = true
 
     // استخدام requestAnimationFrame لتجميع الأحداث السريعة

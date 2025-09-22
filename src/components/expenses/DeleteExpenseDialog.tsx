@@ -68,7 +68,7 @@ const DeleteExpenseDialog: React.FC<DeleteExpenseDialogProps> = ({
   // Get status label in Arabic
   const getStatusLabel = (status: string) => {
     const statuses = {
-      pending: 'معلق',
+      pending: 'آجل',
       paid: 'مدفوع',
       overdue: 'متأخر',
       cancelled: 'ملغي'

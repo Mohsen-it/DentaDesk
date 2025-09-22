@@ -374,14 +374,14 @@ export default function QuickAccessDashboard({
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2 font-tajawal text-lg md:text-xl lg:text-2xl">
                 <DollarSign className="w-5 h-5 md:w-6 md:h-6" />
-                الدفعات المعلقة
+                الدفعات الآجلة
               </CardTitle>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleNavigateToPayments}
                 className="hover:bg-accent/10 hover:text-accent transition-all duration-200 text-sm md:text-base"
-                aria-label="عرض جميع الدفعات المعلقة"
+                aria-label="عرض جميع الدفعات الآجلة"
               >
                 <Eye className="w-4 h-4 mr-1 md:mr-2" />
                 عرض الكل
@@ -392,7 +392,7 @@ export default function QuickAccessDashboard({
             {quickAccessData.pendingPayments.length === 0 ? (
               <div className="text-center py-6 md:py-8 text-muted-foreground">
                 <DollarSign className="w-8 h-8 md:w-12 md:h-12 mx-auto mb-2 md:mb-4 opacity-50" />
-                <p className="text-sm md:text-base font-tajawal">لا توجد دفعات معلقة</p>
+                <p className="text-sm md:text-base font-tajawal">لا توجد دفعات آجلة</p>
               </div>
             ) : (
               <div className="space-y-3">

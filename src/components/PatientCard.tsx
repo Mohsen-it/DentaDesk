@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { memo } from 'react'
 import { Patient } from '../types'
 import { User, Phone, Mail, Calendar, Edit, Trash2 } from 'lucide-react'
 
@@ -16,7 +16,7 @@ interface PatientCardProps {
   onDelete?: (patient: Patient) => void
 }
 
-export default function PatientCard({ patient, onClick, onEdit, onDelete }: PatientCardProps) {
+function PatientCardComponent({ patient, onClick, onEdit, onDelete }: PatientCardProps) {
 
   return (
     <Card
@@ -126,3 +126,5 @@ export default function PatientCard({ patient, onClick, onEdit, onDelete }: Pati
     </Card>
   )
 }
+
+export default memo(PatientCardComponent)

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { memo } from 'react'
 import { useStableClinicName, useStableDoctorName, useStableClinicLogo } from '../hooks/useStableSettings'
 import { useTheme } from '../contexts/ThemeContext'
 
@@ -12,7 +12,7 @@ interface StableClinicHeaderProps {
  * مكون عرض معلومات العيادة مع ضمان الاستقرار أثناء تغيير الثيم
  * يستخدم hooks مخصصة لضمان عدم اختفاء البيانات أثناء التبديل
  */
-export function StableClinicHeader({ 
+export const StableClinicHeader = memo(function StableClinicHeader({ 
   showLogo = true, 
   showDoctorName = true, 
   className = '' 
@@ -52,12 +52,12 @@ export function StableClinicHeader({
       </div>
     </div>
   )
-}
+})
 
 /**
  * مكون مبسط لعرض اسم العيادة فقط
  */
-export function StableClinicName({ className = '' }: { className?: string }) {
+export const StableClinicName = memo(function StableClinicName({ className = '' }: { className?: string }) {
   const clinicName = useStableClinicName()
   
   return (
@@ -65,12 +65,12 @@ export function StableClinicName({ className = '' }: { className?: string }) {
       {clinicName}
     </span>
   )
-}
+})
 
 /**
  * مكون مبسط لعرض اسم الدكتور فقط
  */
-export function StableDoctorName({ className = '' }: { className?: string }) {
+export const StableDoctorName = memo(function StableDoctorName({ className = '' }: { className?: string }) {
   const doctorName = useStableDoctorName()
   
   return (
@@ -78,12 +78,12 @@ export function StableDoctorName({ className = '' }: { className?: string }) {
       {doctorName}
     </span>
   )
-}
+})
 
 /**
  * مكون للشعار مع معالجة الأخطاء
  */
-export function StableClinicLogo({ 
+export const StableClinicLogo = memo(function StableClinicLogo({ 
   size = 'md',
   className = '' 
 }: { 
@@ -112,6 +112,6 @@ export function StableClinicLogo({
       }}
     />
   )
-}
+})
 
 export default StableClinicHeader

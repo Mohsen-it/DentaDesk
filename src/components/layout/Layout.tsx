@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, memo } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -36,10 +36,11 @@ const navigation = [
   { name: 'Backup', href: '/backup', icon: Shield },
 ]
 
-export default function Layout({ children }: LayoutProps) {
+function LayoutComponent({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const location = useLocation()
-  const { settings, isDarkMode, toggleDarkMode } = useSettingsStore()
+  const isDarkMode = useSettingsStore(state => state.isDarkMode)
+  const toggleDarkMode = useSettingsStore(state => state.toggleDarkMode)
   const clinicName = useStableClinicName()
 
   return (
@@ -164,3 +165,5 @@ export default function Layout({ children }: LayoutProps) {
     </div>
   )
 }
+
+export default memo(LayoutComponent)

@@ -51,7 +51,7 @@ export default function AppointmentPaymentSummary({
       case 'partial':
         return 'جزئي'
       case 'pending':
-        return 'معلق'
+        return 'آجل'
       default:
         return 'غير محدد'
     }

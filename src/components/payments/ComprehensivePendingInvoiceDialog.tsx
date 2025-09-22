@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, memo } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -72,7 +72,7 @@ interface ComprehensivePendingInvoiceDialogProps {
   onOpenChange: (open: boolean) => void
 }
 
-export default function ComprehensivePendingInvoiceDialog({
+function ComprehensivePendingInvoiceDialog({
   patient,
   open,
   onOpenChange
@@ -160,7 +160,7 @@ export default function ComprehensivePendingInvoiceDialog({
 📞 ${clinicPhone}
 📍 ${clinicAddress}
 
-📋 فاتورة المدفوعات المعلقة
+📋 فاتورة المدفوعات الآجلة
 🔢 رقم الفاتورة: ${receiptNumber}
 📅 تاريخ الإصدار: ${formattedDate}
 📅 فترة الفاتورة: ${dateRange}
@@ -275,7 +275,7 @@ ${invoiceSettings.discount_reason ? `💸 سبب الخصم: ${invoiceSettings.d
   // تحميل البيانات عند فتح الحوار
   useEffect(() => {
     if (open && patient) {
-      // تحميل العلاجات للمريض المحدد أولاً ثم المدفوعات المعلقة
+      // تحميل العلاجات للمريض المحدد أولاً ثم المدفوعات الآجلة
       Promise.all([
         loadToothTreatments(),
         loadToothTreatmentsByPatient(patient.id)
@@ -359,10 +359,10 @@ ${invoiceSettings.discount_reason ? `💸 سبب الخصم: ${invoiceSettings.d
       setInvoiceData(invoice)
 
     } catch (error) {
-      console.error('خطأ في تحميل المدفوعات المعلقة:', error)
+      console.error('خطأ في تحميل المدفوعات الآجلة:', error)
       toast({
         title: 'خطأ',
-        description: 'فشل في تحميل المدفوعات المعلقة',
+        description: 'فشل في تحميل المدفوعات الآجلة',
         variant: 'destructive'
       })
     } finally {
@@ -411,7 +411,7 @@ ${invoiceSettings.discount_reason ? `💸 سبب الخصم: ${invoiceSettings.d
     try {
       setIsLoading(true)
 
-      // تحديث جميع المدفوعات المعلقة إلى مكتملة مع تحديث المبالغ المالية
+      // تحديث جميع المدفوعات الآجلة إلى مكتملة مع تحديث المبالغ المالية
       const updatePromises = pendingSummary.items
         .filter(item => !item.id.startsWith('unpaid-')) // فقط المدفوعات الموجودة فعلياً
         .map(async item => {
@@ -473,7 +473,7 @@ ${invoiceSettings.discount_reason ? `💸 سبب الخصم: ${invoiceSettings.d
       // إعادة تحميل البيانات
       await loadPendingPayments()
 
-      // تحديث الواجهة لإظهار عدم وجود مدفوعات معلقة
+      // تحديث الواجهة لإظهار عدم وجود مدفوعات آجلة
       setPendingSummary(null)
       setInvoiceData(null)
 
@@ -639,7 +639,7 @@ ${invoiceSettings.discount_reason ? `💸 سبب الخصم: ${invoiceSettings.d
       const htmlContent = `
         <html>
           <head>
-            <title>فاتورة المدفوعات المعلقة - ${receiptNumber}</title>
+            <title>فاتورة المدفوعات الآجلة - ${receiptNumber}</title>
             <meta charset="UTF-8">
             <style>
               @page {
@@ -756,7 +756,7 @@ ${invoiceSettings.discount_reason ? `💸 سبب الخصم: ${invoiceSettings.d
               </div>
 
               <div class="receipt-info">
-                <div><strong>فاتورة المدفوعات المعلقة</strong></div>
+                <div><strong>فاتورة المدفوعات الآجلة</strong></div>
                 <div>رقم الفاتورة: ${receiptNumber}</div>
                 <div>التاريخ: ${formattedDate}</div>
               </div>
@@ -768,7 +768,7 @@ ${invoiceSettings.discount_reason ? `💸 سبب الخصم: ${invoiceSettings.d
               </div>
 
               <div class="items">
-                <div><strong>تفاصيل المدفوعات المعلقة:</strong></div>
+                <div><strong>تفاصيل المدفوعات الآجلة:</strong></div>
                 ${pendingSummary.items.map((item, index) => `
                   <div class="item">
                     <div class="item-header">
@@ -913,12 +913,12 @@ ${invoiceSettings.discount_reason ? `💸 سبب الخصم: ${invoiceSettings.d
 
     let message = `🏥 *${clinicName}*\n`
     message += `👨‍⚕️ د. ${doctorName}\n\n`
-    message += `📋 *فاتورة المدفوعات المعلقة*\n`
+    message += `📋 *فاتورة المدفوعات الآجلة*\n`
     message += `🔢 رقم الفاتورة: ${receiptNumber}\n`
     message += `📅 التاريخ: ${formattedDate}\n\n`
     message += `👤 *بيانات المريض:*\n`
     message += `الاسم: ${patient.full_name}\n\n`
-    message += `💰 *تفاصيل المدفوعات المعلقة:*\n`
+    message += `💰 *تفاصيل المدفوعات الآجلة:*\n`
 
     pendingSummary.items.forEach((item, index) => {
       message += `\n${index + 1}. ${item.appointment_title || item.treatment_type || item.description}\n`
@@ -1005,7 +1005,7 @@ ${invoiceSettings.discount_reason ? `💸 سبب الخصم: ${invoiceSettings.d
           <DialogTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">
               <FileText className="w-5 h-5" />
-              فاتورة المدفوعات المعلقة الشاملة
+              فاتورة المدفوعات الآجلة الشاملة
             </span>
             <Badge variant="outline" className="text-sm">
               {patient.full_name}
@@ -1363,7 +1363,7 @@ ${invoiceSettings.discount_reason ? `💸 سبب الخصم: ${invoiceSettings.d
                 <div className="flex items-center justify-center h-40">
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                    <p className="text-sm text-muted-foreground">جاري تحميل المدفوعات المعلقة...</p>
+                    <p className="text-sm text-muted-foreground">جاري تحميل المدفوعات الآجلة...</p>
                     <p className="text-xs text-muted-foreground mt-1">يرجى الانتظار</p>
                   </div>
                 </div>
@@ -1371,7 +1371,7 @@ ${invoiceSettings.discount_reason ? `💸 سبب الخصم: ${invoiceSettings.d
               <div ref={invoiceRef} className="space-y-4 p-4">
                 {/* رأس الفاتورة - مضغوط */}
                 <div className="text-center border-b pb-3">
-                  <h2 className="text-xl font-bold">فاتورة المدفوعات المعلقة الشاملة</h2>
+                  <h2 className="text-xl font-bold">فاتورة المدفوعات الآجلة الشاملة</h2>
                   <div className="flex justify-center gap-4 text-sm text-muted-foreground mt-1">
                     <span>رقم الفاتورة: {invoiceData?.invoice_number}</span>
                     <span>تاريخ الإصدار: {formatDate(invoiceData?.invoice_date || '')}</span>
@@ -1399,10 +1399,10 @@ ${invoiceSettings.discount_reason ? `💸 سبب الخصم: ${invoiceSettings.d
                   </div>
                 </div>
 
-                {/* تفاصيل المدفوعات المعلقة الشاملة - مضغوط */}
+                {/* تفاصيل المدفوعات الآجلة الشاملة - مضغوط */}
                 <div className="border rounded-lg p-3">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-medium">تفاصيل المدفوعات المعلقة الشاملة</h3>
+                    <h3 className="text-sm font-medium">تفاصيل المدفوعات الآجلة الشاملة</h3>
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary" className="text-xs">
                         {pendingSummary.total_items} عنصر
@@ -1418,7 +1418,7 @@ ${invoiceSettings.discount_reason ? `💸 سبب الخصم: ${invoiceSettings.d
                       // تحديد نوع العنصر والتفاصيل
                       let itemType = 'عام'
                       let itemIcon = '💰'
-                      let itemTitle = 'دفعة معلقة'
+                      let itemTitle = 'دفعة آجلة'
 
                       // تنظيف الوصف من معرفات العلاج
                       let cleanDescription = item.description
@@ -1438,7 +1438,7 @@ ${invoiceSettings.discount_reason ? `💸 سبب الخصم: ${invoiceSettings.d
                         itemIcon = '📅'
                         itemTitle = item.appointment_title || cleanDescription || 'موعد طبي'
                       } else {
-                        itemTitle = cleanDescription || 'دفعة معلقة'
+                        itemTitle = cleanDescription || 'دفعة آجلة'
                       }
 
                       return (
@@ -1556,12 +1556,12 @@ ${invoiceSettings.discount_reason ? `💸 سبب الخصم: ${invoiceSettings.d
               <div className="flex items-center justify-center h-40">
                 <div className="text-center">
                   <AlertTriangle className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-muted-foreground mb-2">لا توجد مدفوعات معلقة للمريض</p>
+                  <p className="text-muted-foreground mb-2">لا توجد مدفوعات آجلة للمريض</p>
                   <p className="text-xs text-muted-foreground mb-2">
                     جرب تغيير فلتر التاريخ أو تفعيل خيارات إضافية
                   </p>
                   <div className="text-xs text-muted-foreground space-y-1">
-                    <p>• تأكد من وجود مدفوعات بحالة "معلق" للمريض</p>
+                    <p>• تأكد من وجود مدفوعات بحالة "آجل" للمريض</p>
                     <p>• جرب توسيع نطاق التاريخ</p>
                     <p>• فعل خيار "المواعيد غير المدفوعة" أو "العلاجات غير المدفوعة"</p>
                   </div>
@@ -1574,3 +1574,5 @@ ${invoiceSettings.discount_reason ? `💸 سبب الخصم: ${invoiceSettings.d
     </Dialog>
   )
 }
+
+export default memo(ComprehensivePendingInvoiceDialog)

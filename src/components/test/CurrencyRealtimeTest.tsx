@@ -161,7 +161,7 @@ export default function CurrencyRealtimeTest() {
       {/* Mock Pending Payments */}
       <Card>
         <CardHeader>
-          <CardTitle>المدفوعات المعلقة (اختبار التحديث الفوري)</CardTitle>
+          <CardTitle>المدفوعات الآجلة (اختبار التحديث الفوري)</CardTitle>
           <CardDescription>
             يجب أن تتحدث هذه المبالغ فوراً عند تغيير العملة
           </CardDescription>
@@ -223,7 +223,7 @@ export default function CurrencyRealtimeTest() {
         <CardContent>
           <ol className="list-decimal list-inside space-y-2 text-sm">
             <li>غير العملة باستخدام محدد العملة في الأعلى</li>
-            <li>لاحظ كيف تتحدث مبالغ المدفوعات المعلقة فوراً</li>
+            <li>لاحظ كيف تتحدث مبالغ المدفوعات الآجلة فوراً</li>
             <li>تحقق من تحديث الإحصائيات في الشريط الجانبي</li>
             <li>قم بتبديل الأرقام العربية ولاحظ التغيير في التنسيق</li>
             <li>تأكد من عدم الحاجة لإعادة تحميل الصفحة</li>

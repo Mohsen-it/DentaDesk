@@ -52,7 +52,7 @@ import { notify } from '@/services/notificationService'
 import { TIME_PERIODS, TimePeriod } from '@/services/comprehensiveExportService'
 import type { ComprehensiveProfitLossReport } from '@/types'
 
-export default function ComprehensiveProfitLossReport() {
+function ComprehensiveProfitLossReportComponent() {
   const { payments } = usePaymentStore()
   const { expenses: clinicExpenses } = useExpensesStore()
   const { labOrders } = useLabOrderStore()
@@ -226,7 +226,7 @@ export default function ComprehensiveProfitLossReport() {
       )
       setReportData(report)
     } catch (error) {
-      console.error('Error generating comprehensive profit/loss report:', error)
+      if (process.env.NODE_ENV !== 'production') console.error('Error generating comprehensive profit/loss report:', error)
     } finally {
       setIsLoading(false)
     }
@@ -249,7 +249,7 @@ export default function ComprehensiveProfitLossReport() {
       })
       notify.success('تم تصدير تقرير الأرباح والخسائر إلى Excel بنجاح')
     } catch (error) {
-      console.error('Error exporting to Excel:', error)
+      if (process.env.NODE_ENV !== 'production') console.error('Error exporting to Excel:', error)
       notify.error('فشل في تصدير التقرير إلى Excel')
     } finally {
       setIsExporting(false)
@@ -273,7 +273,7 @@ export default function ComprehensiveProfitLossReport() {
       }, settings)
       notify.success('تم تصدير تقرير الأرباح والخسائر إلى PDF بنجاح')
     } catch (error) {
-      console.error('Error exporting to PDF:', error)
+      if (process.env.NODE_ENV !== 'production') console.error('Error exporting to PDF:', error)
       notify.error('فشل في تصدير التقرير إلى PDF')
     } finally {
       setIsExporting(false)
@@ -313,7 +313,7 @@ export default function ComprehensiveProfitLossReport() {
         percentage: revenue.totalRevenue > 0 ? ((revenue.partialPayments / revenue.totalRevenue) * 100).toFixed(1) : '0'
       },
       {
-        name: 'مبالغ معلقة',
+        name: 'مبالغ آجلة',
         value: revenue.pendingAmount || 0,
         color: chartColors.danger,
         percentage: revenue.totalRevenue > 0 ? (((revenue.pendingAmount || 0) / revenue.totalRevenue) * 100).toFixed(1) : '0'
@@ -609,6 +609,8 @@ export default function ComprehensiveProfitLossReport() {
                   radius={[4, 4, 0, 0]}
                   minPointSize={5}
                   maxBarSize={100}
+                  isAnimationActive={false}
+                  animationDuration={0}
                 >
                   {comparisonData.map((entry, index) => (
                     <Cell
@@ -682,7 +684,7 @@ export default function ComprehensiveProfitLossReport() {
                     amount: payments.filter(p => p.status === 'partial').reduce((sum, p) => sum + (p.amount || 0), 0)
                   },
                   {
-                    name: 'معلقة',
+                    name: 'آجلة',
                     value: payments.filter(p => p.status === 'pending').length,
                     color: chartColors.danger,
                     amount: payments.filter(p => p.status === 'pending').reduce((sum, p) => sum + (p.total_amount_due || p.amount || 0), 0)
@@ -827,7 +829,7 @@ export default function ComprehensiveProfitLossReport() {
                     </div>
                   </div>
                   <div className="p-3 bg-orange-50 dark:bg-orange-950/50 rounded">
-                    <div className="text-xs text-orange-600 dark:text-orange-400">المبالغ المعلقة</div>
+                    <div className="text-xs text-orange-600 dark:text-orange-400">المبالغ الآجلة</div>
                     <div className="font-semibold text-orange-700 dark:text-orange-300">
                       <CurrencyDisplay amount={revenue.pendingAmount || 0} currency={currency} />
                     </div>

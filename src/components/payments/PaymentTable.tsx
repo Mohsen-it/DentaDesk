@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, memo } from 'react'
 import { Payment, Patient } from '@/types'
 import {
   Table,
@@ -43,7 +43,7 @@ interface PaymentTableProps {
   onViewDetails: (payment: Payment) => void
 }
 
-export default function PaymentTable({
+function PaymentTableComponent({
   payments,
   patients,
   isLoading,
@@ -173,7 +173,7 @@ export default function PaymentTable({
     const statusConfig = {
       completed: { label: 'مكتمل', variant: 'default' as const },
       partial: { label: 'جزئي', variant: 'outline' as const },
-      pending: { label: 'معلق', variant: 'secondary' as const }
+      pending: { label: 'آجل', variant: 'secondary' as const }
     }
 
     const config = statusConfig[status as keyof typeof statusConfig] || { label: status, variant: 'outline' as const }
@@ -582,3 +582,5 @@ export default function PaymentTable({
     </div>
   )
 }
+
+export default memo(PaymentTableComponent)

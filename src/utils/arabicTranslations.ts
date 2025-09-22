@@ -113,7 +113,7 @@ export const getStatusLabelInArabic = (status: string): string => {
     'in_progress': 'قيد التنفيذ',
     'completed': 'مكتمل',
     'cancelled': 'ملغي',
-    'pending': 'معلق',
+    'pending': 'آجل',
     'active': 'نشط',
     'inactive': 'غير نشط'
   }
@@ -142,7 +142,7 @@ export const getPaymentStatusInArabic = (status: string): string => {
   if (!status) return 'غير محدد'
 
   const statusLabels: { [key: string]: string } = {
-    'pending': 'معلق',
+    'pending': 'آجل',
     'completed': 'مكتمل',
     'partial': 'جزئي',
     'cancelled': 'ملغي',
@@ -186,7 +186,7 @@ export const getClinicNeedStatusInArabic = (status: string): string => {
   if (!status) return 'غير محدد'
 
   const statusLabels: { [key: string]: string } = {
-    'pending': 'معلق',
+    'pending': 'آجل',
     'ordered': 'مطلوب',
     'received': 'مستلم',
     'cancelled': 'ملغي'

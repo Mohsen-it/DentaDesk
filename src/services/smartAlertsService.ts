@@ -503,7 +503,7 @@ export class SmartAlertsService {
       const today = new Date()
 
       payments.forEach((payment: Payment) => {
-        // تنبيه للدفعات المعلقة
+        // تنبيه للدفعات الآجلة
         if (payment.status === 'pending' && payment.remaining_balance && payment.remaining_balance > 0) {
           // تحقق من صحة التاريخ
           if (!payment.payment_date) {
@@ -529,8 +529,8 @@ export class SmartAlertsService {
               id: `payment_overdue_${payment.id}`,
               type: 'payment',
               priority: daysOverdue > 7 ? 'high' : 'medium',
-              title: `دفعة معلقة - ${patientName}`,
-              description: `دفعة معلقة منذ ${daysOverdue} يوم - المبلغ: ${this.formatAmount(payment.remaining_balance)}`,
+              title: `دفعة آجلة - ${patientName}`,
+              description: `دفعة آجلة منذ ${daysOverdue} يوم - المبلغ: ${this.formatAmount(payment.remaining_balance)}`,
               patientId: patientId,
               patientName: patientName !== 'مريض غير محدد' ? patientName : null,
               relatedData: {
@@ -615,7 +615,7 @@ export class SmartAlertsService {
       const today = new Date()
 
       treatments.forEach((treatment: ToothTreatment) => {
-        // تنبيه للعلاجات المعلقة لفترة طويلة
+        // تنبيه للعلاجات الآجلة لفترة طويلة
         if (treatment.treatment_status === 'planned' || treatment.treatment_status === 'in_progress') {
           const createdDate = new Date(treatment.created_at)
           const daysPending = Math.floor((today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24))
@@ -625,8 +625,8 @@ export class SmartAlertsService {
               id: `treatment_pending_${treatment.id}`,
               type: 'treatment',
               priority: daysPending > 30 ? 'high' : 'medium',
-              title: `علاج معلق - ${treatment.patient?.full_name || 'مريض غير محدد'}`,
-              description: `علاج ${treatment.treatment_type} للسن ${treatment.tooth_number} معلق منذ ${daysPending} يوم`,
+              title: `علاج آجل - ${treatment.patient?.full_name || 'مريض غير محدد'}`,
+              description: `علاج ${treatment.treatment_type} للسن ${treatment.tooth_number} آجل منذ ${daysPending} يوم`,
               patientId: treatment.patient_id,
               patientName: treatment.patient?.full_name,
               relatedData: {
@@ -1495,7 +1495,7 @@ export class SmartAlertsService {
 
       labOrders.forEach((order: any) => {
         // تنبيه للطلبات المتأخرة في التسليم
-        if (order.expected_delivery_date && order.status === 'معلق') {
+        if (order.expected_delivery_date && order.status === 'آجل') {
           const expectedDate = new Date(order.expected_delivery_date)
           const daysLate = Math.floor((today.getTime() - expectedDate.getTime()) / (1000 * 60 * 60 * 24))
 
@@ -1522,13 +1522,13 @@ export class SmartAlertsService {
           }
         }
 
-        // تنبيه للدفعات المعلقة
+        // تنبيه للدفعات الآجلة
         if (order.remaining_balance > 0) {
           alerts.push({
             id: `lab_order_payment_${order.id}`,
             type: 'payment',
             priority: 'medium',
-            title: `دفعة مختبر معلقة - ${order.service_name}`,
+            title: `دفعة مختبر آجلة - ${order.service_name}`,
             description: `المبلغ المتبقي: ${this.formatAmount(order.remaining_balance)}${order.patient?.full_name ? ` - ${order.patient.full_name}` : ''}`,
             patientId: order.patient_id,
             patientName: order.patient?.full_name,
@@ -1545,7 +1545,7 @@ export class SmartAlertsService {
         }
 
         // تنبيه للطلبات القريبة من موعد التسليم
-        if (order.expected_delivery_date && order.status === 'معلق') {
+        if (order.expected_delivery_date && order.status === 'آجل') {
           const expectedDate = new Date(order.expected_delivery_date)
           const daysUntilDelivery = Math.floor((expectedDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
 
@@ -1591,7 +1591,7 @@ export class SmartAlertsService {
       const today = new Date()
 
       clinicNeeds.forEach((need: any) => {
-        // تنبيه للاحتياجات عالية الأولوية المعلقة
+        // تنبيه للاحتياجات عالية الأولوية الآجلة
         if (need.priority === 'urgent' && need.status === 'pending') {
           const createdDate = new Date(need.created_at)
           const daysPending = Math.floor((today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24))
@@ -1600,8 +1600,8 @@ export class SmartAlertsService {
             id: `clinic_need_urgent_${need.id}`,
             type: 'inventory',
             priority: 'high',
-            title: `احتياج عاجل معلق - ${need.need_name}`,
-            description: `معلق منذ ${daysPending} يوم - الكمية: ${need.quantity}`,
+            title: `احتياج عاجل آجل - ${need.need_name}`,
+            description: `آجل منذ ${daysPending} يوم - الكمية: ${need.quantity}`,
             relatedData: {
               clinicNeedId: need.id,
               needName: need.need_name,
@@ -1641,7 +1641,7 @@ export class SmartAlertsService {
           }
         }
 
-        // تنبيه للاحتياجات عالية التكلفة المعلقة
+        // تنبيه للاحتياجات عالية التكلفة الآجلة
         if (need.price > 1000 && need.status === 'pending') {
           alerts.push({
             id: `clinic_need_expensive_${need.id}`,

@@ -394,7 +394,7 @@ export class EnhancedPdfReports {
           <div class="summary-card warning">
             <div class="card-icon">⏳</div>
             <div class="card-content">
-              <h3>المدفوعات المعلقة</h3>
+              <h3>المدفوعات الآجلة</h3>
               <div class="number">${data.pendingPayments?.toLocaleString() || '0'}</div>
             </div>
           </div>
@@ -517,7 +517,7 @@ export class EnhancedPdfReports {
                     const statusData = [
                       { status: 'مكتمل', count: data.completedPayments || 0, icon: '✅', color: 'success' },
                       { status: 'جزئي', count: data.partialPayments || 0, icon: '🔄', color: 'info' },
-                      { status: 'معلق', count: data.pendingPayments || 0, icon: '⏳', color: 'warning' },
+                      { status: 'آجل', count: data.pendingPayments || 0, icon: '⏳', color: 'warning' },
                       { status: 'متأخر', count: data.overduePayments || 0, icon: '⚠️', color: 'danger' },
                       { status: 'فاشل', count: data.failedPayments || 0, icon: '❌', color: 'danger' }
                     ]
@@ -558,7 +558,7 @@ export class EnhancedPdfReports {
                 const statusData = [
                   { status: 'مكتمل', count: data.completedPayments || 0, icon: '✅', color: '#065f46', bgColor: '#d1fae5' },
                   { status: 'جزئي', count: data.partialPayments || 0, icon: '🔄', color: '#1e40af', bgColor: '#dbeafe' },
-                  { status: 'معلق', count: data.pendingPayments || 0, icon: '⏳', color: '#92400e', bgColor: '#fef3c7' },
+                  { status: 'آجل', count: data.pendingPayments || 0, icon: '⏳', color: '#92400e', bgColor: '#fef3c7' },
                   { status: 'متأخر', count: data.overduePayments || 0, icon: '⚠️', color: '#991b1b', bgColor: '#fee2e2' }
                 ]
 
@@ -1167,7 +1167,7 @@ export class EnhancedPdfReports {
         <div class="section">
           <div class="section-title">
             <span class="section-icon">⏳</span>
-            العلاجات المعلقة (${data.pendingTreatments.length})
+            العلاجات الآجلة (${data.pendingTreatments.length})
           </div>
           <div class="section-content">
             <div class="chart-container">
@@ -1187,7 +1187,7 @@ export class EnhancedPdfReports {
                       <td class="category-cell">${getTreatmentNameInArabic(treatment.treatment_type || 'غير محدد')}</td>
                       <td class="patient-cell">${treatment.patient_name || 'غير محدد'}</td>
                       <td class="status-cell">
-                        <span class="status-badge warning">${treatment.status || 'معلق'}</span>
+                        <span class="status-badge warning">${treatment.status || 'آجل'}</span>
                       </td>
                       <td class="date-cell">${treatment.created_at ? (() => {
                         const date = new Date(treatment.created_at)
@@ -1207,7 +1207,7 @@ export class EnhancedPdfReports {
             </div>
             ${data.pendingTreatments.length > 20 ? `
             <div class="pagination-info">
-              <p>عرض أول 20 علاج من إجمالي ${data.pendingTreatments.length.toLocaleString()} علاج معلق</p>
+              <p>عرض أول 20 علاج من إجمالي ${data.pendingTreatments.length.toLocaleString()} علاج آجل</p>
             </div>
             ` : ''}
           </div>
@@ -1430,7 +1430,7 @@ export class EnhancedPdfReports {
               <span>${formatCurrency(reportData.revenue.partialPayments)}</span>
             </div>
             <div class="breakdown-item">
-              <span>المبالغ المعلقة (غير مدفوعة):</span>
+              <span>المبالغ الآجلة (غير مدفوعة):</span>
               <span>${formatCurrency(reportData.revenue.pendingAmount || 0)}</span>
             </div>
             <div class="breakdown-item">
@@ -1552,7 +1552,7 @@ export class EnhancedPdfReports {
                   <td>${formatCurrency(paidAmount)}</td>
                   <td>${formatCurrency(totalAmount)}</td>
                   <td>${formatCurrency(remainingAmount)}</td>
-                  <td>${payment.status === 'completed' ? 'مكتمل' : payment.status === 'partial' ? 'جزئي' : 'معلق'}</td>
+                  <td>${payment.status === 'completed' ? 'مكتمل' : payment.status === 'partial' ? 'جزئي' : 'آجل'}</td>
                   <td>${payment.payment_method || ''}</td>
                   <td>${payment.payment_date ? formatDate(payment.payment_date) : ''}</td>
                 </tr>
@@ -1561,14 +1561,14 @@ export class EnhancedPdfReports {
             </tbody>
           </table>
 
-          <!-- ملخص المدفوعات المعلقة والمتبقية -->
+          <!-- ملخص المدفوعات الآجلة والمتبقية -->
           <div style="margin-top: 20px; padding: 15px; background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%); border: 2px solid #1a365d; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-            <h4>📊 ملخص المدفوعات المعلقة والمتبقية</h4>
+            <h4>📊 ملخص المدفوعات الآجلة والمتبقية</h4>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
               <div>
-                <strong>إجمالي المدفوعات المعلقة:</strong><br>
+                <strong>إجمالي المدفوعات الآجلة:</strong><br>
                 ${formatCurrency(payments.filter(p => p.status === 'pending').reduce((sum, p) => {
-                  // للمدفوعات المعلقة، استخدم المبلغ الإجمالي المطلوب
+                  // للمدفوعات الآجلة، استخدم المبلغ الإجمالي المطلوب
                   const totalAmountDue = p.total_amount_due || p.treatment_total_cost || 0
                   return sum + totalAmountDue
                 }, 0))}
@@ -1612,7 +1612,7 @@ export class EnhancedPdfReports {
                   <td>${formatCurrency(order.cost || 0)}</td>
                   <td>${formatCurrency(order.paid_amount || 0)}</td>
                   <td>${formatCurrency((order.cost || 0) - (order.paid_amount || 0))}</td>
-                  <td>${order.status === 'completed' ? 'مكتمل' : order.status === 'pending' ? 'معلق' : 'ملغي'}</td>
+                  <td>${order.status === 'completed' ? 'مكتمل' : order.status === 'pending' ? 'آجل' : 'ملغي'}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -1648,7 +1648,7 @@ export class EnhancedPdfReports {
                   <td>${formatCurrency(unitPrice)}</td>
                   <td>${formatCurrency(totalCost)}</td>
                   <td>${need.priority === 'urgent' ? 'عاجل' : need.priority === 'high' ? 'عالي' : need.priority === 'medium' ? 'متوسط' : 'منخفض'}</td>
-                  <td>${need.status === 'received' ? 'مستلم' : need.status === 'ordered' ? 'مطلوب' : 'معلق'}</td>
+                  <td>${need.status === 'received' ? 'مستلم' : need.status === 'ordered' ? 'مطلوب' : 'آجل'}</td>
                   <td>${need.created_at ? formatDate(need.created_at) : ''}</td>
                 </tr>
                 `

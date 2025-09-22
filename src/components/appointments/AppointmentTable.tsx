@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, memo } from 'react'
 import { Appointment, Patient } from '@/types'
 import { useToast } from '@/hooks/use-toast'
 import {
@@ -45,7 +45,7 @@ interface AppointmentTableProps {
 type SortField = 'patient_name' | 'start_time' | 'end_time' | 'status' | 'title'
 type SortDirection = 'asc' | 'desc'
 
-export default function AppointmentTable({
+function AppointmentTableComponent({
   appointments,
   patients,
   isLoading,
@@ -73,9 +73,9 @@ export default function AppointmentTable({
 
   // Enhanced appointments with patient data and filtering
   const enhancedAppointments = useMemo(() => {
-    console.log('📋 AppointmentTable: Processing appointments:', appointments.length)
+    if (process.env.NODE_ENV !== 'production') console.log('📋 AppointmentTable: Processing appointments:', appointments.length)
     if (appointments.length > 0) {
-      console.log('📋 AppointmentTable: First appointment sample:', appointments[0])
+      if (process.env.NODE_ENV !== 'production') console.log('📋 AppointmentTable: First appointment sample:', appointments[0])
     }
 
     let filtered = appointments.map(appointment => {
@@ -86,7 +86,7 @@ export default function AppointmentTable({
         patient_name: appointment.patient_name || appointment.patient?.full_name || patientMap.get(appointment.patient_id)?.full_name || 'مريض غير معروف'
       }
 
-      if (appointment.patient_name === 'مريض غير معروف') {
+      if (appointment.patient_name === 'مريض غير معروف' && process.env.NODE_ENV !== 'production') {
         console.log('⚠️ AppointmentTable: Unknown patient for appointment:', {
           id: appointment.id,
           patient_id: appointment.patient_id,
@@ -504,3 +504,5 @@ export default function AppointmentTable({
     </div>
   )
 }
+
+export default memo(AppointmentTableComponent)

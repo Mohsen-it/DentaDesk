@@ -80,7 +80,7 @@ const AddExpenseDialog: React.FC<AddExpenseDialogProps> = ({
   ]
 
   const statusOptions = [
-    { value: 'pending', label: 'معلق' },
+    { value: 'pending', label: 'آجل' },
     { value: 'paid', label: 'مدفوع' },
     { value: 'overdue', label: 'متأخر' },
     { value: 'cancelled', label: 'ملغي' }

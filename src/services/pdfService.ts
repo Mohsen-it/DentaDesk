@@ -1884,7 +1884,7 @@ export class PdfService {
   }
 
   /**
-   * تصدير فاتورة المدفوعات المعلقة الشاملة كـ PDF
+   * تصدير فاتورة المدفوعات الآجلة الشاملة كـ PDF
    */
   static async exportComprehensivePendingInvoice(invoiceData: any): Promise<void> {
     try {
@@ -1893,12 +1893,12 @@ export class PdfService {
       await this.convertHTMLToPDF(htmlContent, fileName)
     } catch (error) {
       console.error('Error exporting comprehensive pending invoice:', error)
-      throw new Error('فشل في تصدير فاتورة المدفوعات المعلقة')
+      throw new Error('فشل في تصدير فاتورة المدفوعات الآجلة')
     }
   }
 
   /**
-   * إنشاء HTML لفاتورة المدفوعات المعلقة الشاملة
+   * إنشاء HTML لفاتورة المدفوعات الآجلة الشاملة
    */
   private static createComprehensivePendingInvoiceHTML(invoiceData: any): string {
     const { patient, summary, settings: invoiceSettings, clinic_info } = invoiceData
@@ -1964,7 +1964,7 @@ export class PdfService {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>فاتورة المدفوعات المعلقة - ${patient.full_name}</title>
+      <title>فاتورة المدفوعات الآجلة - ${patient.full_name}</title>
       <style>
         * {
           margin: 0;
@@ -2193,7 +2193,7 @@ export class PdfService {
       <div class="invoice-container">
         <!-- رأس الفاتورة -->
         <div class="header">
-          <h1>فاتورة المدفوعات المعلقة الشاملة</h1>
+          <h1>فاتورة المدفوعات الآجلة الشاملة</h1>
           <div class="invoice-info">
             <div>رقم الفاتورة: ${invoiceData.invoice_number}</div>
             <div>تاريخ الإصدار: ${formatDate(invoiceData.invoice_date)}</div>
@@ -2226,10 +2226,10 @@ export class PdfService {
           </div>
         </div>
 
-        <!-- تفاصيل المدفوعات المعلقة -->
+        <!-- تفاصيل المدفوعات الآجلة -->
         <div class="items-section">
           <div class="items-header">
-            <h3>تفاصيل المدفوعات المعلقة</h3>
+            <h3>تفاصيل المدفوعات الآجلة</h3>
             <div class="items-badge">${summary.total_items} عنصر</div>
           </div>
 
@@ -2885,7 +2885,7 @@ export class PdfService {
             <div class="number">$${data.totalRevenue?.toLocaleString() || 0}</div>
           </div>
           <div class="summary-card">
-            <h3>المدفوعات المعلقة</h3>
+            <h3>المدفوعات الآجلة</h3>
             <div class="number">$${data.pendingPayments?.toLocaleString() || 0}</div>
           </div>
           <div class="summary-card">
@@ -3857,7 +3857,7 @@ export class PdfService {
       const rows = appointments.map((appointment: any) => {
         const statusText = appointment.status === 'completed' ? 'مكتمل' :
                           appointment.status === 'scheduled' ? 'مجدول' :
-                          appointment.status === 'cancelled' ? 'ملغي' : 'معلق'
+                          appointment.status === 'cancelled' ? 'ملغي' : 'آجل'
 
         return `
           <tr>
@@ -4056,7 +4056,7 @@ export class PdfService {
 
       labOrders.forEach((labOrder: any) => {
         const statusText = labOrder.status === 'completed' ? 'مكتمل' :
-                          labOrder.status === 'in_progress' ? 'قيد التنفيذ' : 'معلق'
+                          labOrder.status === 'in_progress' ? 'قيد التنفيذ' : 'آجل'
 
         htmlContent += `
             <tr>
@@ -4350,7 +4350,7 @@ export class PdfService {
             <div class="value">${formatCurrency(data.totalValue || 0)}</div>
           </div>
           <div class="stat-card">
-            <h3>الاحتياجات المعلقة</h3>
+            <h3>الاحتياجات الآجلة</h3>
             <div class="value">${data.pendingCount || 0}</div>
           </div>
           <div class="stat-card">
@@ -4497,7 +4497,7 @@ export class PdfService {
 
         ${data.pendingNeeds && data.pendingNeeds.length > 0 ? `
         <div class="section">
-          <h2>الاحتياجات المعلقة</h2>
+          <h2>الاحتياجات الآجلة</h2>
           <table class="table">
             <thead>
               <tr>
@@ -4775,7 +4775,7 @@ export class PdfService {
               </div>
             </div>
             <div class="summary-card">
-              <h3>المبالغ المعلقة</h3>
+              <h3>المبالغ الآجلة</h3>
               <div class="number warning">${formatCurrency(data.totalPending || 0)}</div>
             </div>
             <div class="summary-card">
@@ -4827,7 +4827,7 @@ export class PdfService {
               <div class="number warning">${data.partialPayments || 0}</div>
             </div>
             <div class="summary-card">
-              <h3>المعاملات المعلقة</h3>
+              <h3>المعاملات الآجلة</h3>
               <div class="number">${data.pendingPayments || 0}</div>
             </div>
             <div class="summary-card">
@@ -5208,7 +5208,7 @@ export class PdfService {
                            payment.appointment_id ? 'موعد' : 'دفعة عامة'
 
         const statusText = payment.status === 'completed' ? 'مكتمل' :
-                          payment.status === 'partial' ? 'جزئي' : 'معلق'
+                          payment.status === 'partial' ? 'جزئي' : 'آجل'
 
         const methodText = payment.payment_method === 'cash' ? 'نقدي' : 'تحويل بنكي'
 
@@ -5737,7 +5737,7 @@ export class PdfService {
         const statusText = appointment.status === 'completed' ? 'مكتمل' :
                           appointment.status === 'cancelled' ? 'ملغي' :
                           appointment.status === 'scheduled' ? 'مجدول' :
-                          appointment.status === 'no_show' ? 'لم يحضر' : 'معلق'
+                          appointment.status === 'no_show' ? 'لم يحضر' : 'آجل'
 
         // استخدام start_time للتاريخ والوقت
         const dateTime = formatDateTime(appointment.start_time)

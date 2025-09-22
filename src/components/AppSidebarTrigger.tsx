@@ -1,5 +1,6 @@
 import * as React from "react"
 import { X } from "lucide-react"
+const __DEV__ = process.env.NODE_ENV !== 'production'
 
 import { Button } from "@/components/ui/button"
 import { useSidebar } from "@/components/ui/sidebar"
@@ -8,7 +9,7 @@ export function AppSidebarTrigger() {
   const { toggleSidebar, open } = useSidebar()
 
   const handleClick = () => {
-    console.log('SidebarTrigger clicked, current state:', open)
+    __DEV__ && console.log('SidebarTrigger clicked, current state:', open)
     toggleSidebar()
   }
 

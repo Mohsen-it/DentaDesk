@@ -13,7 +13,7 @@ import {
 import { getTreatmentNameInArabic } from '@/data/teethData'
 
 /**
- * خدمة حسابات المدفوعات المعلقة
+ * خدمة حسابات المدفوعات الآجلة
  * تضمن دقة الحسابات ومنع الأخطاء المحاسبية
  */
 export class PendingPaymentsService {
@@ -66,7 +66,7 @@ export class PendingPaymentsService {
   }
 
   /**
-   * فلترة المدفوعات المعلقة حسب التاريخ
+   * فلترة المدفوعات الآجلة حسب التاريخ
    */
   static filterPaymentsByDate(
     payments: Payment[],
@@ -79,7 +79,7 @@ export class PendingPaymentsService {
   }
 
   /**
-   * الحصول على المدفوعات المعلقة لمريض محدد
+   * الحصول على المدفوعات الآجلة لمريض محدد
    */
   static async getPatientPendingPayments(
     patientId: string,
@@ -96,7 +96,7 @@ export class PendingPaymentsService {
       const safeAppointments = appointments || []
       const safeTreatments = treatments || []
 
-      // فلترة المدفوعات المعلقة للمريض
+      // فلترة المدفوعات الآجلة للمريض
       const patientPendingPayments = safePayments.filter(payment =>
         payment.patient_id === patientId &&
         payment.status === 'pending'
@@ -129,10 +129,10 @@ export class PendingPaymentsService {
         const allRelatedTreatments = directTreatment ? [directTreatment] : appointmentTreatments
 
         // إنشاء عنصر فاتورة للدفعة
-        // للمدفوعات المعلقة، استخدام المبلغ الإجمالي المطلوب إذا كان المبلغ المدفوع 0
+        // للمدفوعات الآجلة، استخدام المبلغ الإجمالي المطلوب إذا كان المبلغ المدفوع 0
         const paymentAmount = payment.amount || 0
 
-        // تحديد المبلغ المعلق حسب نوع الدفعة
+        // تحديد المبلغ الآجل حسب نوع الدفعة
         let pendingAmount = paymentAmount
         let totalAmountDue = 0
         let remainingBalance = 0
@@ -267,22 +267,22 @@ export class PendingPaymentsService {
         pendingItems.push(item)
       }
 
-      // لا حاجة لإضافة أي شيء آخر - فقط المدفوعات المعلقة من جدول المدفوعات
+      // لا حاجة لإضافة أي شيء آخر - فقط المدفوعات الآجلة من جدول المدفوعات
 
       return pendingItems.sort((a, b) =>
         new Date(a.payment_date).getTime() - new Date(b.payment_date).getTime()
       )
 
     } catch (error) {
-      console.error('خطأ في جلب المدفوعات المعلقة:', error)
-      throw new Error('فشل في جلب المدفوعات المعلقة')
+      console.error('خطأ في جلب المدفوعات الآجلة:', error)
+      throw new Error('فشل في جلب المدفوعات الآجلة')
     }
   }
 
 
 
   /**
-   * حساب ملخص المدفوعات المعلقة مع الخصومات والضرائب
+   * حساب ملخص المدفوعات الآجلة مع الخصومات والضرائب
    */
   static calculatePendingPaymentsSummary(
     patientId: string,

@@ -67,7 +67,7 @@ const ClinicNeedsTable: React.FC<ClinicNeedsTableProps> = ({
   }
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      pending: { label: 'معلق', variant: 'secondary' as const, icon: Clock },
+      pending: { label: 'آجل', variant: 'secondary' as const, icon: Clock },
       ordered: { label: 'مطلوب', variant: 'default' as const, icon: ShoppingCart },
       received: { label: 'مستلم', variant: 'default' as const, icon: CheckCircle },
       cancelled: { label: 'ملغي', variant: 'destructive' as const, icon: AlertTriangle }

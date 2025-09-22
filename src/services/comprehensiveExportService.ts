@@ -156,7 +156,7 @@ export class ComprehensiveExportService {
     // إجمالي الإيرادات
     const totalRevenue = completedPayments + partialPayments
 
-    // المبالغ المتبقية من المدفوعات الجزئية والمعلقة
+    // المبالغ المتبقية من المدفوعات الجزئية والآجلة
     const remainingBalances = validateAmount(
       payments
         .filter(p => (p.status === 'partial' || p.status === 'pending') &&
@@ -168,7 +168,7 @@ export class ComprehensiveExportService {
         }, 0)
     )
 
-    // المدفوعات المعلقة
+    // المدفوعات الآجلة
     const pendingAmount = payments
       .filter(p => p.status === 'pending')
       .reduce((sum, payment) => {
@@ -289,7 +289,7 @@ export class ComprehensiveExportService {
       }
     })
 
-    // المدفوعات المتأخرة (المدفوعات المعلقة التي تجاوز تاريخ دفعها 30 يوماً)
+    // المدفوعات المتأخرة (المدفوعات الآجلة التي تجاوز تاريخ دفعها 30 يوماً)
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
@@ -583,7 +583,7 @@ export class ComprehensiveExportService {
    */
   private static calculateLabOrderStats(labOrders: LabOrder[]) {
     const total = labOrders.length
-    const pending = labOrders.filter(order => order.status === 'معلق').length
+    const pending = labOrders.filter(order => order.status === 'آجل').length
     const completed = labOrders.filter(order => order.status === 'مكتمل').length
     const cancelled = labOrders.filter(order => order.status === 'ملغي').length
 
@@ -790,7 +790,7 @@ export class ComprehensiveExportService {
     csv += `إجمالي الإيرادات,${formatCurrency(financialStats.totalRevenue)}\n`
     csv += `المدفوعات المكتملة,${formatCurrency(financialStats.completedAmount)}\n`
     csv += `المدفوعات الجزئية,${formatCurrency(financialStats.partialAmount)}\n`
-    csv += `المدفوعات المعلقة,${formatCurrency(financialStats.pendingAmount)}\n`
+    csv += `المدفوعات الآجلة,${formatCurrency(financialStats.pendingAmount)}\n`
     csv += `المدفوعات المتأخرة,${formatCurrency(financialStats.overdueAmount)}\n`
 
     // إضافة المبالغ المتبقية من الدفعات الجزئية
@@ -1059,7 +1059,7 @@ export class ComprehensiveExportService {
       'cancelled': 'ملغي',
       'no-show': 'لم يحضر',
       'confirmed': 'مؤكد',
-      'pending': 'معلق'
+      'pending': 'آجل'
     }
     return statusMap[status] || status
   }
@@ -1448,7 +1448,7 @@ export class ComprehensiveExportService {
     csv += `المدفوعات الجزئية,${formatCurrency(data.stats.partialPayments || 0)}\n`
     csv += `إجمالي الإيرادات,${formatCurrency(data.stats.totalRevenue || 0)}\n`
     csv += `المبالغ المتبقية من المدفوعات الجزئية,${formatCurrency(data.stats.remainingBalances || 0)}\n`
-    csv += `المدفوعات المعلقة,${formatCurrency(data.stats.pendingAmount || 0)}\n\n`
+    csv += `المدفوعات الآجلة,${formatCurrency(data.stats.pendingAmount || 0)}\n\n`
 
     // المصروفات
     csv += 'المصروفات\n'
@@ -1588,7 +1588,7 @@ export class ComprehensiveExportService {
     csv += 'تحليل طلبات المخابر\n'
     csv += '==================\n'
     csv += `إجمالي طلبات المخابر,${data.stats.totalLabOrders || 0}\n`
-    csv += `الطلبات المعلقة,${data.stats.pendingLabOrders || 0}\n`
+    csv += `الطلبات الآجلة,${data.stats.pendingLabOrders || 0}\n`
     csv += `الطلبات المكتملة,${data.stats.completedLabOrders || 0}\n`
     csv += `الطلبات الملغية,${data.stats.cancelledLabOrders || 0}\n`
     csv += `معدل إنجاز طلبات المخابر,${data.stats.labOrdersCompletionRate || 0}%\n`
@@ -1638,7 +1638,7 @@ export class ComprehensiveExportService {
     csv += 'تحليل احتياجات العيادة\n'
     csv += '=====================\n'
     csv += `إجمالي الاحتياجات,${data.stats.totalClinicNeeds || 0}\n`
-    csv += `الاحتياجات المعلقة,${data.stats.pendingNeeds || 0}\n`
+    csv += `الاحتياجات الآجلة,${data.stats.pendingNeeds || 0}\n`
     csv += `الاحتياجات المطلوبة,${data.stats.orderedNeeds || 0}\n`
     csv += `الاحتياجات المستلمة,${data.stats.receivedNeeds || 0}\n`
     csv += `الاحتياجات الملغية,${data.stats.cancelledNeeds || 0}\n`
@@ -1689,7 +1689,7 @@ export class ComprehensiveExportService {
                         need.priority === 'high' ? 'عالي' :
                         need.priority === 'medium' ? 'متوسط' :
                         need.priority === 'low' ? 'منخفض' : (need.priority || 'غير محدد')
-        const status = need.status === 'pending' ? 'معلق' :
+        const status = need.status === 'pending' ? 'آجل' :
                       need.status === 'ordered' ? 'مطلوب' :
                       need.status === 'received' ? 'مستلم' :
                       need.status === 'cancelled' ? 'ملغي' : (need.status || 'غير محدد')
@@ -1958,7 +1958,7 @@ export class ComprehensiveExportService {
         ['إجمالي الإيرادات', formatCurrency(financialStats.totalRevenue || 0)],
         ['المدفوعات المكتملة', formatCurrency(financialStats.completedPayments || 0)],
         ['المدفوعات الجزئية', formatCurrency(financialStats.partialPayments || 0)],
-        ['المبالغ المعلقة', formatCurrency(financialStats.pendingAmount || 0)],
+        ['المبالغ الآجلة', formatCurrency(financialStats.pendingAmount || 0)],
         ['إجمالي المصروفات', formatCurrency(financialStats.totalExpenses || 0)],
         ['صافي الربح/الخسارة', formatCurrency(financialStats.netProfit || 0)]
       ]
@@ -2214,7 +2214,7 @@ export class ComprehensiveExportService {
       ['إجمالي الإيرادات', formatCurrency(totalRevenue)],
       ['المدفوعات المكتملة', completedPayments.length],
       ['المدفوعات الجزئية', partialPayments.length],
-      ['المدفوعات المعلقة', pendingPayments.length]
+      ['المدفوعات الآجلة', pendingPayments.length]
     ]
 
     worksheet.getCell(`A${currentRow}`).value = 'إحصائيات المدفوعات'
@@ -2553,7 +2553,7 @@ export class ComprehensiveExportService {
       ['إجمالي الاحتياجات', data.clinicNeeds.length],
       ['إجمالي التكلفة المتوقعة', formatCurrency(totalCost)],
       ['الاحتياجات العاجلة', urgentNeeds],
-      ['الاحتياجات المعلقة', pendingNeeds]
+      ['الاحتياجات الآجلة', pendingNeeds]
     ]
 
     worksheet.getCell(`A${currentRow}`).value = 'إحصائيات احتياجات العيادة'
@@ -2598,7 +2598,7 @@ export class ComprehensiveExportService {
       }
 
       const statusLabels = {
-        pending: 'معلق',
+        pending: 'آجل',
         ordered: 'تم الطلب',
         received: 'تم الاستلام'
       }
@@ -2667,7 +2667,7 @@ export class ComprehensiveExportService {
       ['إجمالي المصروفات', data.expenses.length],
       ['إجمالي المبلغ', formatCurrency(totalExpenses)],
       ['المصروفات المدفوعة', paidExpenses.length],
-      ['المصروفات المعلقة', pendingExpenses.length]
+      ['المصروفات الآجلة', pendingExpenses.length]
     ]
 
     worksheet.getCell(`A${currentRow}`).value = 'إحصائيات مصروفات العيادة'
@@ -2728,7 +2728,7 @@ export class ComprehensiveExportService {
         formatCurrency(expense.amount || 0),
         methodMapping[expense.payment_method as keyof typeof methodMapping] || expense.payment_method || 'غير محدد',
         expense.vendor || 'غير محدد',
-        expense.status === 'paid' ? 'مدفوع' : 'معلق'
+        expense.status === 'paid' ? 'مدفوع' : 'آجل'
       ]
 
       rowData.forEach((value, colIndex) => {
@@ -2832,7 +2832,7 @@ export class ComprehensiveExportService {
     const revenueData = [
       ['المدفوعات المكتملة', `${completedPayments.length} (${formatCurrency(completedPayments.reduce((sum: number, p: any) => sum + (p.amount || 0), 0))})`],
       ['المدفوعات الجزئية', `${partialPayments.length} (${formatCurrency(partialPayments.reduce((sum: number, p: any) => sum + (p.amount || 0), 0))})`],
-      ['المدفوعات المعلقة', `${pendingPayments.length} (${formatCurrency(pendingPayments.reduce((sum: number, p: any) => sum + (p.amount || 0), 0))})`]
+      ['المدفوعات الآجلة', `${pendingPayments.length} (${formatCurrency(pendingPayments.reduce((sum: number, p: any) => sum + (p.amount || 0), 0))})`]
     ]
 
     revenueData.forEach(([label, value]) => {
@@ -2875,7 +2875,7 @@ export class ComprehensiveExportService {
     const statusMap: { [key: string]: string } = {
       'completed': 'مكتمل',
       'partial': 'جزئي',
-      'pending': 'معلق',
+      'pending': 'آجل',
       'overdue': 'متأخر',
       'cancelled': 'ملغي'
     }

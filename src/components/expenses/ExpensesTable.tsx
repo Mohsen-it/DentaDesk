@@ -185,7 +185,7 @@ export default function ExpensesTable({
   const getStatusName = (status: string) => {
     const statusMap: { [key: string]: string } = {
       'paid': 'مدفوع',
-      'pending': 'معلق',
+      'pending': 'آجل',
       'overdue': 'متأخر',
       'cancelled': 'ملغي'
     }

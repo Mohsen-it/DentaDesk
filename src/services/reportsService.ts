@@ -517,7 +517,7 @@ export class ReportsService {
     const totalPending = filteredPayments
       .filter(p => p.status === 'pending')
       .reduce((sum, p) => {
-        // للمدفوعات المعلقة، استخدام المبلغ الإجمالي المطلوب إذا كان المبلغ المدفوع 0
+        // للمدفوعات الآجلة، استخدام المبلغ الإجمالي المطلوب إذا كان المبلغ المدفوع 0
         const amount = validateAmount(p.amount)
         const totalAmountDue = validateAmount(p.total_amount_due)
 

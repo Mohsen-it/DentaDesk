@@ -276,11 +276,11 @@ export default function Labs() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'معلق':
+      case 'آجل':
         return (
           <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
             <Clock className="w-3 h-3 mr-1" />
-            معلق
+            آجل
           </Badge>
         )
       case 'مكتمل':
@@ -459,7 +459,7 @@ export default function Labs() {
         <Card className={getCardStyles('yellow')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2" dir="rtl">
             <CardTitle className="text-sm font-medium text-muted-foreground text-right">
-              {labOrderStats.timeFilter.preset === 'all' || (!labOrderStats.timeFilter.startDate && !labOrderStats.timeFilter.endDate) ? 'طلبات معلقة' : 'طلبات معلقة مفلترة'}
+              {labOrderStats.timeFilter.preset === 'all' || (!labOrderStats.timeFilter.startDate && !labOrderStats.timeFilter.endDate) ? 'طلبات آجلة' : 'طلبات آجلة مفلترة'}
             </CardTitle>
             <Clock className={`h-4 w-4 ${getIconStyles('yellow')}`} />
           </CardHeader>
@@ -467,12 +467,12 @@ export default function Labs() {
             <div className="text-2xl font-bold text-foreground">
               {labOrderStats.timeFilter.preset === 'all' || (!labOrderStats.timeFilter.startDate && !labOrderStats.timeFilter.endDate)
                 ? pendingOrders
-                : labOrderStats.filteredData.filter(order => order.status === 'معلق').length}
+                : labOrderStats.filteredData.filter(order => order.status === 'آجل').length}
             </div>
             <p className="text-xs text-muted-foreground">
               {labOrderStats.timeFilter.preset === 'all' || (!labOrderStats.timeFilter.startDate && !labOrderStats.timeFilter.endDate)
                 ? 'في انتظار الإنجاز'
-                : 'معلقة في الفترة المحددة'}
+                : 'آجلة في الفترة المحددة'}
             </p>
           </CardContent>
         </Card>
@@ -576,7 +576,7 @@ export default function Labs() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">جميع الحالات</SelectItem>
-                        <SelectItem value="معلق">معلق</SelectItem>
+                        <SelectItem value="آجل">آجل</SelectItem>
                         <SelectItem value="مكتمل">مكتمل</SelectItem>
                         <SelectItem value="ملغي">ملغي</SelectItem>
                       </SelectContent>

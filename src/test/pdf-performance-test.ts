@@ -90,7 +90,7 @@ export class DatabasePerformanceTest {
       service_name: `خدمة مختبر تجريبية ${i + 1}`,
       cost: 3000 + (i * 100),
       order_date: new Date(2024, 0, i % 30 + 1).toISOString(),
-      status: ['معلق', 'مكتمل', 'ملغي'][i % 3],
+      status: ['آجل', 'مكتمل', 'ملغي'][i % 3],
       notes: `طلب مختبر تجريبي ${i + 1}`,
       paid_amount: i % 2 === 0 ? 3000 + (i * 100) : 0,
       remaining_balance: i % 2 === 0 ? 0 : 3000 + (i * 100),
@@ -231,7 +231,7 @@ export class DatabasePerformanceTest {
       console.log(`👥 إجمالي المرضى: ${storeStats.totalPatients}`)
       console.log(`📅 إجمالي المواعيد: ${storeStats.totalAppointments}`)
       console.log(`💰 إجمالي الإيرادات: ${storeStats.totalRevenue.toLocaleString()} ل.س`)
-      console.log(`⏳ المدفوعات المعلقة: ${storeStats.pendingPayments}`)
+      console.log(`⏳ المدفوعات الآجلة: ${storeStats.pendingPayments}`)
       console.log(`📆 مواعيد اليوم: ${storeStats.todayAppointments}`)
       console.log(`📈 إيرادات الشهر: ${storeStats.thisMonthRevenue.toLocaleString()} ل.س`)
 

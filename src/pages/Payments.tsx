@@ -228,7 +228,7 @@ export default function Payments() {
                 const getStatusLabel = (status: string) => {
                   const statusLabels = {
                     completed: 'مكتمل',
-                    pending: 'معلق',
+                    pending: 'آجل',
                     partial: 'جزئي',
                     overdue: 'متأخر',
                     failed: 'فاشل',
@@ -361,8 +361,8 @@ export default function Payments() {
             </div>
             <p className="text-xs text-muted-foreground">
               {paymentStats.timeFilter.preset === 'all' || (!paymentStats.timeFilter.startDate && !paymentStats.timeFilter.endDate)
-                ? 'من العلاجات والمواعيد المعلقة'
-                : 'من العلاجات والمواعيد المعلقة في الفترة المحددة'}
+                ? 'من العلاجات والمواعيد الآجلة'
+                : 'من العلاجات والمواعيد الآجلة في الفترة المحددة'}
             </p>
           </CardContent>
         </Card>
@@ -616,7 +616,7 @@ export default function Payments() {
                 <SelectContent>
                   <SelectItem value="all">جميع الحالات</SelectItem>
                   <SelectItem value="completed">مكتمل</SelectItem>
-                  <SelectItem value="pending">معلق</SelectItem>
+                  <SelectItem value="pending">آجل</SelectItem>
                   <SelectItem value="partial">جزئي</SelectItem>
                   <SelectItem value="overdue">متأخر</SelectItem>
                   <SelectItem value="failed">فاشل</SelectItem>

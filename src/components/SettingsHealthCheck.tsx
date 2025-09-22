@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, memo } from 'react'
 import { AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react'
 import { useSettingsStore } from '../store/settingsStore'
+import { shallow } from 'zustand/shallow'
 import { Button } from './ui/button'
 import { Alert, AlertDescription } from './ui/alert'
 
@@ -12,7 +13,9 @@ interface SettingsHealthStatus {
 }
 
 export function SettingsHealthCheck() {
-  const { settings, loadSettings, isLoading } = useSettingsStore()
+  const settings = useSettingsStore(state => state.settings)
+  const loadSettings = useSettingsStore(state => state.loadSettings)
+  const isLoading = useSettingsStore(state => state.isLoading)
   const [healthStatus, setHealthStatus] = useState<SettingsHealthStatus>({
     hasValidSettings: false,
     hasBackup: false,

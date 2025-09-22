@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, memo } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -30,13 +30,14 @@ interface AddPaymentDialogProps {
   preSelectedPatientId?: string
 }
 
-export default function AddPaymentDialog({ open, onOpenChange, preSelectedPatientId }: AddPaymentDialogProps) {
+function AddPaymentDialogComponent({ open, onOpenChange, preSelectedPatientId }: AddPaymentDialogProps) {
 
   const { toast } = useToast()
   const { createPayment, updatePayment, isLoading, getPaymentsByPatient, getPaymentsByAppointment, getPaymentsByToothTreatment } = usePaymentStore()
-  const { patients } = usePatientStore()
-  const { appointments } = useAppointmentStore()
-  const { toothTreatments, loadToothTreatmentsByPatient } = useDentalTreatmentStore()
+  const patients = usePatientStore(state => state.patients)
+  const appointments = useAppointmentStore(state => state.appointments)
+  const toothTreatments = useDentalTreatmentStore(state => state.toothTreatments)
+  const loadToothTreatmentsByPatient = useDentalTreatmentStore(state => state.loadToothTreatmentsByPatient)
   const { formatAmount } = useCurrency()
 
   const [formData, setFormData] = useState({
@@ -311,7 +312,7 @@ export default function AddPaymentDialog({ open, onOpenChange, preSelectedPatien
       newErrors.patient_id = 'يرجى اختيار المريض'
     }
 
-    // التحقق من المبلغ - يمكن أن يكون 0 إذا كان هناك مبلغ إجمالي مطلوب (دفعة معلقة)
+    // التحقق من المبلغ - يمكن أن يكون 0 إذا كان هناك مبلغ إجمالي مطلوب (دفعة آجلة)
     const amount = formData.amount ? parseFloat(formData.amount) : 0
     const totalAmountDue = formData.total_amount_due ? parseFloat(formData.total_amount_due) : 0
 
@@ -331,7 +332,7 @@ export default function AddPaymentDialog({ open, onOpenChange, preSelectedPatien
       newErrors.total_amount_due = 'المبلغ الإجمالي المطلوب يجب أن يكون أكبر من صفر'
     }
 
-    console.log('🔍 Validation check:', {
+    if (process.env.NODE_ENV !== 'production') console.log('🔍 Validation check:', {
       total_amount_due: formData.total_amount_due,
       amount: formData.amount,
       patient_id: formData.patient_id,
@@ -374,15 +375,17 @@ export default function AddPaymentDialog({ open, onOpenChange, preSelectedPatien
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    console.log('🚀 Starting form submission...')
-    console.log('📝 Current form data:', formData)
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('🚀 Starting form submission...')
+      console.log('📝 Current form data:', formData)
+    }
 
     if (!validateForm()) {
       console.log('❌ Form validation failed')
       return
     }
 
-    console.log('✅ Form validation passed')
+    if (process.env.NODE_ENV !== 'production') console.log('✅ Form validation passed')
 
     try {
       // التأكد من أن amount رقم صحيح، استخدام 0 كقيمة افتراضية
@@ -442,10 +445,12 @@ export default function AddPaymentDialog({ open, onOpenChange, preSelectedPatien
         paymentData.remaining_balance = remainingBalance
       }
 
-      console.log('💰 Submitting payment data:', paymentData)
-      console.log('📊 Form data before submit:', formData)
-      console.log('🔍 Total amount due being sent:', totalAmountDue)
-      console.log('🔍 Payment data total_amount_due:', paymentData.total_amount_due)
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('💰 Submitting payment data:', paymentData)
+        console.log('📊 Form data before submit:', formData)
+        console.log('🔍 Total amount due being sent:', totalAmountDue)
+        console.log('🔍 Payment data total_amount_due:', paymentData.total_amount_due)
+      }
 
       let result
 
@@ -454,7 +459,7 @@ export default function AddPaymentDialog({ open, onOpenChange, preSelectedPatien
         const existingPayments = getPaymentsByToothTreatment(formData.tooth_treatment_id)
 
         if (existingPayments.length > 0) {
-          // البحث عن دفعة معلقة أولاً، وإلا استخدم أول دفعة موجودة
+          // البحث عن دفعة آجلة أولاً، وإلا استخدم أول دفعة موجودة
           const pendingPayment = existingPayments.find(p => p.status === 'pending')
           const targetPayment = pendingPayment || existingPayments[0]
 
@@ -488,18 +493,18 @@ export default function AddPaymentDialog({ open, onOpenChange, preSelectedPatien
             treatment_remaining_balance: Math.max(0, totalAmountDue - updatedAmount)
           }
 
-          console.log('🔄 Updating existing payment for treatment:', targetPayment.id, updateData)
+          if (process.env.NODE_ENV !== 'production') console.log('🔄 Updating existing payment for treatment:', targetPayment.id, updateData)
           result = await updatePayment(targetPayment.id, updateData)
-          console.log('✅ Payment updated successfully:', result)
+          if (process.env.NODE_ENV !== 'production') console.log('✅ Payment updated successfully:', result)
         } else {
           // إنشاء دفعة جديدة إذا لم توجد دفعة للعلاج
           result = await createPayment(paymentData)
-          console.log('✅ Payment created successfully:', result)
+          if (process.env.NODE_ENV !== 'production') console.log('✅ Payment created successfully:', result)
         }
       } else {
         // للمدفوعات غير المرتبطة بعلاج، إنشاء دفعة جديدة
         result = await createPayment(paymentData)
-        console.log('✅ Payment created successfully:', result)
+        if (process.env.NODE_ENV !== 'production') console.log('✅ Payment created successfully:', result)
       }
 
       // رسالة نجاح مخصصة حسب نوع العملية
@@ -531,7 +536,7 @@ export default function AddPaymentDialog({ open, onOpenChange, preSelectedPatien
 
       onOpenChange(false)
     } catch (error) {
-      console.error('❌ Failed to submit payment:', error)
+      if (process.env.NODE_ENV !== 'production') console.error('❌ Failed to submit payment:', error)
       toast({
         title: 'خطأ',
         description: error instanceof Error ? error.message : 'فشل في تسجيل الدفعة',
@@ -813,7 +818,7 @@ export default function AddPaymentDialog({ open, onOpenChange, preSelectedPatien
                     {formData.amount && parseFloat(formData.amount) > 0 && (
                       <span className="text-xs text-muted-foreground mr-2">
                         (مقترح: {getSuggestedStatus() === 'completed' ? 'مكتمل' :
-                                getSuggestedStatus() === 'partial' ? 'جزئي' : 'معلق'})
+                                getSuggestedStatus() === 'partial' ? 'جزئي' : 'آجل'})
                       </span>
                     )}
                   </Label>
@@ -845,7 +850,7 @@ export default function AddPaymentDialog({ open, onOpenChange, preSelectedPatien
                       </SelectItem>
                       <SelectItem value="pending">
                         <div className="flex items-center gap-2">
-                          <span>معلق</span>
+                          <span>آجل</span>
                           {getSuggestedStatus() === 'pending' && (
                             <span className="text-xs text-blue-600">✓ مقترح</span>
                           )}
@@ -1116,3 +1121,5 @@ export default function AddPaymentDialog({ open, onOpenChange, preSelectedPatien
     </Dialog>
   )
 }
+
+export default memo(AddPaymentDialogComponent)

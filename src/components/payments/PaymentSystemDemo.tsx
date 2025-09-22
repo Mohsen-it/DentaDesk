@@ -149,7 +149,7 @@ export default function PaymentSystemDemo() {
                   className="arabic-enhanced"
                 >
                   {paymentStatus === 'completed' ? 'مكتمل' : 
-                   paymentStatus === 'partial' ? 'جزئي' : 'معلق'}
+                   paymentStatus === 'partial' ? 'جزئي' : 'آجل'}
                 </Badge>
               </div>
 

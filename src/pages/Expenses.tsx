@@ -265,7 +265,7 @@ export default function Expenses() {
           color="green"
         />
         <StatCard
-          title="المعلق"
+          title="الآجل"
           value={<CurrencyDisplay amount={analytics.pendingAmount} />}
           icon={<Clock />}
           color="yellow"
@@ -326,7 +326,7 @@ export default function Expenses() {
                       <SelectContent>
                         <SelectItem value="all">جميع الحالات</SelectItem>
                         <SelectItem value="paid">مدفوع</SelectItem>
-                        <SelectItem value="pending">معلق</SelectItem>
+                        <SelectItem value="pending">آجل</SelectItem>
                         <SelectItem value="overdue">متأخر</SelectItem>
                         <SelectItem value="cancelled">ملغي</SelectItem>
                       </SelectContent>

@@ -63,7 +63,7 @@ export default function ExpenseDetailsModal({
   const getStatusName = (status: string) => {
     const statusMap: { [key: string]: string } = {
       'paid': 'مدفوع',
-      'pending': 'معلق',
+      'pending': 'آجل',
       'overdue': 'متأخر',
       'cancelled': 'ملغي'
     }

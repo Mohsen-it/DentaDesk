@@ -76,7 +76,7 @@ export default function DeletePaymentDialog({ open, onOpenChange, payment }: Del
     const statuses = {
       completed: 'مكتمل',
       partial: 'جزئي',
-      pending: 'معلق'
+      pending: 'آجل'
     }
     return statuses[status as keyof typeof statuses] || status
   }

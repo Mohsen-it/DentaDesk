@@ -78,7 +78,7 @@ export default function PaymentDetailsDialog({
         return (
           <Badge variant="default" className="bg-orange-100 text-orange-800 border-orange-200">
             <Clock className="w-3 h-3 ml-1" />
-            معلقة
+            آجلة
           </Badge>
         )
       default:

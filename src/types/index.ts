@@ -164,7 +164,7 @@ export interface LabOrder {
   order_date: string
   expected_delivery_date?: string // تاريخ التسليم المتوقع
   actual_delivery_date?: string // تاريخ التسليم الفعلي
-  status: 'معلق' | 'مكتمل' | 'ملغي'
+  status: 'آجل' | 'مكتمل' | 'ملغي'
   notes?: string
   paid_amount?: number
   remaining_balance?: number
@@ -638,7 +638,7 @@ export interface ComprehensiveProfitLossReport {
     totalRevenue: number // إجمالي الإيرادات
     partialPayments: number // المدفوعات الجزئية
     remainingBalances: number // المبالغ المتبقية من المدفوعات الجزئية
-    pendingAmount: number // المبالغ المعلقة (غير المدفوعة)
+    pendingAmount: number // المبالغ الآجلة (غير المدفوعة)
   }
 
   // المصروفات

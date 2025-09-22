@@ -415,7 +415,7 @@ const Dashboard = React.memo(function Dashboard({ onAddPatient, onAddAppointment
         <Card className={`${getCardStyles("yellow")} stats-card-rtl`}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              {paymentStats.timeFilter.preset === 'all' || (!paymentStats.timeFilter.startDate && !paymentStats.timeFilter.endDate) ? 'المدفوعات المعلقة' : 'المدفوعات المعلقة المفلترة'}
+              {paymentStats.timeFilter.preset === 'all' || (!paymentStats.timeFilter.startDate && !paymentStats.timeFilter.endDate) ? 'المدفوعات الآجلة' : 'المدفوعات الآجلة المفلترة'}
             </CardTitle>
             <Clock className={`h-4 w-4 stats-icon ${getIconStyles("yellow")}`} />
           </CardHeader>
@@ -428,7 +428,7 @@ const Dashboard = React.memo(function Dashboard({ onAddPatient, onAddAppointment
             <p className="text-xs text-muted-foreground">
               {paymentStats.timeFilter.preset === 'all' || (!paymentStats.timeFilter.startDate && !paymentStats.timeFilter.endDate)
                 ? 'مدفوعات في انتظار التحصيل'
-                : 'مدفوعات معلقة في الفترة المحددة'}
+                : 'مدفوعات آجلة في الفترة المحددة'}
             </p>
           </CardContent>
         </Card>
