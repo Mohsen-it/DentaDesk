@@ -715,62 +715,74 @@ function AppContent() {
     <SidebarProvider>
         <AppSidebar activeTab={activeTab} onTabChange={handleTabChange} />
         <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/40 rtl-layout">
-            {/* Left side - Breadcrumbs */}
-            <div className="flex items-center gap-2 px-4">
-              <Breadcrumb>
-                <BreadcrumbList className="flex-rtl">
-                  <BreadcrumbItem className="hidden md:block">
-                    <BreadcrumbLink href="#" className="text-muted-foreground hover:text-foreground transition-colors duration-200">
-                      🦷 نظام إدارة العيادة السنية
-                    </BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator className="hidden md:block" />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage className="font-semibold text-sky-600 dark:text-sky-400">{getCurrentPageTitle()}</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
-            </div>
+     <header className="flex flex-row-reverse items-center justify-between h-16 w-full bg-background/95 backdrop-blur border-b border-border/40 px-4 gap-4" dir="rtl">
+      
+      {/* ✅ Right Side - التاريخ والساعة */}
+      <div className="flex items-center gap-2 text-sm text-muted-foreground bg-accent/20 px-4 py-1 rounded-full font-mono">
+        <LiveDateTime />
+      </div>
 
-            {/* Center - Global Search */}
-            <div className="flex-1 max-w-md mx-8">
-              <div className="relative">
-                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-700 dark:text-slate-300 w-5 h-5 rtl:left-3 rtl:right-auto" aria-hidden="true" />
-                <Input
-                  placeholder="البحث الشامل... (F)"
-                  className="pr-10 pl-4 py-2 bg-slate-50 dark:bg-card border-slate-200 dark:border-slate-700 rounded-lg shadow-sm dark:shadow-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-slate-700 focus:border-transparent rtl:pr-4 rtl:pl-10"
-                  readOnly
-                  onClick={() => setShowGlobalSearch(true)}
-                  aria-label="البحث الشامل"
-                  aria-describedby="search-shortcut"
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault()
-                      setShowGlobalSearch(true)
-                    }
-                  }}
-                />
-                <span id="search-shortcut" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-xs text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-card px-2 py-1 rounded rtl:right-3 rtl:left-auto" aria-hidden="true">
-                  F
-                </span>
-              </div>
-            </div>
+    
 
-            {/* Right side - Controls */}
-            <div className="ml-auto-rtl flex items-center gap-3 px-4 space-x-3-rtl">
-              <SidebarTrigger />
-              <Separator orientation="vertical" className="mx-2 h-4" />
+      {/* ✅ Left Side - البحث والتنقل والإعدادات */}
+      <div className="flex flex-row-reverse items-center gap-4">
 
-              <QuickShortcutHint />
-              <ThemeToggle />
-              <div className="text-sm text-muted-foreground bg-accent/30 px-3 py-1 rounded-full">
-                <LiveDateTime />
-              </div>
-            </div>
-          </header>
+      
+
+        {/* زر الوضع الليلي */}
+        <ThemeToggle />
+        {/* فاصل بصري */}
+        <Separator orientation="vertical" className="h-6" />
+
+        {/* البحث الشامل */}
+        <div className="relative w-64 max-w-xs">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+          <Input
+            placeholder="بحث شامل... (F)"
+            className="pr-10 pl-4 py-2 bg-slate-50 dark:bg-card border border-border rounded-lg shadow-sm dark:shadow-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-slate-700 focus:border-transparent cursor-pointer text-right"
+            readOnly
+            onClick={() => setShowGlobalSearch(true)}
+            aria-label="البحث الشامل"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                setShowGlobalSearch(true)
+              }
+            }}
+          />
+          <span
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground bg-background/70 px-2 py-0.5 rounded"
+            aria-hidden="true"
+          >
+            F
+          </span>
+        </div>
+
+        {/* المسار (Breadcrumb) */}
+        <Breadcrumb>
+          <BreadcrumbList className="flex flex-row-reverse items-center">
+            <BreadcrumbItem className="hidden md:block">
+              <BreadcrumbLink
+                href="#"
+                className="text-muted-foreground hover:text-foreground transition-colors duration-200"
+              >
+                🦷 نظام إدارة العيادة السنية
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator className="hidden md:block" />
+            <BreadcrumbItem>
+              <BreadcrumbPage className="font-semibold text-sky-600 dark:text-sky-400">
+                {getCurrentPageTitle()}
+              </BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+  {/* زر القائمة الجانبية */}
+        <SidebarTrigger />
+      </div>
+    </header>
           <div className="flex flex-1 flex-col gap-4 p-10 pt-4 max-w-full overflow-hidden relative rtl-layout">
             <div className="w-full max-w-none content-wrapper">
               <ErrorBoundary>
