@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
@@ -39,6 +40,7 @@ import {
   User,
   RefreshCw,
   Download,
+  FileText,
   Filter,
   X
 } from 'lucide-react'
@@ -236,29 +238,55 @@ export default function Patients({ onNavigateToTreatments, onNavigateToPayments 
           </p>
         </div>
         <div className="flex items-center space-x-2 space-x-reverse">
-          <Button
-            variant="outline"
-            onClick={async () => {
-              // Export patients data
-              if (filteredPatientsWithAdvancedFilters.length === 0) {
-                notify.noDataToExport('لا توجد بيانات مرضى للتصدير')
-                return
-              }
-
-              try {
-                // تصدير إلى Excel مع التنسيق الجميل والمقروء
-                await ExportService.exportPatientsToExcel(filteredPatientsWithAdvancedFilters)
-
-                notify.exportSuccess(`تم تصدير ${filteredPatientsWithAdvancedFilters.length} مريض بنجاح إلى ملف Excel مع التنسيق الجميل!`)
-              } catch (error) {
-                console.error('Error exporting patients:', error)
-                notify.exportError('فشل في تصدير بيانات المرضى')
-              }
-            }}
-          >
-            <Download className="w-4 h-4 ml-2" />
-            تصدير
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                <Download className="w-4 h-4 ml-2" />
+                تصدير
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuItem
+                onClick={async () => {
+                  if (filteredPatientsWithAdvancedFilters.length === 0) {
+                    notify.noDataToExport('لا توجد بيانات مرضى للتصدير')
+                    return
+                  }
+                  try {
+                    await ExportService.exportPatientsToExcel(filteredPatientsWithAdvancedFilters)
+                    notify.exportSuccess(`تم تصدير ${filteredPatientsWithAdvancedFilters.length} مريض بنجاح إلى ملف Excel!`)
+                  } catch (error) {
+                    console.error('Error exporting patients (Excel):', error)
+                    notify.exportError('فشل في تصدير بيانات المرضى (Excel)')
+                  }
+                }}
+                className="arabic-enhanced"
+              >
+                <Download className="w-4 h-4 ml-2" />
+                تصدير Excel
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={async () => {
+                  if (filteredPatientsWithAdvancedFilters.length === 0) {
+                    notify.noDataToExport('لا توجد بيانات مرضى للتصدير')
+                    return
+                  }
+                  try {
+                    await ExportService.exportPatientsToPDF(filteredPatientsWithAdvancedFilters)
+                    notify.exportSuccess(`تم تصدير ${filteredPatientsWithAdvancedFilters.length} مريض كملف PDF بنجاح!`)
+                  } catch (error) {
+                    console.error('Error exporting patients (PDF):', error)
+                    notify.exportError('فشل في تصدير بيانات المرضى (PDF)')
+                  }
+                }}
+                className="arabic-enhanced"
+              >
+                <FileText className="w-4 h-4 ml-2" />
+                تصدير PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button onClick={() => setShowAddDialog(true)}>
             <Plus className="w-4 h-4 ml-2" />
             إضافة مريض جديد

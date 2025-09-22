@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useClinicNeedsStore } from '../store/clinicNeedsStore'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import {
   ClipboardList,
   Plus,
@@ -9,7 +10,8 @@ import {
   DollarSign,
   AlertTriangle,
   Clock,
-  Download
+  Download,
+  FileText
 } from 'lucide-react'
 import { formatCurrency } from '../lib/utils'
 import { getCardStyles, getIconStyles } from '../lib/cardStyles'
@@ -175,29 +177,58 @@ const ClinicNeeds: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={async () => {
-              // Export clinic needs data
-              if (filteredNeeds.length === 0) {
-                notify.noDataToExport('لا توجد بيانات احتياجات للتصدير')
-                return
-              }
-
-              try {
-                // تصدير إلى Excel مع التنسيق الجميل والمقروء باستخدام دالة CSV
-                await ExportService.exportClinicNeedsToCSV(filteredNeeds, `احتياجات_العيادة_${new Date().toISOString().split('T')[0]}`)
-
-                notify.exportSuccess(`تم تصدير ${filteredNeeds.length} احتياج بنجاح إلى ملف Excel مع التنسيق الجميل!`)
-              } catch (error) {
-                console.error('Error exporting clinic needs:', error)
-                notify.exportError('فشل في تصدير بيانات الاحتياجات')
-              }
-            }}
-          >
-            <Download className="w-4 h-4 ml-2" />
-            تصدير
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                <Download className="w-4 h-4 ml-2" />
+                تصدير
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem
+                onClick={async () => {
+                  if (filteredNeeds.length === 0) {
+                    notify.noDataToExport('لا توجد بيانات احتياجات للتصدير')
+                    return
+                  }
+                  try {
+                    await ExportService.exportClinicNeedsToCSV(filteredNeeds, `احتياجات_العيادة_${new Date().toISOString().split('T')[0]}`)
+                    notify.exportSuccess(`تم تصدير ${filteredNeeds.length} احتياج بنجاح إلى ملف Excel!`)
+                  } catch (error) {
+                    console.error('Error exporting clinic needs (Excel):', error)
+                    notify.exportError('فشل في تصدير بيانات الاحتياجات (Excel)')
+                  }
+                }}
+                className="arabic-enhanced"
+              >
+                <Download className="w-4 h-4 ml-2" />
+                تصدير Excel
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={async () => {
+                  if (filteredNeeds.length === 0) {
+                    notify.noDataToExport('لا توجد بيانات احتياجات للتصدير')
+                    return
+                  }
+                  try {
+                    // استخدام pdfService عبر ExportService موحد لاحقاً إن لزم
+                    // حالياً لا يوجد دالة PDF مباشرة لاحتياجات العيادة في ExportService
+                    // يمكننا الاستفادة من تقارير صفحة التقارير لاحقاً
+                    // لإبقاء الواجهة متسقة سنحاول تصدير عبر comprehensiveExportService إن توفر
+                    await notify.info('تصدير PDF قيد التطوير في تقارير احتياجات العيادة')
+                  } catch (error) {
+                    console.error('Error exporting clinic needs (PDF):', error)
+                    notify.exportError('فشل في تصدير بيانات الاحتياجات (PDF)')
+                  }
+                }}
+                className="arabic-enhanced"
+              >
+                <FileText className="w-4 h-4 ml-2" />
+                تصدير PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button onClick={handleAddNew} className="flex items-center gap-2">
             <Plus className="w-4 h-4" />
             إضافة احتياج جديد

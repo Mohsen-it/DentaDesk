@@ -4,6 +4,7 @@ import moment from 'moment'
 import { MOMENT_GREGORIAN_CONFIG } from '@/lib/gregorianCalendar'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
@@ -377,30 +378,55 @@ export default function Appointments() {
             جدولة ومتابعة مواعيد المرضى
           </p>
         </div>
-        <div className="flex items-center space-x-2 space-x-reverse">
-          <Button
-            variant="outline"
-            onClick={async () => {
-              // Export appointments data
-              if (filteredAppointments.length === 0) {
-                notify.noDataToExport('لا توجد بيانات مواعيد للتصدير')
-                return
-              }
-
-              try {
-                // تصدير إلى Excel مع التنسيق الجميل والمقروء
-                await ExportService.exportAppointmentsToExcel(filteredAppointments)
-
-                notify.exportSuccess(`تم تصدير ${filteredAppointments.length} موعد بنجاح إلى ملف Excel مع التنسيق الجميل!`)
-              } catch (error) {
-                console.error('Error exporting appointments:', error)
-                notify.exportError('فشل في تصدير بيانات المواعيد')
-              }
-            }}
-          >
-            <Download className="w-4 h-4 ml-2" />
-            تصدير
-          </Button>
+      <div className="flex items-center space-x-2 space-x-reverse">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline">
+              <Download className="w-4 h-4 ml-2" />
+              تصدير
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuItem
+              onClick={async () => {
+                if (filteredAppointments.length === 0) {
+                  notify.noDataToExport('لا توجد بيانات مواعيد للتصدير')
+                  return
+                }
+                try {
+                  await ExportService.exportAppointmentsToExcel(filteredAppointments)
+                  notify.exportSuccess(`تم تصدير ${filteredAppointments.length} موعد بنجاح إلى ملف Excel!`)
+                } catch (error) {
+                  console.error('Error exporting appointments (Excel):', error)
+                  notify.exportError('فشل في تصدير بيانات المواعيد (Excel)')
+                }
+              }}
+              className="arabic-enhanced"
+            >
+              <Download className="w-4 h-4 ml-2" />
+              تصدير Excel
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={async () => {
+                if (filteredAppointments.length === 0) {
+                  notify.noDataToExport('لا توجد بيانات مواعيد للتصدير')
+                  return
+                }
+                try {
+                  await ExportService.exportAppointmentsToPDF(filteredAppointments)
+                  notify.exportSuccess(`تم تصدير ${filteredAppointments.length} موعد كملف PDF بنجاح!`)
+                } catch (error) {
+                  console.error('Error exporting appointments (PDF):', error)
+                  notify.exportError('فشل في تصدير بيانات المواعيد (PDF)')
+                }
+              }}
+              className="arabic-enhanced"
+            >
+              PDF تصدير
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
           <Button onClick={() => {
             setSelectedAppointment(null) // Clear selection for new appointment
             setShowAddDialog(true)

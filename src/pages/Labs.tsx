@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
@@ -37,6 +38,7 @@ import {
   Search,
   Filter,
   Download,
+  FileText,
   RefreshCw,
   Microscope,
   Building2,
@@ -322,14 +324,39 @@ export default function Labs() {
             <RefreshCw className={`w-4 h-4 mr-2 ${(labsLoading || ordersLoading) ? 'animate-spin' : ''}`} />
             تحديث
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExportCSV}
-          >
-            <Download className="w-4 h-4 mr-2" />
-            تصدير اكسل
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Download className="w-4 h-4 mr-2" />
+                تصدير
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem
+                onClick={handleExportCSV}
+                className="arabic-enhanced"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                تصدير Excel
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={async () => {
+                  try {
+                    // لا يوجد مسار PDF مخصص للمختبرات حالياً
+                    notify.info('تصدير PDF للمختبرات سيُضاف قريباً')
+                  } catch (error) {
+                    console.error('Error exporting labs (PDF):', error)
+                    notify.error('فشل في تصدير بيانات المختبرات (PDF)')
+                  }
+                }}
+                className="arabic-enhanced"
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                تصدير PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 

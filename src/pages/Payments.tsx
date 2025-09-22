@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -33,6 +34,7 @@ import {
   TrendingUp,
   RefreshCw,
   Download,
+  FileText,
   Search,
   Filter,
   X
@@ -197,108 +199,113 @@ export default function Payments() {
           </p>
         </div>
         <div className="flex items-center space-x-2 space-x-reverse">
-          <Button
-            variant="outline"
-            onClick={async () => {
-              // Export payments data
-              if (payments.length === 0) {
-                notify.noDataToExport('لا توجد بيانات مدفوعات للتصدير')
-                return
-              }
-
-              try {
-                // Helper functions for export
-                const getPatientName = (payment: Payment) => {
-                  const patient = patients.find(p => p.id === payment.patient_id)
-                  return patient?.full_name || 'غير محدد'
-                }
-
-                const getPaymentMethodLabel = (method: string) => {
-                  const methods = {
-                    cash: 'نقداً',
-                    card: 'بطاقة ائتمان',
-                    bank_transfer: 'تحويل بنكي',
-                    check: 'شيك',
-                    insurance: 'تأمين'
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                <Download className="w-4 h-4 ml-2" />
+                تصدير
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem
+                onClick={async () => {
+                  if (payments.length === 0) {
+                    notify.noDataToExport('لا توجد بيانات مدفوعات للتصدير')
+                    return
                   }
-                  return methods[method as keyof typeof methods] || method
-                }
-
-                // Match the table columns exactly
-                const getStatusLabel = (status: string) => {
-                  const statusLabels = {
-                    completed: 'مكتمل',
-                    pending: 'آجل',
-                    partial: 'جزئي',
-                    overdue: 'متأخر',
-                    failed: 'فاشل',
-                    refunded: 'مسترد'
+                  try {
+                    let dataToExport = [...payments]
+                    if (paymentStats.timeFilter.startDate && paymentStats.timeFilter.endDate) {
+                      const startDate = new Date(paymentStats.timeFilter.startDate)
+                      const endDate = new Date(paymentStats.timeFilter.endDate)
+                      endDate.setHours(23, 59, 59, 999)
+                      dataToExport = dataToExport.filter(payment => {
+                        const paymentDate = new Date(payment.payment_date)
+                        return paymentDate >= startDate && paymentDate <= endDate
+                      })
+                    }
+                    if (searchQuery) {
+                      dataToExport = dataToExport.filter(payment => {
+                        const patientName = patients.find(p => p.id === payment.patient_id)?.full_name || ''
+                        return (
+                          payment.receipt_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          payment.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          payment.amount.toString().includes(searchQuery) ||
+                          payment.payment_method.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          payment.status.toLowerCase().includes(searchQuery.toLowerCase())
+                        )
+                      })
+                    }
+                    if (statusFilter !== 'all') {
+                      dataToExport = dataToExport.filter(payment => payment.status === statusFilter)
+                    }
+                    if (paymentMethodFilter !== 'all') {
+                      dataToExport = dataToExport.filter(payment => payment.payment_method === paymentMethodFilter)
+                    }
+                    await ExportService.exportPaymentsToExcel(dataToExport)
+                    notify.exportSuccess(`تم تصدير ${dataToExport.length} دفعة بنجاح إلى ملف Excel!`)
+                  } catch (error) {
+                    console.error('Error exporting payments (Excel):', error)
+                    notify.exportError('فشل في تصدير بيانات المدفوعات (Excel)')
                   }
-                  return statusLabels[status as keyof typeof statusLabels] || status
-                }
-
-                // استخدام البيانات المفلترة (الزمنية + البحث + الفلاتر)
-                let dataToExport = [...payments]
-
-                // تطبيق الفلترة الزمنية
-                if (paymentStats.timeFilter.startDate && paymentStats.timeFilter.endDate) {
-                  const startDate = new Date(paymentStats.timeFilter.startDate)
-                  const endDate = new Date(paymentStats.timeFilter.endDate)
-                  endDate.setHours(23, 59, 59, 999)
-
-                  dataToExport = dataToExport.filter(payment => {
-                    const paymentDate = new Date(payment.payment_date)
-                    return paymentDate >= startDate && paymentDate <= endDate
-                  })
-                }
-
-                // تطبيق فلاتر البحث والحالة وطريقة الدفع
-                if (searchQuery) {
-                  dataToExport = dataToExport.filter(payment => {
-                    const patientName = getPatientName(payment)
-                  return (
-                    payment.receipt_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    payment.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    payment.amount.toString().includes(searchQuery) ||
-                    payment.payment_method.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    payment.status.toLowerCase().includes(searchQuery.toLowerCase())
-                  )
-                })
-              }
-
-              if (statusFilter !== 'all') {
-                dataToExport = dataToExport.filter(payment => payment.status === statusFilter)
-              }
-
-              if (paymentMethodFilter !== 'all') {
-                dataToExport = dataToExport.filter(payment => payment.payment_method === paymentMethodFilter)
-              }
-
-              // استخدام ExportService لتصدير Excel مباشرة
-              await ExportService.exportPaymentsToExcel(dataToExport)
-
-              // رسالة نجاح مفصلة ودقيقة
-              let successMessage = `تم تصدير ${dataToExport.length} دفعة بنجاح إلى ملف Excel!`
-
-              if (paymentStats.timeFilter.startDate && paymentStats.timeFilter.endDate) {
-                successMessage += ` (مفلترة من ${paymentStats.timeFilter.startDate} إلى ${paymentStats.timeFilter.endDate})`
-              }
-
-              if (statusFilter !== 'all' || paymentMethodFilter !== 'all' || searchQuery) {
-                successMessage += ` مع فلاتر مطبقة`
-              }
-
-              notify.exportSuccess(successMessage)
-              } catch (error) {
-                console.error('Error exporting payments:', error)
-                notify.exportError('فشل في تصدير بيانات المدفوعات')
-              }
-            }}
-          >
-            <Download className="w-4 h-4 ml-2" />
-            تصدير
-          </Button>
+                }}
+                className="arabic-enhanced"
+              >
+                <Download className="w-4 h-4 ml-2" />
+                تصدير Excel
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={async () => {
+                  if (payments.length === 0) {
+                    notify.noDataToExport('لا توجد بيانات مدفوعات للتصدير')
+                    return
+                  }
+                  try {
+                    let dataToExport = [...payments]
+                    if (paymentStats.timeFilter.startDate && paymentStats.timeFilter.endDate) {
+                      const startDate = new Date(paymentStats.timeFilter.startDate)
+                      const endDate = new Date(paymentStats.timeFilter.endDate)
+                      endDate.setHours(23, 59, 59, 999)
+                      dataToExport = dataToExport.filter(payment => {
+                        const paymentDate = new Date(payment.payment_date)
+                        return paymentDate >= startDate && paymentDate <= endDate
+                      })
+                    }
+                    if (searchQuery) {
+                      dataToExport = dataToExport.filter(payment => {
+                        const patientName = patients.find(p => p.id === payment.patient_id)?.full_name || ''
+                        return (
+                          payment.receipt_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          payment.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          payment.amount.toString().includes(searchQuery) ||
+                          payment.payment_method.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          payment.status.toLowerCase().includes(searchQuery.toLowerCase())
+                        )
+                      })
+                    }
+                    if (statusFilter !== 'all') {
+                      dataToExport = dataToExport.filter(payment => payment.status === statusFilter)
+                    }
+                    if (paymentMethodFilter !== 'all') {
+                      dataToExport = dataToExport.filter(payment => payment.payment_method === paymentMethodFilter)
+                    }
+                    await ExportService.exportPaymentsToPDF(dataToExport)
+                    notify.exportSuccess(`تم تصدير ${dataToExport.length} دفعة كملف PDF بنجاح!`)
+                  } catch (error) {
+                    console.error('Error exporting payments (PDF):', error)
+                    notify.exportError('فشل في تصدير بيانات المدفوعات (PDF)')
+                  }
+                }}
+                className="arabic-enhanced"
+              >
+                <FileText className="w-4 h-4 ml-2" />
+                تصدير PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button onClick={handleAddPayment}>
             <Plus className="w-4 h-4 ml-2" />
             تسجيل دفعة جديدة
