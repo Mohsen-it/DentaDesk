@@ -798,82 +798,85 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
   const backupStatus = getBackupStatus()
 
   return (
-    <div className="space-y-6" dir="rtl">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-heading-1 text-foreground arabic-enhanced">الإعدادات</h1>
-          <p className="text-body text-muted-foreground mt-2 arabic-enhanced">
-            إدارة إعدادات العيادة والنسخ الاحتياطية
-          </p>
-        </div>
-        <div className="flex items-center space-x-2 space-x-reverse">
-          <button
-            onClick={() => loadBackups()}
-            disabled={isLoading}
-            className="flex items-center space-x-2 space-x-reverse px-4 py-2 border border-input bg-background text-foreground rounded-lg hover:bg-accent disabled:opacity-50"
-          >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-            <span>تحديث</span>
-          </button>
-          <button
-            onClick={async () => {
-              // Export settings data
-              const settingsData = {
-                'الوضع المظلم': isDarkMode ? 'مفعل' : 'معطل',
-                'النسخ التلقائية': autoBackupEnabled ? 'مفعلة' : 'معطلة',
-                'تكرار النسخ': backupFrequency === 'daily' ? 'يومياً' : backupFrequency === 'weekly' ? 'أسبوعياً' : 'شهرياً',
-                'إجمالي النسخ الاحتياطية': backupStatus.totalBackups,
-                'آخر نسخة احتياطية': backupStatus.lastBackup || 'لا توجد',
+    <div className="min-h-screen bg-background" dir="rtl">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-7xl">
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-card/50 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-border/50">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground arabic-enhanced">الإعدادات</h1>
+              <p className="text-sm sm:text-base text-muted-foreground mt-2 arabic-enhanced">
+                إدارة إعدادات العيادة والنسخ الاحتياطية
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
+              <button
+                onClick={() => loadBackups()}
+                disabled={isLoading}
+                className="flex items-center justify-center space-x-2 space-x-reverse px-4 py-2 border border-input bg-background text-foreground rounded-lg hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 interactive-card focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 min-h-[44px]"
+              >
+                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                <span className="whitespace-nowrap">تحديث</span>
+              </button>
+              <button
+                onClick={async () => {
+                  // Export settings data
+                  const settingsData = {
+                    'الوضع المظلم': isDarkMode ? 'مفعل' : 'معطل',
+                    'النسخ التلقائية': autoBackupEnabled ? 'مفعلة' : 'معطلة',
+                    'تكرار النسخ': backupFrequency === 'daily' ? 'يومياً' : backupFrequency === 'weekly' ? 'أسبوعياً' : 'شهرياً',
+                    'إجمالي النسخ الاحتياطية': backupStatus.totalBackups,
+                    'آخر نسخة احتياطية': backupStatus.lastBackup || 'لا توجد',
 
-                'تاريخ التصدير': formatDate(new Date())
-              }
+                    'تاريخ التصدير': formatDate(new Date())
+                  }
 
-              const csvContent = '\uFEFF' + [
-                'الإعداد,القيمة',
-                ...Object.entries(settingsData).map(([key, value]) => `"${key}","${value}"`)
-              ].join('\n')
+                  const csvContent = '\uFEFF' + [
+                    'الإعداد,القيمة',
+                    ...Object.entries(settingsData).map(([key, value]) => `"${key}","${value}"`)
+                  ].join('\n')
 
-              // تحويل إلى Excel مباشرة
-              await ExportService.convertCSVToExcel(csvContent, 'settings', {
-                format: 'csv',
-                includeCharts: false,
-                includeDetails: true,
-                language: 'ar'
-              })
-            }}
-            className="flex items-center space-x-2 space-x-reverse px-4 py-2 border border-input bg-background text-foreground rounded-lg hover:bg-accent"
-          >
-            <Download className="w-4 h-4" />
-            <span>تصدير الإعدادات</span>
-          </button>
-        </div>
-      </div>
+                  // تحويل إلى Excel مباشرة
+                  await ExportService.convertCSVToExcel(csvContent, 'settings', {
+                    format: 'csv',
+                    includeCharts: false,
+                    includeDetails: true,
+                    language: 'ar'
+                  })
+                }}
+                className="flex items-center justify-center space-x-2 space-x-reverse px-4 py-2 border border-input bg-background text-foreground rounded-lg hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 interactive-card focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 min-h-[44px]"
+              >
+                <Download className="w-4 h-4" />
+                <span className="whitespace-nowrap">تصدير الإعدادات</span>
+              </button>
+            </div>
+          </div>
 
       {/* Tabs */}
-      <div className="border-b border-border">
-        <nav className="-mb-px flex space-x-8 space-x-reverse">
+      <div className="border-b border-border sticky top-0 bg-background/95 backdrop-blur-sm z-10 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
+        <nav className="flex space-x-1 space-x-reverse overflow-x-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent py-2">
           {[
             { id: 'backup', name: 'النسخ الاحتياطية', icon: Database },
             { id: 'diagnostics', name: 'تشخيص النظام', icon: AlertTriangle },
             { id: 'appearance', name: 'المظهر', icon: Palette },
             { id: 'whatsapp', name: 'تذكيرات واتساب', icon: Phone },
-            { id: 'shortcuts', name: 'اختصارات لوحة المفاتيح', icon: Keyboard },
+            { id: 'shortcuts', name: 'اختصارات', icon: Keyboard },
             { id: 'security', name: 'الأمان', icon: Key },
-            { id: 'clinic', name: 'إعدادات العيادة', icon: SettingsIcon },
-            { id: 'development', name: 'فريق التطوير', icon: Users }
+            { id: 'clinic', name: 'العيادة', icon: SettingsIcon },
+            { id: 'development', name: 'التطوير', icon: Users }
           ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center space-x-2 space-x-reverse py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`flex items-center space-x-2 space-x-reverse px-3 py-2 border-b-2 font-medium text-sm whitespace-nowrap rounded-t-lg transition-all duration-200 interactive-card min-w-[120px] justify-center ${
                 activeTab === tab.id
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
+                  ? 'border-primary text-primary bg-primary/5 shadow-sm'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border/50 hover:bg-accent/30'
               }`}
+              aria-selected={activeTab === tab.id}
             >
-              <tab.icon className="w-4 h-4" />
-              <span>{tab.name}</span>
+              <tab.icon className="w-4 h-4 transition-colors flex-shrink-0" />
+              <span className="font-medium">{tab.name}</span>
             </button>
           ))}
         </nav>
@@ -884,41 +887,41 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
       {activeTab === 'backup' && (
         <div className="space-y-6">
           {/* Backup Status Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-card rounded-lg shadow border border-border p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div className="bg-card rounded-xl shadow-sm border border-border p-4 sm:p-6 interactive-card transition-all duration-200 hover:shadow-md">
               <div className="flex items-center">
-                <div className="p-2 bg-primary/10 rounded-lg">
+                <div className="p-3 bg-primary/10 rounded-xl transition-colors">
                   <HardDrive className="w-6 h-6 text-primary" />
                 </div>
-                <div className="mr-4">
+                <div className="mr-4 flex-1 min-w-0">
                   <p className="text-sm font-medium text-muted-foreground">إجمالي النسخ</p>
-                  <p className="text-2xl font-bold text-foreground">{backupStatus.totalBackups}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-foreground">{backupStatus.totalBackups}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-card rounded-lg shadow border border-border p-6">
+            <div className="bg-card rounded-xl shadow-sm border border-border p-4 sm:p-6 interactive-card transition-all duration-200 hover:shadow-md">
               <div className="flex items-center">
-                <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
+                <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-xl transition-colors">
                   <Clock className="w-6 h-6 text-green-600 dark:text-green-400" />
                 </div>
-                <div className="mr-4">
+                <div className="mr-4 flex-1 min-w-0">
                   <p className="text-sm font-medium text-muted-foreground">آخر نسخة احتياطية</p>
-                  <p className="text-sm font-bold text-foreground">
+                  <p className="text-sm font-bold text-foreground break-words">
                     {backupStatus.lastBackup || 'لا توجد نسخ'}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-card rounded-lg shadow border border-border p-6">
+            <div className="bg-card rounded-xl shadow-sm border border-border p-4 sm:p-6 interactive-card transition-all duration-200 hover:shadow-md sm:col-span-2 lg:col-span-1">
               <div className="flex items-center">
-                <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
+                <div className="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-xl transition-colors">
                   <Calendar className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                 </div>
-                <div className="mr-4">
+                <div className="mr-4 flex-1 min-w-0">
                   <p className="text-sm font-medium text-muted-foreground">النسخة التالية</p>
-                  <p className="text-sm font-bold text-foreground">
+                  <p className="text-sm font-bold text-foreground break-words">
                     {backupStatus.nextScheduledBackup || 'غير محدد'}
                   </p>
                 </div>
@@ -927,43 +930,41 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
           </div>
 
           {/* Manual Backup Actions */}
-          <div className="bg-card rounded-lg shadow border border-border">
-            <div className="p-6 border-b border-border">
-              <h3 className="text-lg font-medium text-foreground">النسخ الاحتياطية اليدوية</h3>
+          <div className="bg-card rounded-xl shadow-sm border border-border">
+            <div className="p-4 sm:p-6 border-b border-border">
+              <h3 className="text-lg sm:text-xl font-semibold text-foreground">النسخ الاحتياطية اليدوية</h3>
               <p className="text-sm text-muted-foreground mt-1">
                 إنشاء واستعادة النسخ الاحتياطية يدوياً (تنسيق SQLite)
               </p>
             </div>
-            <div className="p-6">
-              <div className="flex flex-col sm:flex-row gap-4">
+            <div className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <button
                   onClick={() => handleCreateBackup(false)}
                   disabled={isCreatingBackup}
-                  className="flex items-center justify-center space-x-2 space-x-reverse px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center justify-center space-x-2 space-x-reverse px-4 sm:px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 interactive-card focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 min-h-[44px] flex-1 sm:flex-none"
                 >
                   <Download className="w-5 h-5" />
-                  <span>{isCreatingBackup ? 'جاري الإنشاء...' : 'إنشاء نسخة احتياطية'}</span>
+                  <span className="whitespace-nowrap">{isCreatingBackup ? 'جاري الإنشاء...' : 'إنشاء نسخة احتياطية'}</span>
                 </button>
 
                 <button
                   onClick={() => handleCreateBackup(true)}
                   disabled={isCreatingBackup}
-                  className="flex items-center justify-center space-x-2 space-x-reverse px-6 py-3 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center justify-center space-x-2 space-x-reverse px-4 sm:px-6 py-3 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 interactive-card focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2 min-h-[44px] flex-1 sm:flex-none"
                 >
                   <Image className="w-5 h-5" />
-                  <span>{isCreatingBackup ? 'جاري الإنشاء...' : 'إنشاء نسخة احتياطية مع صور'}</span>
+                  <span className="whitespace-nowrap">{isCreatingBackup ? 'جاري الإنشاء...' : 'إنشاء نسخة مع صور'}</span>
                 </button>
 
                 <button
                   onClick={handleRestoreBackup}
                   disabled={isRestoringBackup}
-                  className="flex items-center justify-center space-x-2 space-x-reverse px-6 py-3 bg-green-600 dark:bg-green-700 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center justify-center space-x-2 space-x-reverse px-4 sm:px-6 py-3 bg-green-600 dark:bg-green-700 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 interactive-card focus:ring-2 focus:ring-green-500/50 focus:ring-offset-2 min-h-[44px] flex-1 sm:flex-none"
                 >
                   <Upload className="w-5 h-5" />
-                  <span>{isRestoringBackup ? 'جاري الاستعادة...' : 'استعادة نسخة احتياطية'}</span>
+                  <span className="whitespace-nowrap">{isRestoringBackup ? 'جاري الاستعادة...' : 'استعادة نسخة احتياطية'}</span>
                 </button>
-
-
               </div>
 
               <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
@@ -1037,14 +1038,14 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
           )}
 
           {/* Backup List */}
-          <div className="bg-card rounded-lg shadow border border-border">
-            <div className="p-6 border-b border-border">
-              <h3 className="text-lg font-medium text-foreground">النسخ الاحتياطية المحفوظة</h3>
+          <div className="bg-card rounded-xl shadow-sm border border-border">
+            <div className="p-4 sm:p-6 border-b border-border">
+              <h3 className="text-lg sm:text-xl font-semibold text-foreground">النسخ الاحتياطية المحفوظة</h3>
               <p className="text-sm text-muted-foreground mt-1">
                 قائمة بجميع النسخ الاحتياطية المتاحة - اضغط على أي نسخة لاستعادتها
               </p>
             </div>
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               {isLoading ? (
                 <div className="text-center py-8">
                   <RefreshCw className="w-8 h-8 animate-spin mx-auto text-muted-foreground" />
@@ -1061,48 +1062,49 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                   {backups.map((backup, index) => (
                     <div
                       key={`${backup.name}-${index}`}
-                      className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent cursor-pointer"
+                      className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 cursor-pointer transition-all duration-200"
                       onClick={() => handleRestoreFromPath(backup.path)}
                     >
-                      <div className="flex items-center space-x-3 space-x-reverse">
-                        <div className="p-2 bg-primary/10 rounded-lg">
+                      <div className="flex items-start space-x-3 space-x-reverse w-full">
+                        <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0">
                           <Shield className="w-5 h-5 text-primary" />
                         </div>
-                        <div>
-                          <div className="flex items-center space-x-2 space-x-reverse">
-                            <h4 className="text-sm font-medium text-foreground">{backup.name}</h4>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 mb-2">
+                            <h4 className="text-sm font-medium text-foreground break-words">{backup.name}</h4>
                             {backup.isSqliteOnly && (
-                              <span className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 rounded-full">
+                              <span className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 rounded-full whitespace-nowrap">
                                 SQLite
                               </span>
                             )}
                             {backup.includesImages && (
-                              <span className="px-2 py-1 text-xs bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200 rounded-full flex items-center gap-1">
+                              <span className="px-2 py-1 text-xs bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200 rounded-full flex items-center gap-1 whitespace-nowrap">
                                 <Image className="w-3 h-3" />
                                 مع صور
                               </span>
                             )}
                             {backup.isLegacy && (
-                              <span className="px-2 py-1 text-xs bg-gray-100 dark:bg-card/20 text-gray-800 dark:text-gray-200 rounded-full">
+                              <span className="px-2 py-1 text-xs bg-gray-100 dark:bg-card/20 text-gray-800 dark:text-gray-200 rounded-full whitespace-nowrap">
                                 قديم
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center space-x-4 space-x-reverse text-sm text-muted-foreground">
-                            <span>{formatBackupDate(backup.created_at)}</span>
-                            <span>{formatBackupSize(backup.size)}</span>
-                            {backup.version && <span>إصدار {backup.version}</span>}
+                          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                            <span className="whitespace-nowrap">{formatBackupDate(backup.created_at)}</span>
+                            <span className="whitespace-nowrap">{formatBackupSize(backup.size)}</span>
+                            {backup.version && <span className="whitespace-nowrap">إصدار {backup.version}</span>}
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2 space-x-reverse">
+                      <div className="flex items-center space-x-2 space-x-reverse mt-3 sm:mt-0 flex-shrink-0">
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
                             handleRestoreFromPath(backup.path)
                           }}
-                          className="p-2 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/20 rounded-lg"
+                          className="p-2 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/20 rounded-lg transition-all duration-200 interactive-card min-h-[44px] min-w-[44px] flex items-center justify-center"
                           title="استعادة"
+                          aria-label="استعادة النسخة الاحتياطية"
                         >
                           <Upload className="w-4 h-4" />
                         </button>
@@ -1113,9 +1115,10 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                             console.log('🗑️ Delete button clicked for backup:', backup.name)
                             setShowDeleteConfirm(backup.name)
                           }}
-                          className="p-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                          className="p-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-all duration-200 interactive-card min-h-[44px] min-w-[44px] flex items-center justify-center"
                           title="حذف"
                           type="button"
+                          aria-label="حذف النسخة الاحتياطية"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -1149,14 +1152,14 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
       {/* Appearance Settings Tab */}
       {activeTab === 'appearance' && (
         <div className="space-y-6">
-          <div className="bg-card rounded-lg shadow border border-border">
-            <div className="p-6 border-b border-border">
-              <h3 className="text-lg font-medium text-foreground">إعدادات المظهر</h3>
+          <div className="bg-card rounded-xl shadow-sm border border-border">
+            <div className="p-4 sm:p-6 border-b border-border">
+              <h3 className="text-lg sm:text-xl font-semibold text-foreground">إعدادات المظهر</h3>
               <p className="text-sm text-muted-foreground mt-1">
                 تخصيص مظهر التطبيق وفقاً لتفضيلاتك
               </p>
             </div>
-            <div className="p-6 space-y-6">
+            <div className="p-4 sm:p-6 space-y-6">
          
            
               {/* Dark Mode Toggle */}
@@ -1178,12 +1181,13 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                 </div>
                 <button
                   onClick={toggleDarkMode}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 ${
                     isDarkMode ? 'bg-primary' : 'bg-muted'
-                  }`}
+                  } interactive-card focus:ring-2 focus:ring-primary/50 focus:ring-offset-2`}
+                  aria-label={isDarkMode ? 'تفعيل الوضع الفاتح' : 'تفعيل الوضع المظلم'}
                 >
                   <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform ${
+                    className={`inline-block h-4 w-4 transform rounded-full bg-background transition-all duration-300 shadow-sm ${
                       isDarkMode ? 'translate-x-6' : 'translate-x-1'
                     }`}
                   />
@@ -1288,7 +1292,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                       key={m}
                       type="button"
                       onClick={() => setMinutesBefore(m)}
-                      className="px-2 py-1 text-xs border border-input rounded-md hover:bg-accent"
+                      className="px-2 py-1 text-xs border border-input rounded-md hover:bg-accent transition-all duration-200 interactive-card"
                     >
                       {m >= 60 ? `${m / 60} ساعة` : `${m} دقيقة`}
                     </button>
@@ -1332,7 +1336,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                     <button
                       type="button"
                       onClick={() => insertTokenAtCursor('{{patient_name}}')}
-                      className="px-2 py-1 text-xs border border-input rounded-md hover:bg-accent"
+                      className="px-2 py-1 text-xs border border-input rounded-md hover:bg-accent transition-all duration-200 interactive-card"
                       title="إدراج اسم المريض"
                     >
                       اسم المريض
@@ -1340,7 +1344,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                     <button
                       type="button"
                       onClick={() => insertTokenAtCursor('{{appointment_date}}')}
-                      className="px-2 py-1 text-xs border border-input rounded-md hover:bg-accent"
+                      className="px-2 py-1 text-xs border border-input rounded-md hover:bg-accent transition-all duration-200 interactive-card"
                       title="إدراج تاريخ الموعد"
                     >
                       تاريخ الموعد
@@ -1348,7 +1352,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                     <button
                       type="button"
                       onClick={() => insertTokenAtCursor('{{appointment_time}}')}
-                      className="px-2 py-1 text-xs border border-input rounded-md hover:bg-accent"
+                      className="px-2 py-1 text-xs border border-input rounded-md hover:bg-accent transition-all duration-200 interactive-card"
                       title="إدراج وقت الموعد"
                     >
                       وقت الموعد
@@ -1501,7 +1505,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                             showNotification('تعذر بدء عملية الربط عبر QR', 'error')
                           }
                         }}
-                        className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center space-x-2 space-x-reverse font-medium shadow-md"
+                        className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all duration-200 flex items-center space-x-2 space-x-reverse font-medium shadow-md interactive-card focus:ring-2 focus:ring-primary/50 focus:ring-offset-2"
                       >
                         <Phone className="w-5 h-5" />
                         <span>ربط عبر QR</span>
@@ -1619,7 +1623,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
               <Trash2 className="w-4 h-4 ml-2" />
               تأكيد الحذف
             </AlertDialogAction>
-            <AlertDialogCancel>
+            <AlertDialogCancel className="transition-all duration-200 interactive-card">
               إلغاء
             </AlertDialogCancel>
           </AlertDialogFooter>
@@ -1662,7 +1666,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
               <Trash2 className="w-4 h-4 ml-2" />
               تأكيد الحذف
             </AlertDialogAction>
-            <AlertDialogCancel>
+            <AlertDialogCancel className="transition-all duration-200 interactive-card">
               إلغاء
             </AlertDialogCancel>
           </AlertDialogFooter>
@@ -1708,7 +1712,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                       id="clinic_name"
                       name="clinic_name"
                       defaultValue={settings?.clinic_name || ''}
-                      className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200 interactive-card"
                       required
                     />
                   </div>
@@ -1723,7 +1727,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                       name="doctor_name"
                       defaultValue={settings?.doctor_name || ''}
                       placeholder="د. محمد أحمد"
-                      className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200 interactive-card"
                       required
                     />
                   </div>
@@ -1739,7 +1743,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                       placeholder="96395 XXX XXXX"
 
                       defaultValue={settings?.clinic_phone || ''}
-                      className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200 interactive-card"
                     />
                   </div>
 
@@ -1753,7 +1757,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                       name="clinic_email"
                       defaultValue={settings?.clinic_email || ''}
                       placeholder="clinic@example.com"
-                      className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200 interactive-card"
                     />
                   </div>
                 </div>
@@ -1768,7 +1772,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                     defaultValue={settings?.clinic_address || ''}
                     placeholder="حلب، الجمهورية العربية السورية"
                     rows={3}
-                    className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200 interactive-card resize-none"
                   />
                 </div>
 
@@ -1782,7 +1786,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                     id="currency"
                     name="currency"
                     defaultValue={settings?.currency || currentCurrency || 'USD'}
-                    className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200 interactive-card"
                     onChange={(e) => {
                       // Update currency immediately when changed
                       setCurrency(e.target.value)
@@ -1839,7 +1843,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                           type="button"
                           onClick={() => document.getElementById('clinic_logo')?.click()}
                           disabled={logoUploading}
-                          className="px-3 py-2 text-sm border border-input bg-background text-foreground rounded-md hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="px-3 py-2 text-sm border border-input bg-background text-foreground rounded-md hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 interactive-card"
                         >
                           {logoUploading ? 'جاري الرفع...' : 'اختيار شعار'}
                         </button>
@@ -1848,7 +1852,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                             type="button"
                             onClick={() => handleUpdateSettings({ clinic_logo: '' })}
                             disabled={logoUploading}
-                            className="px-3 py-2 text-sm border border-red-200 bg-red-50 text-red-700 rounded-md hover:bg-red-100 disabled:opacity-50"
+                            className="px-3 py-2 text-sm border border-red-200 bg-red-50 text-red-700 rounded-md hover:bg-red-100 disabled:opacity-50 transition-all duration-200 interactive-card"
                           >
                             حذف الشعار
                           </button>
@@ -1870,7 +1874,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="px-6 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 interactive-card focus:ring-2 focus:ring-primary/50 focus:ring-offset-2"
                   >
                     {isLoading ? 'جاري الحفظ...' : 'حفظ الإعدادات'}
                   </button>
@@ -1946,7 +1950,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                     // Method 3: Fallback to window.open
                     window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
                   }}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 interactive-card"
                 >
                   تواصل عبر واتساب
                 </button>
@@ -1964,7 +1968,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                 </div>
                 <button
                   onClick={() => window.open('mailto:AgorraCode@gmail.com', '_blank')}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 interactive-card"
                 >
                   إرسال إيميل
                 </button>
@@ -2038,13 +2042,13 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
               <div className="flex justify-end space-x-3 space-x-reverse">
                 <button
                   onClick={() => setShowDeleteConfirm(null)}
-                  className="px-4 py-2 border border-input bg-background text-foreground rounded-lg hover:bg-accent transition-colors"
+                  className="px-4 py-2 border border-input bg-background text-foreground rounded-lg hover:bg-accent transition-all duration-200 interactive-card"
                 >
                   إلغاء
                 </button>
                 <button
                   onClick={() => handleDeleteBackup(showDeleteConfirm)}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 interactive-card focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                 >
                   تأكيد الحذف
                 </button>
@@ -2067,7 +2071,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                   <h3 className="text-xl font-semibold text-foreground">ربط واتساب عبر رمز QR</h3>
                   <p className="text-sm text-muted-foreground mt-1">افتح واتساب على هاتفك → الإعدادات → الأجهزة المرتبطة → ربط جهاز.</p>
                 </div>
-                <button onClick={() => setShowQRModal(false)} className="px-2 py-1 text-sm text-muted-foreground hover:text-foreground">✕</button>
+                <button onClick={() => setShowQRModal(false)} className="px-2 py-1 text-sm text-muted-foreground hover:text-foreground transition-all duration-200 interactive-card rounded-lg">✕</button>
               </div>
               <div className="flex items-center justify-center p-4 bg-white border border-border rounded-xl min-h-[512px]">
                 {qrData && qrData.trim() !== '' ? (
@@ -2132,7 +2136,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                 <li>إن لم يظهر الرمز خلال ثوانٍ، اضغط إعادة توليد.</li>
               </ul>
               <div className="flex justify-end gap-2">
-                <button onClick={() => setShowQRModal(false)} className="px-4 py-2 border border-input rounded-lg">إغلاق</button>
+                <button onClick={() => setShowQRModal(false)} className="px-4 py-2 border border-input rounded-lg transition-all duration-200 interactive-card">إغلاق</button>
                 <button
                   onClick={async () => {
                     try {
@@ -2212,7 +2216,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                       showNotification(`حدث خطأ أثناء إعادة توليد رمز QR: ${(error as any)?.message || 'خطأ غير معروف'}`, 'error')
                     }
                   }}
-                  className="px-4 py-2 bg-primary text-white rounded-lg shadow-sm hover:bg-primary/90"
+                  className="px-4 py-2 bg-primary text-white rounded-lg shadow-sm hover:bg-primary/90 transition-all duration-200 interactive-card"
                 >
                   إعادة توليد QR
                 </button>
@@ -2240,5 +2244,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
         </div>
       )}
     </div>
+  </div>
+</div>
   )
 }

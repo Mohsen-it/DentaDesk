@@ -480,6 +480,7 @@ export default function DashboardAnalytics({
               onClick={() => setTimeRange('7d')}
               aria-label="عرض التحليلات لآخر 7 أيام"
               aria-pressed={timeRange === '7d'}
+              className="transition-all duration-200 interactive-card"
             >
               7 أيام
             </Button>
@@ -489,6 +490,7 @@ export default function DashboardAnalytics({
               onClick={() => setTimeRange('30d')}
               aria-label="عرض التحليلات لآخر 30 يوم"
               aria-pressed={timeRange === '30d'}
+              className="transition-all duration-200 interactive-card"
             >
               30 يوم
             </Button>
@@ -498,6 +500,7 @@ export default function DashboardAnalytics({
               onClick={() => setTimeRange('90d')}
               aria-label="عرض التحليلات لآخر 90 يوم"
               aria-pressed={timeRange === '90d'}
+              className="transition-all duration-200 interactive-card"
             >
               90 يوم
             </Button>
@@ -510,6 +513,7 @@ export default function DashboardAnalytics({
               calculateAnalytics()
             }}
             aria-label="تحديث التحليلات"
+            className="transition-all duration-200 interactive-card"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
             تحديث البيانات
@@ -530,14 +534,14 @@ export default function DashboardAnalytics({
         <TabsContent value="overview" className="space-y-6">
           {/* Overview Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-all duration-200 bg-white dark:bg-card border-slate-200 dark:border-slate-700" onClick={onNavigateToPatients} role="button" tabIndex={0} aria-label="عرض إدارة المرضى">
+            <Card className="cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-all duration-200 bg-white dark:bg-card border-slate-200 dark:border-slate-700 interactive-card" onClick={onNavigateToPatients} role="button" tabIndex={0} aria-label="عرض إدارة المرضى">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground dark:text-slate-400">إجمالي المرضى</p>
                     <p className="text-2xl font-bold">{analyticsData.overview.totalPatients}</p>
                   </div>
-                  <Users className="w-8 h-8 text-primary dark:text-slate-200" />
+                  <Users className="w-8 h-8 text-primary dark:text-slate-200 transition-colors" />
                 </div>
                 <div className="flex items-center mt-2">
                   {analyticsData.overview.growthRate >= 0 ? (
@@ -553,14 +557,14 @@ export default function DashboardAnalytics({
               </CardContent>
             </Card>
 
-            <Card className="cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-all duration-200 bg-white dark:bg-card border-slate-200 dark:border-slate-700" onClick={onNavigateToAppointments} role="button" tabIndex={0} aria-label="عرض إدارة المواعيد">
+            <Card className="cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-all duration-200 bg-white dark:bg-card border-slate-200 dark:border-slate-700 interactive-card" onClick={onNavigateToAppointments} role="button" tabIndex={0} aria-label="عرض إدارة المواعيد">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground dark:text-slate-400">المواعيد</p>
                     <p className="text-2xl font-bold">{analyticsData.overview.totalAppointments}</p>
                   </div>
-                  <Calendar className="w-8 h-8 text-medical dark:text-slate-200" />
+                  <Calendar className="w-8 h-8 text-medical dark:text-slate-200 transition-colors" />
                 </div>
                 <div className="flex items-center mt-2">
                   <Badge variant="secondary" className="text-xs">
@@ -570,14 +574,14 @@ export default function DashboardAnalytics({
               </CardContent>
             </Card>
 
-            <Card className="cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-all duration-200 bg-white dark:bg-card border-slate-200 dark:border-slate-700" onClick={onNavigateToPayments} role="button" tabIndex={0} aria-label="عرض إدارة المدفوعات">
+            <Card className="cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-all duration-200 bg-white dark:bg-card border-slate-200 dark:border-slate-700 interactive-card" onClick={onNavigateToPayments} role="button" tabIndex={0} aria-label="عرض إدارة المدفوعات">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground dark:text-slate-400">الإيرادات</p>
                     <p className="text-2xl font-bold">{formatAmount(analyticsData.overview.totalRevenue)}</p>
                   </div>
-                  <DollarSign className="w-8 h-8 text-accent dark:text-slate-200" />
+                  <DollarSign className="w-8 h-8 text-accent dark:text-slate-200 transition-colors" />
                 </div>
                 <div className="flex items-center mt-2">
                   <span className="text-sm text-muted-foreground dark:text-slate-400">
@@ -587,14 +591,14 @@ export default function DashboardAnalytics({
               </CardContent>
             </Card>
 
-            <Card className="bg-white dark:bg-card border-slate-200 dark:border-slate-700 transition-all duration-200 hover:shadow-md dark:hover:shadow-lg">
+            <Card className="bg-white dark:bg-card border-slate-200 dark:border-slate-700 transition-all duration-200 hover:shadow-md dark:hover:shadow-lg interactive-card">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground dark:text-slate-400">معدل الاستفادة</p>
                     <p className="text-2xl font-bold">{analyticsData.kpis.appointmentUtilization.toFixed(1)}%</p>
                   </div>
-                  <Activity className="w-8 h-8 text-muted-foreground dark:text-slate-200" />
+                  <Activity className="w-8 h-8 text-muted-foreground dark:text-slate-200 transition-colors" />
                 </div>
                 <div className="flex items-center mt-2">
                   <span className="text-sm text-muted-foreground dark:text-slate-400">
@@ -837,19 +841,19 @@ export default function DashboardAnalytics({
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Button onClick={onNavigateToPatients} className="h-12 justify-start" aria-label="الانتقال إلى إدارة المرضى">
+                <Button onClick={onNavigateToPatients} className="h-12 justify-start transition-all duration-200 interactive-card" aria-label="الانتقال إلى إدارة المرضى">
                   <Users className="w-4 h-4 mr-2" />
                   إدارة المرضى
                 </Button>
-                <Button onClick={onNavigateToAppointments} variant="outline" className="h-12 justify-start" aria-label="الانتقال إلى إدارة المواعيد">
+                <Button onClick={onNavigateToAppointments} variant="outline" className="h-12 justify-start transition-all duration-200 interactive-card" aria-label="الانتقال إلى إدارة المواعيد">
                   <Calendar className="w-4 h-4 mr-2" />
                   إدارة المواعيد
                 </Button>
-                <Button onClick={onNavigateToPayments} variant="outline" className="h-12 justify-start" aria-label="الانتقال إلى إدارة المدفوعات">
+                <Button onClick={onNavigateToPayments} variant="outline" className="h-12 justify-start transition-all duration-200 interactive-card" aria-label="الانتقال إلى إدارة المدفوعات">
                   <DollarSign className="w-4 h-4 mr-2" />
                   إدارة المدفوعات
                 </Button>
-                <Button onClick={onNavigateToTreatments} variant="outline" className="h-12 justify-start" aria-label="الانتقال إلى إدارة العلاجات">
+                <Button onClick={onNavigateToTreatments} variant="outline" className="h-12 justify-start transition-all duration-200 interactive-card" aria-label="الانتقال إلى إدارة العلاجات">
                   <Activity className="w-4 h-4 mr-2" />
                   إدارة العلاجات
                 </Button>

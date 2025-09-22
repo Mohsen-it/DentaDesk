@@ -1,22 +1,28 @@
 import * as React from "react"
-import { PanelLeft } from "lucide-react"
+import { X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { useSidebar } from "@/components/ui/sidebar"
 
 export function AppSidebarTrigger() {
-  const { toggleSidebar } = useSidebar()
+  const { toggleSidebar, open } = useSidebar()
+
+  const handleClick = () => {
+    console.log('SidebarTrigger clicked, current state:', open)
+    toggleSidebar()
+  }
 
   return (
     <Button
       data-sidebar="trigger"
       variant="ghost"
       size="icon"
-      onClick={toggleSidebar}
-      className="h-7 w-7"
+      onClick={handleClick}
+      className="h-7 w-7 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+      title={open ? "إغلاق السايدبار" : "فتح السايدبار"}
     >
-      <PanelLeft className="h-4 w-4" />
-      <span className="sr-only">Toggle Sidebar</span>
+      <X className="h-4 w-4" />
+      <span className="sr-only">إغلاق السايدبار</span>
     </Button>
   )
 }

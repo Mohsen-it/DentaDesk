@@ -127,12 +127,24 @@ export function AppSidebar({ activeTab, onTabChange, ...props }: AppSidebarProps
   const clinicLogo = useStableClinicLogo()
 
   return (
-    <Sidebar collapsible="offcanvas" side="right" className="border-l border-border/50 dark:border-border shadow-xl rtl-layout bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900" {...props}>
-      <SidebarHeader className="border-b border-border/50 dark:border-border dark:bg-slate-900">
+    <Sidebar
+      collapsible="offcanvas"
+      side="right"
+      className="border-l border-border/50 dark:border-border shadow-xl rtl-layout bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900 performance-optimized sidebar-performance loaded"
+      {...props}
+    >
+      <SidebarHeader className="border-b border-border/50 dark:border-border dark:bg-slate-900 flex-shrink-0 performance-optimized layout-contained" style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 10,
+        background: 'hsl(var(--background))',
+        contain: 'layout style',
+        willChange: 'auto'
+      }}>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild >
-              <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-accent/50 dark:hover:bg-accent/20 transition-all duration-300 flex-rtl shadow-sm hover:shadow-md ">
+              <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-accent/50 dark:hover:bg-accent/20 transition-all duration-200 ease-out flex-rtl shadow-sm hover:shadow-md hover:scale-[1.01] cursor-pointer">
                 <div className="flex aspect-square size-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-lg overflow-hidden ring-2 ring-primary/20">
                   {clinicLogo && clinicLogo.trim() !== '' ? (
                     <img
@@ -169,8 +181,21 @@ export function AppSidebar({ activeTab, onTabChange, ...props }: AppSidebarProps
         </SidebarMenu>
       </SidebarHeader>
 
-      <SidebarContent className="px-4 py-6  dark:bg-slate-900/20">
-        <SidebarGroup className="space-y-2">
+      <SidebarContent className="px-4 py-6 dark:bg-slate-900/20 flex-1 overflow-y-auto performance-optimized scroll-optimized" style={{
+        maxHeight: 'calc(100vh - 140px)', // حساب ارتفاع الهيدر والفوتر
+        scrollBehavior: 'smooth',
+        scrollbarWidth: 'thin',
+        scrollbarColor: 'rgb(148 163 184 / 0.3) transparent',
+        contain: 'layout style',
+        willChange: 'auto',
+        // Enhanced scroll performance
+        WebkitOverflowScrolling: 'touch',
+        overscrollBehavior: 'contain'
+      }}>
+        <SidebarGroup className="space-y-2 flex-1 min-h-0 performance-optimized layout-contained" style={{
+          contain: 'layout style',
+          willChange: 'auto'
+        }}>
           <SidebarGroupLabel className="text-sm font-bold text-muted-foreground dark:text-muted-foreground uppercase tracking-wider px-3 py-2 text-right border-r-2 border-primary">
             القائمة الرئيسية
           </SidebarGroupLabel>
@@ -181,7 +206,7 @@ export function AppSidebar({ activeTab, onTabChange, ...props }: AppSidebarProps
                   <SidebarMenuButton
                     isActive={activeTab === item.url}
                     onClick={() => onTabChange(item.url)}
-                    className="flex items-center gap-4 w-full text-right justify-start hover:bg-gradient-to-r hover:from-accent/50 hover:to-accent/30 dark:hover:from-accent/20 dark:hover:to-accent/10 transition-all duration-300 py-3 px-4 text-base nav-item rounded-xl shadow-sm hover:shadow-md border border-transparent hover:border-primary/30 dark:hover:border-primary/20 group"
+                    className="flex items-center gap-4 w-full text-right justify-start hover:bg-gradient-to-r hover:from-accent/50 hover:to-accent/30 dark:hover:from-accent/20 dark:hover:to-accent/10 transition-all duration-200 ease-out py-3 px-4 text-base nav-item rounded-xl shadow-sm hover:shadow-md border border-transparent hover:border-primary/30 dark:hover:border-primary/20 group hover:scale-[1.02] focus:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-primary/20"
                   >
                     <item.icon className={`size-5 nav-icon transition-all duration-300 ${
                       activeTab === item.url
@@ -204,10 +229,18 @@ export function AppSidebar({ activeTab, onTabChange, ...props }: AppSidebarProps
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-border/50 dark:border-border dark:bg-slate-900">
+      <SidebarFooter className="border-t border-border/50 dark:border-border dark:bg-slate-900 flex-shrink-0 performance-optimized layout-contained" style={{
+        position: 'sticky',
+        bottom: 0,
+        zIndex: 10,
+        background: 'hsl(var(--background))',
+        marginTop: 'auto',
+        contain: 'layout style',
+        willChange: 'auto'
+      }}>
         <SidebarMenu>
           <SidebarMenuItem>
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-accent/50 to-accent/30 dark:from-accent/20 dark:to-accent/10 hover:from-accent/60 hover:to-accent/40 dark:hover:from-accent/30 dark:hover:to-accent/20 shadow-sm hover:shadow-md transition-all duration-300">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-accent/50 to-accent/30 dark:from-accent/20 dark:to-accent/10 hover:from-accent/60 hover:to-accent/40 dark:hover:from-accent/30 dark:hover:to-accent/20 shadow-sm hover:shadow-md transition-all duration-200 ease-out hover:scale-[1.01] cursor-pointer">
               <div className="flex aspect-square size-10 items-center justify-center rounded-full bg-gradient-to-br from-primary/80 to-purple-700 text-primary-foreground overflow-hidden ring-2 ring-primary/20 shadow-md">
                 {clinicLogo && clinicLogo.trim() !== '' ? (
                   <img
@@ -240,7 +273,7 @@ export function AppSidebar({ activeTab, onTabChange, ...props }: AppSidebarProps
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
-      <SidebarRail />
+      {/* SidebarRail disabled to remove the thin lines */}
     </Sidebar>
   )
 }
