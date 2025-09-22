@@ -1,4 +1,4 @@
- import React, { useState, useEffect } from 'react'
+import React, { memo, useState, useEffect } from 'react'
  import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
  import { Button } from '@/components/ui/button'
  import { Badge } from '@/components/ui/badge'
@@ -23,11 +23,15 @@ import { usePatientStore } from '@/store/patientStore'
 import { useAppointmentStore } from '@/store/appointmentStore'
 import { usePaymentStore } from '@/store/paymentStore'
 import { useInventoryStore } from '@/store/inventoryStore'
+import { shallow } from 'zustand/shallow'
 import { useSettingsStore } from '@/store/settingsStore'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useCurrency } from '@/contexts/CurrencyContext'
 import { format, subDays, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns'
 import { ar } from 'date-fns/locale'
+
+// Performance: only log verbose analytics in development
+const __DEV__ = process.env.NODE_ENV !== 'production'
 
 interface DashboardAnalyticsProps {
   onNavigateToPatients?: () => void
@@ -61,7 +65,7 @@ interface AnalyticsData {
   }
 }
 
-export default function DashboardAnalytics({
+function DashboardAnalyticsComponent({
   onNavigateToPatients,
   onNavigateToAppointments,
   onNavigateToPayments,
@@ -73,10 +77,12 @@ export default function DashboardAnalytics({
   const [timeRange, setTimeRange] = useState('30d')
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
 
-  const { patients } = usePatientStore()
-  const { appointments } = useAppointmentStore()
-  const { payments, totalRevenue } = usePaymentStore()
-  const { items: inventoryItems } = useInventoryStore()
+  // Use selectors to limit re-renders to only the used slices
+  const patients = usePatientStore(state => state.patients)
+  const appointments = useAppointmentStore(state => state.appointments)
+  const payments = usePaymentStore(state => state.payments)
+  const totalRevenue = usePaymentStore(state => state.totalRevenue)
+  const inventoryItems = useInventoryStore(state => state.items)
   // Removed: const { currency } = useSettingsStore() - now using centralized currency formatting
   const { isDarkMode } = useTheme()
   const { formatAmount, useArabicNumerals } = useCurrency()
@@ -145,7 +151,7 @@ export default function DashboardAnalytics({
       }
 
       // Log data availability for debugging
-      console.log('📊 Analytics Data Check:', {
+      __DEV__ && console.log('📊 Analytics Data Check:', {
         patientsCount: patients.length,
         appointmentsCount: appointments.length,
         paymentsCount: payments.length,
@@ -166,7 +172,7 @@ export default function DashboardAnalytics({
         isWithinInterval(new Date(payment.payment_date), { start: startDate, end: endDate })
       )
 
-      console.log('📊 Filtered Data:', {
+      __DEV__ && console.log('📊 Filtered Data:', {
         filteredAppointmentsCount: filteredAppointments.length,
         filteredPaymentsCount: filteredPayments.length,
         dateRange: { start: startDate.toISOString(), end: endDate.toISOString() }
@@ -181,7 +187,7 @@ export default function DashboardAnalytics({
         growthRate: calculateGrowthRate()
       }
 
-      console.log('📊 Overview Metrics:', {
+      __DEV__ && console.log('📊 Overview Metrics:', {
         totalPatients: overview.totalPatients,
         totalAppointments: overview.totalAppointments,
         totalRevenue: totalRevenue,
@@ -202,7 +208,7 @@ export default function DashboardAnalytics({
         ageGroups: calculateAgeGroupDistribution()
       }
 
-      console.log('📊 Calculated Distributions:', {
+      __DEV__ && console.log('📊 Calculated Distributions:', {
         appointmentStatus: distributions.appointmentStatus,
         gender: distributions.gender,
         ageGroups: distributions.ageGroups
@@ -217,7 +223,7 @@ export default function DashboardAnalytics({
         noShowRate: calculateNoShowRate(filteredAppointments)
       }
 
-      console.log('📊 KPIs:', {
+      __DEV__ && console.log('📊 KPIs:', {
         patientRetention: kpis.patientRetention,
         appointmentUtilization: kpis.appointmentUtilization,
         averageRevenue: averageRevenue,
@@ -231,7 +237,7 @@ export default function DashboardAnalytics({
         kpis
       }
 
-      console.log('📊 Final Analytics Data:', finalData)
+      __DEV__ && console.log('📊 Final Analytics Data:', finalData)
 
       setAnalyticsData(finalData)
       setLastUpdate(new Date())
@@ -347,7 +353,7 @@ export default function DashboardAnalytics({
   }
 
   const calculateGenderDistribution = () => {
-    console.log('📊 Calculating Gender Distribution:', {
+    __DEV__ && console.log('📊 Calculating Gender Distribution:', {
       patientsCount: patients.length,
       patientsSample: patients.slice(0, 5).map(p => ({ id: p.id, gender: p.gender }))
     })
@@ -355,7 +361,7 @@ export default function DashboardAnalytics({
     const genderCounts = patients.reduce((acc, patient) => {
       // Validate gender data
       if (!patient.gender || typeof patient.gender !== 'string') {
-        console.warn('Invalid gender data for patient:', patient.id, patient.gender)
+        __DEV__ && console.warn('Invalid gender data for patient:', patient.id, patient.gender)
         return acc
       }
 
@@ -367,7 +373,7 @@ export default function DashboardAnalytics({
       return acc
     }, {} as Record<string, number>)
 
-    console.log('📊 Gender Counts:', genderCounts)
+    __DEV__ && console.log('📊 Gender Counts:', genderCounts)
 
     const colors = [
       'hsl(var(--primary))',
@@ -383,7 +389,7 @@ export default function DashboardAnalytics({
   }
 
   const calculateAgeGroupDistribution = () => {
-    console.log('📊 Calculating Age Group Distribution:', {
+    __DEV__ && console.log('📊 Calculating Age Group Distribution:', {
       patientsCount: patients.length,
       ageSample: patients.slice(0, 5).map(p => ({ id: p.id, age: p.age }))
     })
@@ -405,7 +411,7 @@ export default function DashboardAnalytics({
       else ageGroups['65+']++
     })
 
-    console.log('📊 Age Groups:', ageGroups)
+    __DEV__ && console.log('📊 Age Groups:', ageGroups)
 
     const colors = [
       'hsl(var(--primary))',
@@ -628,7 +634,7 @@ export default function DashboardAnalytics({
                     <XAxis dataKey="date" />
                     <YAxis />
                     <Tooltip />
-                    <Area type="monotone" dataKey="count" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} />
+                    <Area type="monotone" dataKey="count" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} isAnimationActive={false} animationDuration={0} />
                   </AreaChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -649,7 +655,7 @@ export default function DashboardAnalytics({
                     <XAxis dataKey="date" />
                     <YAxis />
                     <Tooltip formatter={(value) => [formatAmount(Number(value)), 'الإيرادات']} />
-                    <Line type="monotone" dataKey="amount" stroke="hsl(var(--medical-500))" strokeWidth={2} />
+                    <Line type="monotone" dataKey="amount" stroke="hsl(var(--medical-500))" strokeWidth={2} isAnimationActive={false} animationDuration={0} />
                   </RechartsLineChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -670,7 +676,7 @@ export default function DashboardAnalytics({
                     <XAxis dataKey="date" />
                     <YAxis />
                     <Tooltip />
-                    <Bar dataKey="count" fill="hsl(var(--accent))" />
+                    <Bar dataKey="count" fill="hsl(var(--accent))" isAnimationActive={false} animationDuration={0} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -698,6 +704,8 @@ export default function DashboardAnalytics({
                       cy="50%"
                       outerRadius={80}
                       dataKey="value"
+                      isAnimationActive={false}
+                      animationDuration={0}
                       label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                     >
                       {analyticsData.distributions.appointmentStatus.map((entry, index) => (
@@ -727,6 +735,8 @@ export default function DashboardAnalytics({
                       cy="50%"
                       outerRadius={80}
                       dataKey="value"
+                      isAnimationActive={false}
+                      animationDuration={0}
                       label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                     >
                       {analyticsData.distributions.gender.map((entry, index) => (
@@ -756,6 +766,8 @@ export default function DashboardAnalytics({
                       cy="50%"
                       outerRadius={80}
                       dataKey="value"
+                      isAnimationActive={false}
+                      animationDuration={0}
                       label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                     >
                       {analyticsData.distributions.ageGroups.map((entry, index) => (
@@ -865,3 +877,8 @@ export default function DashboardAnalytics({
     </div>
   )
 }
+
+export default memo(DashboardAnalyticsComponent, (prevProps, nextProps) => {
+  // Props are navigation callbacks only; treat them as stable to prevent needless re-renders
+  return true
+})
