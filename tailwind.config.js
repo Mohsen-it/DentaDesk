@@ -211,6 +211,14 @@ export default {
   					opacity: '1'
   				}
   			},
+  			'fade-in-fast': {
+  				from: {
+  					opacity: '0'
+  				},
+  				to: {
+  					opacity: '1'
+  				}
+  			},
   			'slide-in-from-top': {
   				from: {
   					transform: 'translateY(-100%)'
@@ -232,6 +240,7 @@ export default {
   			'accordion-down': 'accordion-down 0.2s ease-out',
   			'accordion-up': 'accordion-up 0.2s ease-out',
   			'fade-in': 'fade-in 0.2s ease-out',
+  			'fade-in-fast': 'fade-in-fast 0.1s ease-out',
   			'slide-in-from-top': 'slide-in-from-top 0.3s ease-out',
   			'slide-in-from-bottom': 'slide-in-from-bottom 0.3s ease-out'
   		}

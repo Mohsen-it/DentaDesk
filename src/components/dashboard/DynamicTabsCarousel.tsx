@@ -230,7 +230,7 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
   return (
     <div
       ref={containerRef}
-      className="h-full flex flex-col bg-card rounded-xl shadow-xl dark:shadow-2xl overflow-hidden backdrop-blur-sm animate-fade-in"
+      className="h-full flex flex-col bg-card rounded-xl shadow-xl dark:shadow-2xl overflow-hidden backdrop-blur-sm"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}

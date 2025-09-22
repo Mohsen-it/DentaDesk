@@ -75,9 +75,9 @@ const FloatingQuickActions = memo(function FloatingQuickActions({
   }, [isExpanded])
 
   return (
-    <div className="floating-actions fixed bottom-24 right-4 z-50 animate-fade-in" dir="rtl">
+    <div className="floating-actions fixed bottom-24 right-4 z-50" dir="rtl">
       {/* FAB Menu */}
-      <div className={`flex flex-col-reverse items-end gap-2 sm:gap-3 mb-3 sm:mb-4 transition-all duration-300 ${isExpanded ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
+      <div className={`flex flex-col-reverse items-end gap-2 sm:gap-3 mb-3 sm:mb-4 transition-all duration-200 will-change-opacity ${isExpanded ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
         {actions.map((action, index) => {
           const Icon = action.icon
           return (
@@ -87,7 +87,7 @@ const FloatingQuickActions = memo(function FloatingQuickActions({
                 action.onClick?.()
                 setIsExpanded(false)
               }}
-              className={`flex items-center gap-2 px-3 py-3 sm:px-4 rounded-full font-medium transition-all duration-300 hover:scale-110 shadow-lg ${action.color} text-white min-h-[44px] sm:min-h-[48px] w-[44px] sm:w-[48px] justify-center`}
+              className={`flex items-center gap-2 px-3 py-3 sm:px-4 rounded-full font-medium transition-all duration-200 hover:scale-105 shadow-lg will-change-transform ${action.color} text-white min-h-[44px] sm:min-h-[48px] w-[44px] sm:w-[48px] justify-center`}
               aria-label={action.label}
             >
               <Icon className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
@@ -99,7 +99,7 @@ const FloatingQuickActions = memo(function FloatingQuickActions({
       {/* Main FAB Button */}
       <Button
         onClick={toggleExpanded}
-        className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-primary hover:bg-primary/90 shadow-lg hover:scale-110 transition-all duration-300 flex items-center justify-center"
+        className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-primary hover:bg-primary/90 shadow-lg hover:scale-105 transition-all duration-200 will-change-transform flex items-center justify-center"
         aria-label={isExpanded ? 'إغلاق الإجراءات السريعة' : 'فتح الإجراءات السريعة'}
       >
         {isExpanded ? <X className="w-5 h-5 sm:w-6 sm:h-6 text-white" /> : <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-white" />}

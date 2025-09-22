@@ -56,7 +56,7 @@ const LeftSidebarStatistics = memo(function LeftSidebarStatistics() {
   ], [patients.length, pendingAmount, urgentAlerts, formatAmount])
 
   return (
-    <div className="h-full p-4 md:p-5 lg:p-6 bg-sidebar animate-fade-in" role="region" aria-label="إحصائيات العيادة">
+    <div className="h-full p-4 md:p-5 lg:p-6 bg-sidebar" role="region" aria-label="إحصائيات العيادة">
       <div className="space-y-5 md:space-y-6 lg:space-y-7">
         <div className="text-center space-y-2">
           <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-sidebar-foreground mb-1 md:mb-2 font-tajawal">

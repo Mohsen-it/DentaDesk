@@ -72,7 +72,7 @@ const NewDashboardLayout = memo(function NewDashboardLayout({
   }, [onNavigateToPatients, onNavigateToAppointments, onNavigateToPayments, onNavigateToTreatments])
 
   return (
-    <div className="min-h-screen bg-background rtl relative overflow-hidden animate-fade-in" dir="rtl">
+    <div className="min-h-screen bg-background rtl relative overflow-hidden" dir="rtl">
         {/* Responsive CSS Grid Layout with improved spacing and visual hierarchy */}
         <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] lg:grid-cols-[340px_1fr] xl:grid-cols-[380px_1fr] rtl:md:grid-cols-[1fr_300px] rtl:lg:grid-cols-[1fr_340px] rtl:xl:grid-cols-[1fr_380px] grid-rows-[auto_1fr] h-screen gap-0 md:gap-3 lg:gap-4 xl:gap-5">
         {/* Header - spans full width on mobile, top row on desktop with enhanced shadow */}
