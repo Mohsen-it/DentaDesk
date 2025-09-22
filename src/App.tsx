@@ -58,7 +58,6 @@ const preloadCriticalComponents = () => {
 import { AppSidebar } from './components/AppSidebar'
 import { AppSidebarTrigger } from './components/AppSidebarTrigger'
 import LiveDateTime from './components/LiveDateTime'
-import SplashScreen from './components/SplashScreen'
 import PaymentPasswordModal from './components/payments/PaymentPasswordModal'
 import PasswordResetModal from './components/payments/PasswordResetModal'
 import PasswordSetupModal from './components/payments/PasswordSetupModal'
@@ -132,7 +131,6 @@ function AppContent() {
 
   // State hooks (always in same order)
   const [activeTab, setActiveTab] = useState('dashboard')
-  const [showSplash, setShowSplash] = useState(true)
   const [showAddPatient, setShowAddPatient] = useState(false)
   const [showAddPayment, setShowAddPayment] = useState(false)
   const [loginLoading, setLoginLoading] = useState(false)
@@ -477,11 +475,6 @@ function AppContent() {
         error: errorMessage
       }
     }
-  }
-
-  // Show splash screen initially
-  if (showSplash) {
-    return <SplashScreen onComplete={() => setShowSplash(false)} />
   }
 
   // Show loading screen while checking license or auth status
