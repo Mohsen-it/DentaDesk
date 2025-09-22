@@ -141,7 +141,7 @@ export class PdfService {
     settings?: ClinicSettings | null,
     subtitle?: string
   ): string {
-    const clinicName = settings?.clinic_name || 'عيادة الأسنان الحديثة'
+    const clinicName = `عيادة الأسنان${settings?.clinic_name && settings.clinic_name.trim() !== '' ? ' - ' + settings.clinic_name : ''}`
     const doctorName = settings?.doctor_name || 'د. محمد أحمد'
     const clinicAddress = settings?.clinic_address || ''
     const clinicPhone = settings?.clinic_phone || ''

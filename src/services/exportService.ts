@@ -162,6 +162,13 @@ export class ExportService {
 
   // Create HTML content for reports
   private static createReportHTML(type: string, data: any, options: ReportExportOptions): string {
+    // Try to read clinic name from stored settings on window (preloaded via settings store) if available
+    const globalAny: any = (typeof window !== 'undefined') ? (window as any) : undefined
+    const settingsFromWindow = globalAny?.__CLINIC_SETTINGS__ || globalAny?.clinicSettings || undefined
+    const settingsClinicName = settingsFromWindow?.clinic_name && String(settingsFromWindow.clinic_name).trim() !== ''
+      ? String(settingsFromWindow.clinic_name)
+      : undefined
+    const clinicTitle = `عيادة الأسنان${settingsClinicName ? ' - ' + settingsClinicName : ''}`
     const reportTitles = {
       patients: 'تقرير المرضى',
       appointments: 'تقرير المواعيد',
@@ -274,7 +281,7 @@ export class ExportService {
       </head>
       <body>
         <div class="header">
-          <div class="clinic-name">عيادة الأسنان الحديثة</div>
+          <div class="clinic-name">${clinicTitle}</div>
           <div class="report-title">${title}</div>
           <div class="report-date">${(() => {
             // Format date as DD/MM/YYYY (Gregorian calendar)
@@ -1362,7 +1369,10 @@ export class ExportService {
     // Header
     worksheet.mergeCells('A1:F1')
     const headerCell = worksheet.getCell('A1')
-    headerCell.value = 'تقرير المختبرات - عيادة الأسنان الحديثة'
+    const globalAny2: any = (typeof window !== 'undefined') ? (window as any) : undefined
+    const settingsFromWindow2 = globalAny2?.__CLINIC_SETTINGS__ || globalAny2?.clinicSettings || undefined
+    const clinicNameForExcel1 = `عيادة الأسنان${settingsFromWindow2?.clinic_name && String(settingsFromWindow2.clinic_name).trim() !== '' ? ' - ' + String(settingsFromWindow2.clinic_name) : ''}`
+    headerCell.value = `تقرير المختبرات - ${clinicNameForExcel1}`
     headerCell.font = { size: 16, bold: true, color: { argb: 'FFFFFFFF' } }
     headerCell.fill = {
       type: 'pattern',
@@ -1605,7 +1615,10 @@ export class ExportService {
     // Header
     worksheet.mergeCells('A1:H1')
     const headerCell = worksheet.getCell('A1')
-    headerCell.value = 'تقرير احتياجات العيادة - عيادة الأسنان الحديثة'
+    const globalAny3: any = (typeof window !== 'undefined') ? (window as any) : undefined
+    const settingsFromWindow3 = globalAny3?.__CLINIC_SETTINGS__ || globalAny3?.clinicSettings || undefined
+    const clinicNameForExcel2 = `عيادة الأسنان${settingsFromWindow3?.clinic_name && String(settingsFromWindow3.clinic_name).trim() !== '' ? ' - ' + String(settingsFromWindow3.clinic_name) : ''}`
+    headerCell.value = `تقرير احتياجات العيادة - ${clinicNameForExcel2}`
     headerCell.font = { size: 16, bold: true, color: { argb: 'FFFFFFFF' } }
     headerCell.fill = {
       type: 'pattern',
