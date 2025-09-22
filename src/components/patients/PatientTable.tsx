@@ -409,19 +409,19 @@ function PatientTableComponent({
                   <span className="arabic-enhanced font-medium">الاسم الكامل للمريض</span>
                 </SortableHeader>
                 <SortableHeader field="gender">
-                  <span className="arabic-enhanced font-medium">الجنس</span>
+                  <span className="arabic-enhanced font-medium hidden md:inline">الجنس</span>
                 </SortableHeader>
                 <SortableHeader field="age">
-                  <span className="arabic-enhanced font-medium">العمر</span>
+                  <span className="arabic-enhanced font-medium hidden md:inline">العمر</span>
                 </SortableHeader>
                 <SortableHeader field="phone">
                   <span className="arabic-enhanced font-medium">رقم الهاتف</span>
                 </SortableHeader>
                 <SortableHeader field="patient_condition">
-                  <span className="arabic-enhanced font-medium">حالة المريض</span>
+                  <span className="arabic-enhanced font-medium hidden lg:inline">حالة المريض</span>
                 </SortableHeader>
                 <SortableHeader field="date_added">
-                  <span className="arabic-enhanced font-medium">تاريخ الإضافة</span>
+                  <span className="arabic-enhanced font-medium hidden lg:inline">تاريخ الإضافة</span>
                 </SortableHeader>
                 <TableHead className="text-center">
                   <span className="arabic-enhanced font-medium">الاجراءات</span>
@@ -444,12 +444,12 @@ function PatientTableComponent({
                         <span>{patient.full_name}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-center">
+                    <TableCell className="text-center hidden md:table-cell">
                       <Badge variant={patient.gender === 'male' ? 'default' : 'secondary'}>
                         {patient.gender === 'male' ? 'ذكر' : 'أنثى'}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-center">{patient.age} سنة</TableCell>
+                    <TableCell className="text-center hidden md:table-cell">{patient.age} سنة</TableCell>
                     <TableCell className="min-w-[120px] text-center table-cell-wrap-truncate-sm">
                       {patient.phone ? (
                         <div className="flex items-center justify-center">
@@ -493,18 +493,18 @@ function PatientTableComponent({
                         <span className="text-muted-foreground text-sm arabic-enhanced">غير محدد</span>
                       )}
                     </TableCell>
-                    <TableCell className="min-w-[150px] text-center">
+                    <TableCell className="min-w-[150px] text-center hidden lg:table-cell">
                       <Badge variant="outline" className="max-w-[150px] truncate arabic-enhanced" title={patient.patient_condition}>
                         {patient.patient_condition}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-center">
+                    <TableCell className="text-center hidden lg:table-cell">
                       <span className="text-sm arabic-enhanced">
                         {formatDate(patient.date_added)}
                       </span>
                     </TableCell>
                     <TableCell className="w-auto text-center">
-                      <div className="flex items-center justify-center gap-1">
+                      <div className="flex items-center justify-center gap-1 flex-wrap">
                         {/* الأزرار الرئيسية الثلاثة */}
                         <Button
                           variant="ghost"
@@ -592,14 +592,14 @@ function PatientTableComponent({
 
       {/* Pagination Controls */}
       {totalCount > 0 && (
-        <div className="flex items-center justify-between px-2">
+        <div className="flex items-center justify-between px-2 flex-col gap-3 sm:flex-row">
           <div className="flex items-center space-x-2 space-x-reverse">
             <p className="text-sm text-muted-foreground arabic-enhanced">
               عرض {((currentPage - 1) * pageSize) + 1} إلى {Math.min(currentPage * pageSize, totalCount)} من {totalCount} مريض
             </p>
           </div>
 
-          <div className="flex items-center space-x-6 space-x-reverse lg:space-x-8">
+          <div className="flex items-center space-x-6 space-x-reverse lg:space-x-8 flex-wrap justify-center">
             <div className="flex items-center space-x-2 space-x-reverse">
               <p className="text-sm font-medium arabic-enhanced">عدد الصفوف لكل صفحة</p>
               <Select
@@ -619,7 +619,7 @@ function PatientTableComponent({
               </Select>
             </div>
 
-            <div className="flex w-[100px] items-center justify-center text-sm font-medium arabic-enhanced">
+            <div className="flex w-[120px] items-center justify-center text-sm font-medium arabic-enhanced">
               صفحة {currentPage} من {totalPages}
             </div>
 

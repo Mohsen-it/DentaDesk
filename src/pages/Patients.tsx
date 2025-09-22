@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
@@ -8,7 +8,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { usePatientStore } from '@/store/patientStore'
 import { useAppointmentStore } from '@/store/appointmentStore'
 import { usePaymentStore } from '@/store/paymentStore'
-import { formatDate, getInitials, calculateAge } from '@/lib/utils'
+import { calculateAge } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import { useRealTimeSync } from '@/hooks/useRealTimeSync'
 import { notify } from '@/services/notificationService'
@@ -32,13 +32,7 @@ import { Patient } from '@/types'
 import {
   Plus,
   Search,
-  Edit,
   Trash2,
-  Phone,
-  Mail,
-  Calendar,
-  User,
-  RefreshCw,
   Download,
   FileText,
   Filter,
@@ -56,12 +50,12 @@ export default function Patients({ onNavigateToTreatments, onNavigateToPayments 
 
   const {
     filteredPatients,
-    selectedPatient,
+    
     isLoading,
     error,
     searchQuery,
     setSearchQuery,
-    setSelectedPatient,
+    
     deletePatient,
     updatePatient,
     clearError,
@@ -178,13 +172,18 @@ export default function Patients({ onNavigateToTreatments, onNavigateToPayments 
     // Age range filter
     if (ageRangeFilter !== 'all') {
       filtered = filtered.filter(patient => {
-        if (!patient.date_of_birth) return ageRangeFilter === 'unknown'
+        const ageValue = typeof (patient as any).age === 'number'
+          ? (patient as any).age
+          : (patient as any).date_of_birth
+            ? calculateAge((patient as any).date_of_birth)
+            : null
 
-        const age = calculateAge(patient.date_of_birth)
+        if (ageValue == null) return ageRangeFilter === 'unknown'
+
         switch (ageRangeFilter) {
-          case 'child': return age < 18
-          case 'adult': return age >= 18 && age < 60
-          case 'senior': return age >= 60
+          case 'child': return ageValue < 18
+          case 'adult': return ageValue >= 18 && ageValue < 60
+          case 'senior': return ageValue >= 60
           case 'unknown': return false
           default: return true
         }
@@ -230,17 +229,17 @@ export default function Patients({ onNavigateToTreatments, onNavigateToPayments 
   return (
     <div className="space-y-6" dir="rtl">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-start sm:items-center justify-between gap-4 flex-col sm:flex-row">
         <div>
           <h1 className="text-heading-1 text-foreground arabic-enhanced">إدارة المرضى</h1>
           <p className="text-body text-muted-foreground mt-2 arabic-enhanced">
             إدارة معلومات المرضى وسجلاتهم الطبية
           </p>
         </div>
-        <div className="flex items-center space-x-2 space-x-reverse">
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap space-x-2 space-x-reverse">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline">
+              <Button variant="outline" className="w-full sm:w-auto">
                 <Download className="w-4 h-4 ml-2" />
                 تصدير
               </Button>
@@ -287,7 +286,7 @@ export default function Patients({ onNavigateToTreatments, onNavigateToPayments 
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button onClick={() => setShowAddDialog(true)}>
+          <Button onClick={() => setShowAddDialog(true)} className="w-full sm:w-auto">
             <Plus className="w-4 h-4 ml-2" />
             إضافة مريض جديد
           </Button>
@@ -298,7 +297,7 @@ export default function Patients({ onNavigateToTreatments, onNavigateToPayments 
       <Card>
         <CardContent className="pt-6">
           <div className="space-y-4" dir="rtl">
-            <div className="flex items-center gap-4" dir="rtl">
+            <div className="flex items-stretch gap-4 flex-col md:flex-row" dir="rtl">
               <div className="relative flex-1">
                 <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
@@ -311,7 +310,7 @@ export default function Patients({ onNavigateToTreatments, onNavigateToPayments 
               </div>
               <Collapsible open={showFilters} onOpenChange={setShowFilters}>
                 <CollapsibleTrigger asChild>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="shrink-0 w-full md:w-auto">
                     <Filter className="w-4 h-4 mr-2" />
                     تصفية
                     {(genderFilter !== 'all' || ageRangeFilter !== 'all' || dateAddedFilter.start || dateAddedFilter.end) && (
@@ -321,7 +320,7 @@ export default function Patients({ onNavigateToTreatments, onNavigateToPayments 
                 </CollapsibleTrigger>
               </Collapsible>
               {(searchQuery || genderFilter !== 'all' || ageRangeFilter !== 'all' || dateAddedFilter.start || dateAddedFilter.end) && (
-                <Button variant="ghost" size="sm" onClick={clearAllFilters}>
+                <Button variant="ghost" size="sm" onClick={clearAllFilters} className="shrink-0 w-full md:w-auto">
                   <X className="w-4 h-4 mr-2" />
                   مسح الكل
                 </Button>
@@ -331,7 +330,7 @@ export default function Patients({ onNavigateToTreatments, onNavigateToPayments 
             {/* Advanced Filters */}
             <Collapsible open={showFilters} onOpenChange={setShowFilters}>
               <CollapsibleContent className="space-y-4" dir="rtl">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg" dir="rtl">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg" dir="rtl">
                   {/* Gender Filter */}
                   <div className="space-y-2 text-right">
                     <label className="text-sm font-medium">الجنس</label>
