@@ -143,7 +143,7 @@ export const useSettingsStore = create<SettingsStore>()(
             )
 
             logger.debug('Settings Store: About to call window.electronAPI.settings.get()')
-            const settings = await Promise.race([settingsPromise, timeoutPromise])
+            const settings: any = await Promise.race([settingsPromise, timeoutPromise])
             logger.debug('Settings Store: Received settings from electronAPI:', {
               has_settings: !!settings,
               clinic_name: settings?.clinic_name,
@@ -182,6 +182,7 @@ export const useSettingsStore = create<SettingsStore>()(
                   isLoading: false,
                   isLoaded: true // Mark as loaded
                 })
+                try { (window as any).__CLINIC_SETTINGS__ = restoredSettings } catch {}
                 // Save the restored settings as a new backup
                 saveSettingsBackup(restoredSettings)
                 const backupEndTime = performance.now()
@@ -203,6 +204,7 @@ export const useSettingsStore = create<SettingsStore>()(
               isLoading: false,
               isLoaded: true // Mark as loaded
             })
+            try { (window as any).__CLINIC_SETTINGS__ = settings } catch {}
             const updateEndTime = performance.now()
             logger.debug(`Settings State Update: ${(updateEndTime - updateStartTime).toFixed(2)}ms`)
 
@@ -269,6 +271,7 @@ export const useSettingsStore = create<SettingsStore>()(
               isLoading: false,
               isLoaded: true
             })
+            try { (window as any).__CLINIC_SETTINGS__ = updatedSettings } catch {}
 
             // Save backup immediately after successful update
             saveSettingsBackup(updatedSettings)
