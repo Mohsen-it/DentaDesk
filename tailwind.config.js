@@ -43,7 +43,7 @@ export default {
 
     // Additional dark mode classes for cards
     'bg-white', 'dark:bg-card', 'border-slate-200', 'dark:border-slate-700',
-    'text-slate-700', 'dark:text-slate-300', 'text-slate-800', 'dark:text-slate-200'
+    'text-slate-700', 'dark:text-slate-300', 'text-slate-800', 'dark:text-slate-200',
   ],
   darkMode: 'class', // Enable class-based dark mode
   theme: {

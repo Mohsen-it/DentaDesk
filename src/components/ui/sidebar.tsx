@@ -159,7 +159,7 @@ const SidebarProvider = React.forwardRef<
               } as React.CSSProperties
             }
             className={cn(
-              "sidebar-wrapper group/sidebar-wrapper flex min-h-svh w-full has-[[data-variant=inset]]:bg-sidebar",
+              "sidebar-wrapper group/sidebar-wrapper flex min-h-screen w-full has-[[data-variant=inset]]:bg-sidebar",
               className
             )}
             ref={ref}
@@ -257,7 +257,7 @@ const Sidebar = React.forwardRef<
         />
         <div
           className={cn(
-            "fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right,width] duration-200 ease-linear md:flex",
+            "w-[--sidebar-width] transition-[left,right,width] duration-200 ease-linear md:flex h-full",
             side === "left"
               ? "left-0 group-data-[state=collapsed]:-left-[var(--sidebar-width)]"
               : "right-0 group-data-[state=collapsed]:-right-[var(--sidebar-width)]",
@@ -271,7 +271,7 @@ const Sidebar = React.forwardRef<
         >
           <div
             data-sidebar="sidebar"
-            className="flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow"
+            className="flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow flex-grow"
           >
             {children}
           </div>
@@ -289,7 +289,6 @@ const SidebarTrigger = React.forwardRef<
   const { toggleSidebar, open } = useSidebar()
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    console.log('SidebarTrigger clicked, current state:', open)
     onClick?.(event)
     toggleSidebar()
   }

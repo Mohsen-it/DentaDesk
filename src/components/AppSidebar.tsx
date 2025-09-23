@@ -1,29 +1,12 @@
 import * as React from "react"
 import {
-  Calendar,
-  CreditCard,
-  LayoutDashboard,
-  Settings,
-  Users,
-  User2,
-  Package,
-  BarChart3,
-  Microscope,
-  Pill,
-  Heart,
-  Stethoscope,
-  ClipboardList,
-  Receipt,
-  FileText,
   Activity,
-  Clock,
+  CalendarDays,
   DollarSign,
   Shield,
-  TrendingUp,
+  Stethoscope,
+  User2,
   UserCheck,
-  CalendarDays,
-  FileBarChart,
-  Building2,
 } from "lucide-react"
 
 import {
@@ -37,10 +20,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarRail,
 } from "@/components/ui/sidebar"
 
-import { useSettingsStore } from "@/store/settingsStore"
 import { useStableClinicName, useStableDoctorName, useStableClinicLogo } from "@/hooks/useStableSettings"
 
 // Navigation items data
@@ -121,7 +102,6 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 }
 
 export function AppSidebar({ activeTab, onTabChange, ...props }: AppSidebarProps) {
-  const { settings } = useSettingsStore()
   const clinicName = useStableClinicName()
   const doctorName = useStableDoctorName()
   const clinicLogo = useStableClinicLogo()
@@ -181,8 +161,8 @@ export function AppSidebar({ activeTab, onTabChange, ...props }: AppSidebarProps
         </SidebarMenu>
       </SidebarHeader>
 
-      <SidebarContent className="px-4 py-6 dark:bg-slate-900/20 flex-1 overflow-y-auto performance-optimized scroll-optimized" style={{
-        maxHeight: 'calc(100vh - 140px)', // حساب ارتفاع الهيدر والفوتر
+      <SidebarContent className="px-4 py-6 dark:bg-slate-900/20 flex-1 overflow-y-auto performance-optimized scroll-optimized flex-grow" style={{
+        // maxHeight: 'calc(100vh - 140px)', // حساب ارتفاع الهيدر والفوتر
         scrollBehavior: 'smooth',
         scrollbarWidth: 'thin',
         scrollbarColor: 'rgb(148 163 184 / 0.3) transparent',

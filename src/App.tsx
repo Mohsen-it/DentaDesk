@@ -2,23 +2,20 @@ import React, { useState, useEffect, useCallback, Suspense } from 'react'
 import { usePatientStore } from './store/patientStore'
 import { useAppointmentStore } from './store/appointmentStore'
 import { useSettingsStore } from './store/settingsStore'
-import { ThemeProvider, useTheme } from './contexts/ThemeContext'
-import { CurrencyProvider, useCurrency } from './contexts/CurrencyContext'
+import { ThemeProvider } from './contexts/ThemeContext'
+import { CurrencyProvider } from './contexts/CurrencyContext'
 import { useRealTimeSync } from './hooks/useRealTimeSync'
 import { useRealTimeTableSync } from './hooks/useRealTimeTableSync'
 import { useAuth } from './hooks/useAuth'
 import { useLicense } from './hooks/useLicense'
-import { useSystemShortcuts } from './hooks/useKeyboardShortcuts'
 import { enhanceKeyboardEvent } from '@/utils/arabicKeyboardMapping'
 import logger from './utils/logger'
 import LoginScreen from './components/auth/LoginScreen'
 import LicenseEntryScreen from './components/auth/LicenseEntryScreen'
 import AddPatientDialog from './components/patients/AddPatientDialog'
 import ConfirmDeleteDialog from './components/ConfirmDeleteDialog'
-import AppointmentCard from './components/AppointmentCard'
 import AddAppointmentDialog from './components/AddAppointmentDialog'
 import AddPaymentDialog from './components/payments/AddPaymentDialog'
-import QuickShortcutHint from './components/help/QuickShortcutHint'
 import PageLoading from './components/ui/PageLoading'
 import ErrorBoundary from './components/ErrorBoundary'
 import ThemeToggle from './components/ThemeToggle'
@@ -29,7 +26,6 @@ const PaymentsPage = React.lazy(() => import('./pages/Payments'))
 const SettingsPage = React.lazy(() => import('./pages/Settings'))
 const InventoryPage = React.lazy(() => import('./pages/Inventory'))
 const ReportsPage = React.lazy(() => import('./pages/Reports'))
-const Dashboard = React.lazy(() => import('./pages/Dashboard'))
 const EnhancedDashboard = React.lazy(() => import('./pages/EnhancedDashboard'))
 const PatientsPage = React.lazy(() => import('./pages/Patients'))
 const AppointmentsPage = React.lazy(() => import('./pages/Appointments'))
@@ -56,7 +52,6 @@ const preloadCriticalComponents = () => {
   }, 2000) // Preload after 2 seconds to not interfere with initial load
 }
 import { AppSidebar } from './components/AppSidebar'
-import { AppSidebarTrigger } from './components/AppSidebarTrigger'
 import LiveDateTime from './components/LiveDateTime'
 import PaymentPasswordModal from './components/payments/PaymentPasswordModal'
 import PasswordResetModal from './components/payments/PasswordResetModal'
@@ -64,7 +59,6 @@ import PasswordSetupModal from './components/payments/PasswordSetupModal'
 import { isPasswordSet } from './utils/paymentSecurity'
 
 // shadcn/ui imports
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
 import { Toaster } from '@/components/ui/toaster'
@@ -83,7 +77,7 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
 
-import { Plus, Filter, Search, Keyboard } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { Appointment } from './types'
 import './App.css'
 import './styles/globals.css'
@@ -96,7 +90,6 @@ function AppContent() {
   // This prevents "Rendered more hooks than during the previous render" error
 
   // Theme and UI hooks (always first)
-  const { setDarkMode } = useTheme()
   const { toast } = useToast()
 
   // Authentication and license hooks
@@ -109,8 +102,6 @@ function AppContent() {
     machineInfo,
     activateLicense
   } = useLicense()
-  const { formatAmount } = useCurrency()
-
   // Custom hooks (always in same order)
   useRealTimeSync()
   useRealTimeTableSync()
@@ -119,9 +110,7 @@ function AppContent() {
   // Store hooks (always in same order)
   const { loadPatients, patients } = usePatientStore()
   const {
-    appointments,
     isLoading: appointmentsLoading,
-    error: appointmentsError,
     loadAppointments,
     createAppointment,
     updateAppointment,
@@ -146,14 +135,8 @@ function AppContent() {
   const [showEditAppointment, setShowEditAppointment] = useState(false)
   const [showDeleteAppointmentConfirm, setShowDeleteAppointmentConfirm] = useState(false)
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
-  const [appointmentSearchQuery, setAppointmentSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
 
   // Callback hooks
-  const formatCurrency = useCallback((amount: number) => {
-    return formatAmount(amount)
-  }, [formatAmount])
-
   const handleSearchResultSelect = useCallback((result: any) => {
     logger.search('Search result selected:', result)
 
@@ -373,14 +356,6 @@ function AppContent() {
     }, 500)
   }
 
-
-
-
-
-  // All appointment states moved to top level hooks section
-
-
-
   const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
     toast({
       title: type === 'success' ? 'نجح' : 'خطأ',
@@ -583,16 +558,6 @@ function AppContent() {
 
 
   // Appointment handlers
-  const handleEditAppointment = (appointment: Appointment) => {
-    setSelectedAppointment(appointment)
-    setShowEditAppointment(true)
-  }
-
-  const handleDeleteAppointment = (appointment: Appointment) => {
-    setSelectedAppointment(appointment)
-    setShowDeleteAppointmentConfirm(true)
-  }
-
   const handleConfirmDeleteAppointment = async () => {
     if (selectedAppointment) {
       try {
@@ -607,50 +572,6 @@ function AppContent() {
       }
     }
   }
-
-  const handleUpdateAppointment = async (id: string, appointmentData: Partial<Appointment>) => {
-    try {
-      await updateAppointment(id, appointmentData)
-      setShowEditAppointment(false)
-      setSelectedAppointment(null)
-      logger.success('Appointment updated successfully')
-      showNotification("تم تحديث الموعد بنجاح", "success")
-    } catch (error) {
-      logger.error('Error updating appointment:', error)
-      showNotification("فشل في تحديث الموعد. يرجى المحاولة مرة أخرى", "error")
-    }
-  }
-
-
-  const formatDate = (date: string) => {
-    const dateObj = new Date(date)
-    const day = dateObj.getDate()
-    const month = dateObj.getMonth() + 1 // Add 1 because getMonth() returns 0-11
-    const year = dateObj.getFullYear()
-
-    // Format as DD/MM/YYYY
-    const formattedDay = day.toString().padStart(2, '0')
-    const formattedMonth = month.toString().padStart(2, '0')
-
-    return `${formattedDay}/${formattedMonth}/${year}`
-  };
-
-  const calculateAge = (birthDate: string) => {
-    const today = new Date();
-    const birth = new Date(birthDate);
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--;
-    }
-    return age;
-  };
-
-
-
-
-
-
 
   const renderContent = () => {
     switch (activeTab) {
@@ -713,21 +634,27 @@ function AppContent() {
 
   return (
     <SidebarProvider>
-        <AppSidebar activeTab={activeTab} onTabChange={handleTabChange} />
-        <SidebarInset>
+      <div className="flex w-full group/sidebar-layout h-screen min-h-screen">
+        <AppSidebar 
+          activeTab={activeTab} 
+          onTabChange={handleTabChange} 
+        />
+        <SidebarInset 
+          className="flex-1"
+        >
      <header className="flex flex-row-reverse items-center justify-between h-16 w-full bg-background/95 backdrop-blur border-b border-border/40 px-4 gap-4" dir="rtl">
-      
+
       {/* ✅ Right Side - التاريخ والساعة */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground bg-accent/20 px-4 py-1 rounded-full font-mono">
         <LiveDateTime />
       </div>
 
-    
+
 
       {/* ✅ Left Side - البحث والتنقل والإعدادات */}
       <div className="flex flex-row-reverse items-center gap-4">
 
-      
+
 
         {/* زر الوضع الليلي */}
         <ThemeToggle />
@@ -795,7 +722,7 @@ function AppContent() {
 
           </div>
         </SidebarInset>
-
+      </div>
       {/* Dialogs */}
 
       {/* Add Patient Dialog */}
