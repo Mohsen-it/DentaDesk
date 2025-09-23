@@ -68,7 +68,7 @@ export default function Settings() {
   const messageTextareaRef = useRef<HTMLTextAreaElement | null>(null)
 
   // WhatsApp Session Status State
-  const [sessionStatus, setSessionStatus] = useState<{
+  const [_sessionStatus, setSessionStatus] = useState<{
     isConnected: boolean
     isConnecting: boolean
     lastActivity: string | null
@@ -235,46 +235,46 @@ window.electronAPI?.whatsappReminders?.getStatus) {
     checkExistingQr()
 
     // Subscribe to QR events - fallback to direct event listener
-    const handleQrReceived = (event: any, qr: string) => {
+    const handleQrReceived = (_event: any, qr: string) => {
       console.log('🔄 QR data received:', qr.substring(0, 50) + '...')
       setQrData(qr)
     }
 
-    const handleReady = (event: any, data: any) => {
+    const handleReady = (_event: any, data: any) => {
       console.log('✅ WhatsApp client is ready', data)
       showNotification('تم ربط واتساب بنجاح!', 'success')
       setShowQRModal(false)
       updateSessionStatus()
     }
 
-    const handleSessionConnected = (event: any, data: any) => {
+    const handleSessionConnected = (_event: any, data: any) => {
       console.log('📱 WhatsApp session connected', data)
       showNotification(data?.message || 'تم ربط واتساب بنجاح!', 'success')
       updateSessionStatus()
     }
 
-    const handleAuthFailure = (event: any, data: any) => {
+    const handleAuthFailure = (_event: any, _data: any) => {
       console.log('❌ WhatsApp authentication failed')
       showNotification('فشل في ربط واتساب. يرجى المحاولة مرة أخرى.', 'error')
     }
 
-    const handleSessionCleared = (event: any, data: any) => {
+    const handleSessionCleared = (_event: any, _data: any) => {
       console.log('📱 WhatsApp session cleared')
       setQrData('')
       showNotification('تم مسح جلسة واتساب', 'info')
     }
 
-    const handleConnectionFailure = (event: any, data: any) => {
+    const handleConnectionFailure = (_event: any, data: any) => {
       console.log('❌ WhatsApp connection failure:', data)
       showNotification(`فشل في الاتصال: ${data?.message || 'خطأ غير معروف'}`, 'error')
     }
 
-    const handleInitFailure = (event: any, data: any) => {
+    const handleInitFailure = (_event: any, data: any) => {
       console.log('❌ WhatsApp initialization failure:', data)
       showNotification(`فشل في تهيئة واتساب: ${data?.message || 'خطأ غير معروف'}`, 'error')
     }
 
-    const handleSessionAutoCleared = (event: any, data: any) => {
+    const handleSessionAutoCleared = (_event: any, data: any) => {
       console.log('📱 WhatsApp session auto-cleared:', data)
       showNotification('تم مسح جلسة واتساب تلقائياً بسبب خطأ 401. يرجى مسح رمز QR مرة أخرى.', 'info')
 
@@ -799,7 +799,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-7xl">
+      <div className="w-full">
         <div className="space-y-6">
           {/* Header */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-card/50 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-border/50">
@@ -868,7 +868,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center space-x-2 space-x-reverse px-3 py-2 border-b-2 font-medium text-sm whitespace-nowrap rounded-t-lg transition-all duration-200 interactive-card min-w-[120px] justify-center ${
+              className={`flex items-center space-x-2 space-x-reverse px-3 py-2 border-b-2 font-medium text-sm whitespace-nowrap rounded-t-lg transition-all duration-200 interactive-card w-full sm:w-auto justify-center ${
                 activeTab === tab.id
                   ? 'border-primary text-primary bg-primary/5 shadow-sm'
                   : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border/50 hover:bg-accent/30'
@@ -908,7 +908,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                 <div className="mr-4 flex-1 min-w-0">
                   <p className="text-sm font-medium text-muted-foreground">آخر نسخة احتياطية</p>
                   <p className="text-sm font-bold text-foreground break-words">
-                    {backupStatus.lastBackup || 'لا توجد نسخ'}
+                    {backupStatus.lastBackup || 'لا توجد'}
                   </p>
                 </div>
               </div>
@@ -1163,7 +1163,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
          
            
               {/* Dark Mode Toggle */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-start sm:items-center justify-between gap-3 flex-col sm:flex-row">
                 <div className="flex items-center space-x-3 space-x-reverse">
                   <div className="p-2 bg-primary/10 rounded-lg">
                     {isDarkMode ? (
@@ -1252,7 +1252,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
             </div>
             <div className="p-6 space-y-6">
               {/* Enable Reminder Toggle */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-start sm:items-center justify-between gap-3 flex-col sm:flex-row">
                 <div className="flex items-center space-x-3 space-x-reverse">
                   <div className="p-2 bg-primary/10 rounded-lg">
                     <Phone className="w-5 h-5 text-primary" />
@@ -1286,7 +1286,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                   onChange={(e) => setMinutesBefore(Number(e.target.value))}
                   className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                 />
-                <div className="flex flex-wrap gap-2 mt-2">
+                <div className="flex flex-wrap gap-2 mt-2 justify-start">
                   {[15, 30, 60, 120, 180, 720, 1440].map((m) => (
                     <button
                       key={m}
@@ -1301,7 +1301,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
               </div>
 
               {/* Allow Custom Message Toggle */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-start sm:items-center justify-between gap-3 flex-col sm:flex-row">
                 <div>
                   <label className="text-sm font-medium text-foreground">تخصيص نص الرسالة</label>
                   <p className="text-sm text-muted-foreground">
@@ -1377,7 +1377,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                 <div className="p-6 space-y-4">
                   {/* QR Code Linking */}
                   <div className="p-4 border-2 border-primary/20 rounded-lg bg-primary/5">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-start md:items-center justify-between gap-4 flex-col md:flex-row">
                       <div className="flex-1">
                         <label className="text-base font-semibold text-foreground mb-2 block">🔗 ربط عبر رمز QR</label>
                         <p className="text-sm text-muted-foreground">
@@ -1505,7 +1505,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                             showNotification('تعذر بدء عملية الربط عبر QR', 'error')
                           }
                         }}
-                        className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all duration-200 flex items-center space-x-2 space-x-reverse font-medium shadow-md interactive-card focus:ring-2 focus:ring-primary/50 focus:ring-offset-2"
+                        className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all duration-200 flex items-center justify-center space-x-2 space-x-reverse font-medium shadow-md interactive-card focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 w-full md:w-auto"
                       >
                         <Phone className="w-5 h-5" />
                         <span>ربط عبر QR</span>
@@ -1514,14 +1514,14 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                   </div>
 
                   {/* Reset WhatsApp Session */}
-                  <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-muted/30">
+                  <div className="flex items-start sm:items-center justify-between gap-3 p-4 border border-border rounded-lg bg-muted/30 flex-col sm:flex-row">
                     <div>
                       <label className="text-sm font-medium text-foreground">إعادة تهيئة اتصال واتساب</label>
                       <p className="text-xs text-muted-foreground mt-1">حذف الجلسة الحالية لإظهار رمز QR من جديد وإعادة الربط.</p>
                     </div>
                     <button
                       onClick={() => setConfirmDeleteQROpen(true)}
-                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors w-full sm:w-auto"
                     >
                       حذف جلسة الربط (QR)
                     </button>
@@ -1808,7 +1808,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                 {/* Clinic Logo Section */}
                 <div className="space-y-4 pt-4 border-t border-border">
                   <h4 className="text-sm font-medium text-foreground">شعار العيادة</h4>
-                  <div className="flex items-start space-x-4 space-x-reverse">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                     {/* Logo Preview */}
                     <div className="flex-shrink-0">
                       <div className="w-20 h-20 border-2 border-dashed border-border rounded-lg flex items-center justify-center bg-muted/50">
@@ -1831,7 +1831,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
 
                     {/* Logo Upload */}
                     <div className="flex-1 space-y-2">
-                      <div className="flex items-center space-x-2 space-x-reverse">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                         <input
                           type="file"
                           id="clinic_logo"
@@ -1843,7 +1843,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                           type="button"
                           onClick={() => document.getElementById('clinic_logo')?.click()}
                           disabled={logoUploading}
-                          className="px-3 py-2 text-sm border border-input bg-background text-foreground rounded-md hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 interactive-card"
+                          className="px-3 py-2 text-sm border border-input bg-background text-foreground rounded-md hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 interactive-card w-full sm:w-auto"
                         >
                           {logoUploading ? 'جاري الرفع...' : 'اختيار شعار'}
                         </button>
@@ -1852,7 +1852,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                             type="button"
                             onClick={() => handleUpdateSettings({ clinic_logo: '' })}
                             disabled={logoUploading}
-                            className="px-3 py-2 text-sm border border-red-200 bg-red-50 text-red-700 rounded-md hover:bg-red-100 disabled:opacity-50 transition-all duration-200 interactive-card"
+                            className="px-3 py-2 text-sm border border-red-200 bg-red-50 text-red-700 rounded-md hover:bg-red-100 disabled:opacity-50 transition-all duration-200 interactive-card w-full sm:w-auto"
                           >
                             حذف الشعار
                           </button>
@@ -1912,8 +1912,8 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
               </div>
 
               {/* Contact Phone */}
-              <div className="flex items-center space-x-4 space-x-reverse p-4 bg-muted/50 rounded-lg">
-                <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-lg">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center space-x-4 space-x-reverse p-4 bg-muted/50 rounded-lg gap-4">
+                <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-lg flex-shrink-0">
                   <Phone className="w-6 h-6 text-green-600 dark:text-green-400" />
                 </div>
                 <div className="flex-1">
@@ -1950,15 +1950,15 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                     // Method 3: Fallback to window.open
                     window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
                   }}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 interactive-card"
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 interactive-card w-full sm:w-auto"
                 >
                   تواصل عبر واتساب
                 </button>
               </div>
 
               {/* Contact Email */}
-              <div className="flex items-center space-x-4 space-x-reverse p-4 bg-muted/50 rounded-lg">
-                <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center space-x-4 space-x-reverse p-4 bg-muted/50 rounded-lg gap-4">
+                <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex-shrink-0">
                   <Mail className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div className="flex-1">
@@ -1968,7 +1968,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                 </div>
                 <button
                   onClick={() => window.open('mailto:AgorraCode@gmail.com', '_blank')}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 interactive-card"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 interactive-card w-full sm:w-auto"
                 >
                   إرسال إيميل
                 </button>
