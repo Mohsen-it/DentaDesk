@@ -1967,7 +1967,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                   <p className="text-sm text-muted-foreground">للاستفسارات والدعم الفني</p>
                 </div>
                 <button
-                  onClick={() => window.open('mailto:AgorraCode@gmail.com', '_blank')}
+                  onClick={() => window.open('mailto:ORalSoft@gmail.com', '_blank')}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 interactive-card w-full sm:w-auto"
                 >
                   إرسال إيميل
