@@ -267,9 +267,9 @@ export const usePatientStore = create<PatientStore>()(
         const query = searchQuery.toLowerCase()
         const filtered = patients.filter(patient =>
           patient.full_name.toLowerCase().includes(query) ||
-          patient.phone?.toLowerCase().includes(query) ||
-          patient.email?.toLowerCase().includes(query) ||
-          patient.serial_number?.toLowerCase().includes(query)
+          (patient.phone || '').toLowerCase().includes(query) ||
+          (patient.email || '').toLowerCase().includes(query) ||
+          (patient.serial_number || '').toLowerCase().includes(query)
         )
 
         set({ filteredPatients: filtered })

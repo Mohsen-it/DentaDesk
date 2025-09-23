@@ -26,11 +26,36 @@ export function CurrencyDisplay({
     ? (currency || currentCurrency)
     : (currency || 'USD')
 
+  // Safely convert amount to number to prevent "Cannot convert object to primitive value" error
+  const safeAmount = React.useMemo(() => {
+    if (typeof amount === 'number') {
+      return isNaN(amount) || !isFinite(amount) ? 0 : amount
+    }
+    if (typeof amount === 'string') {
+      const parsed = parseFloat(amount)
+      return isNaN(parsed) || !isFinite(parsed) ? 0 : parsed
+    }
+    if (typeof amount === 'object' && amount !== null) {
+      // Handle objects that might have a numeric value
+      const objAmount = amount as any
+      if (objAmount && typeof objAmount === 'object' && 'value' in objAmount) {
+        return Number(objAmount.value) || 0
+      }
+      if (objAmount && typeof objAmount === 'object' && 'amount' in objAmount) {
+        return Number(objAmount.amount) || 0
+      }
+      // Try to convert object to number
+      const numValue = Number(objAmount)
+      return isNaN(numValue) || !isFinite(numValue) ? 0 : numValue
+    }
+    return 0
+  }, [amount])
+
   try {
-    // Use the appropriate formatting function
+    // Use the appropriate formatting function with safe amount
     const formattedValue = showSymbolOnly
-      ? formatAmountSymbol(amount, effectiveCurrency)
-      : formatAmount(amount, effectiveCurrency)
+      ? formatAmountSymbol(safeAmount, effectiveCurrency)
+      : formatAmount(safeAmount, effectiveCurrency)
 
     return (
       <span className={className}>

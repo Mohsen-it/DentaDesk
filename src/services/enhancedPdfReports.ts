@@ -1,20 +1,19 @@
 import {
-  PatientReportData,
   AppointmentReportData,
-  FinancialReportData,
   InventoryReportData,
   TreatmentReportData,
-  ClinicSettings
+  LabReportData,
+  ClinicNeedsReportData,
+  ExpenseReportData,
+  ClinicSettings,
+  ClinicNeed,
+  Lab
 } from '../types'
 import { PdfService } from './pdfService'
-import { getTreatmentNameInArabic, getCategoryNameInArabic } from '../data/teethData'
+import { getTreatmentNameInArabic } from '../data/teethData'
 import {
   formatCurrency,
-  formatCurrencyWithConfig,
   convertCurrency,
-  getCurrencyConfig,
-  getDefaultCurrency,
-  setDefaultCurrency
 } from '../lib/utils'
 
 export class EnhancedPdfReports {
@@ -89,7 +88,7 @@ export class EnhancedPdfReports {
           </div>
           <div class="section-content">
             <div class="appointments-grid">
-              ${data.appointmentsList.slice(0, 50).map((appointment: any, index: number) => {
+              ${data.appointmentsList.slice(0, 50).map((appointment, _index) => {
                 // Format appointment date and time
                 const appointmentDate = appointment.start_time ? (() => {
                   try {
@@ -130,7 +129,7 @@ export class EnhancedPdfReports {
                       </div>
                       <div class="appointment-info">
                         <h4 class="appointment-patient">${appointment.patient_name || 'غير محدد'}</h4>
-                        <span class="appointment-serial">#${appointment.id || (index + 1).toString().padStart(3, '0')}</span>
+                        <span class="appointment-serial">#${appointment.id || (_index + 1).toString().padStart(3, '0')}</span>
                       </div>
                     </div>
                     <div class="appointment-details">
@@ -701,7 +700,7 @@ export class EnhancedPdfReports {
           </div>
           <div class="section-content">
             <div class="inventory-grid">
-              ${data.inventoryItems.slice(0, 50).map((item: any, index: number) => `
+              ${data.inventoryItems.slice(0, 50).map((item: any, _index: number) => `
                 <div class="inventory-card">
                   <div class="inventory-header">
                     <div class="inventory-avatar">
@@ -835,7 +834,7 @@ export class EnhancedPdfReports {
                   </tr>
                 </thead>
                 <tbody>
-                  ${data.stockAlerts.slice(0, 20).map((item: any) => {
+                  ${data.stockAlerts.slice(0, 20).map(item => {
                     const alertLevel = item.quantity === 0 ? 'critical' : 'warning'
                     const percentage = item.minimum_stock > 0 ? Math.min(100, Math.round((item.quantity / item.minimum_stock) * 100)) : 0
                     return `
@@ -892,7 +891,7 @@ export class EnhancedPdfReports {
                   </tr>
                 </thead>
                 <tbody>
-                  ${data.expiryAlerts.slice(0, 15).map((item: any) => {
+                  ${data.expiryAlerts.slice(0, 15).map(item => {
                     const expiryDate = new Date(item.expiry_date)
                     const today = new Date()
                     const daysRemaining = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
@@ -1110,11 +1109,6 @@ export class EnhancedPdfReports {
                 </tbody>
               </table>
             </div>
-            ${data.treatmentsByType.length > 15 ? `
-            <div class="pagination-info">
-              <p>عرض أول 15 نوع من إجمالي ${data.treatmentsByType.length.toLocaleString()} نوع</p>
-            </div>
-            ` : ''}
           </div>
         </div>
         ` : ''}
@@ -1185,9 +1179,9 @@ export class EnhancedPdfReports {
                   ${data.pendingTreatments.slice(0, 20).map(treatment => `
                     <tr>
                       <td class="category-cell">${getTreatmentNameInArabic(treatment.treatment_type || 'غير محدد')}</td>
-                      <td class="patient-cell">${treatment.patient_name || 'غير محدد'}</td>
+                      <td class="patient-cell">${treatment.patient?.full_name || 'غير محدد'}</td>
                       <td class="status-cell">
-                        <span class="status-badge warning">${treatment.status || 'آجل'}</span>
+                        <span class="status-badge warning">${treatment.treatment_status || 'آجل'}</span>
                       </td>
                       <td class="date-cell">${treatment.created_at ? (() => {
                         const date = new Date(treatment.created_at)
@@ -1232,7 +1226,7 @@ export class EnhancedPdfReports {
               })()}</p>
             </div>
             <div class="footer-right">
-              <p class="clinic-name">${settings?.clinic_name || 'عيادة الأسنان الحديثة'}</p>
+              <p class="clinic-name">${settings?.clinic_name || 'عيادة الأسنان'}</p>
               ${settings?.clinic_address ? `<p class="clinic-address">${settings.clinic_address}</p>` : ''}
               ${settings?.clinic_phone ? `<p class="clinic-phone">📞 ${settings.clinic_phone}</p>` : ''}
             </div>
@@ -1597,6 +1591,8 @@ export class EnhancedPdfReports {
                 <th>رقم الطلب</th>
                 <th>اسم المختبر</th>
                 <th>اسم المريض</th>
+                <th>تاريخ الطلب</th>
+                <th>تاريخ الاستلام</th>
                 <th>التكلفة</th>
                 <th>المدفوع</th>
                 <th>المتبقي</th>
@@ -1604,17 +1600,23 @@ export class EnhancedPdfReports {
               </tr>
             </thead>
             <tbody>
-              ${labOrders.slice(0, 15).map(order => `
-                <tr>
-                  <td>${order.id || ''}</td>
-                  <td>${order.lab?.name || ''}</td>
-                  <td>${order.patient?.full_name || ''}</td>
-                  <td>${formatCurrency(order.cost || 0)}</td>
-                  <td>${formatCurrency(order.paid_amount || 0)}</td>
-                  <td>${formatCurrency((order.cost || 0) - (order.paid_amount || 0))}</td>
-                  <td>${order.status === 'completed' ? 'مكتمل' : order.status === 'pending' ? 'آجل' : 'ملغي'}</td>
-                </tr>
-              `).join('')}
+              ${labOrders.slice(0, 15).map((order: any, _index: number) => {
+                const statusClass = order.status === 'completed' ? 'status-success' : order.status === 'pending' ? 'status-warning' : 'status-danger'
+                const statusText = order.status === 'completed' ? 'مكتمل' : order.status === 'pending' ? 'قيد الانتظار' : 'ملغي'
+                return `
+                  <tr>
+                    <td>#${order.id || (_index + 1).toString().padStart(3, '0')}</td>
+                    <td>${order.lab?.name || 'غير محدد'}</td>
+                    <td>${order.patient?.full_name || 'غير محدد'}</td>
+                    <td>${formatDate(order.order_date)}</td>
+                    <td>${order.delivery_date ? formatDate(order.delivery_date) : 'غير محدد'}</td>
+                    <td>${formatCurrency(order.cost || 0)}</td>
+                    <td>${formatCurrency(order.paid_amount || 0)}</td>
+                    <td>${formatCurrency((order.cost || 0) - (order.paid_amount || 0))}</td>
+                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                  </tr>
+                `
+              }).join('')}
             </tbody>
           </table>
         </div>
@@ -1627,7 +1629,7 @@ export class EnhancedPdfReports {
           <table class="details-table">
             <thead>
               <tr>
-                <th>اسم العنصر</th>
+                <th>اسم الحاجة</th>
                 <th>الكمية</th>
                 <th>سعر الوحدة</th>
                 <th>التكلفة الإجمالية</th>
@@ -1637,27 +1639,27 @@ export class EnhancedPdfReports {
               </tr>
             </thead>
             <tbody>
-              ${clinicNeeds.slice(0, 15).map(need => {
-                const quantity = need.quantity || 0
-                const unitPrice = need.price || 0
-                const totalCost = quantity * unitPrice
+              ${clinicNeeds.slice(0, 15).map((need: any, _index: number) => {
+                const statusClass = need.status === 'received' ? 'status-success' : need.status === 'ordered' ? 'status-info' : 'status-warning'
+                const statusText = need.status === 'received' ? 'مستلمة' : need.status === 'ordered' ? 'مطلوبة' : 'آجلة'
+                const priorityText = need.priority === 'urgent' ? 'عاجل' : need.priority === 'high' ? 'عالي' : need.priority === 'medium' ? 'متوسط' : 'منخفض'
                 return `
-                <tr>
-                  <td>${need.need_name || need.item_name || ''}</td>
-                  <td>${quantity}</td>
-                  <td>${formatCurrency(unitPrice)}</td>
-                  <td>${formatCurrency(totalCost)}</td>
-                  <td>${need.priority === 'urgent' ? 'عاجل' : need.priority === 'high' ? 'عالي' : need.priority === 'medium' ? 'متوسط' : 'منخفض'}</td>
-                  <td>${need.status === 'received' ? 'مستلم' : need.status === 'ordered' ? 'مطلوب' : 'آجل'}</td>
-                  <td>${need.created_at ? formatDate(need.created_at) : ''}</td>
-                </tr>
+                  <tr>
+                    <td>${need.need_name || 'غير محدد'}</td>
+                    <td>${need.quantity.toLocaleString()}</td>
+                    <td>${formatCurrency(need.price || 0)}</td>
+                    <td>${formatCurrency((need.quantity || 0) * (need.price || 0))}</td>
+                    <td>${priorityText}</td>
+                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    <td>${formatDate(need.created_at)}</td>
+                  </tr>
                 `
               }).join('')}
             </tbody>
           </table>
 
           <!-- إجمالي تكلفة احتياجات العيادة -->
-          <div style="margin-top: 15px; padding: 10px; background: #f1f5f9; border-radius: 5px;">
+          <div style="margin-top: 15px; padding: 10px; background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%); border-radius: 5px;">
             <strong>إجمالي تكلفة احتياجات العيادة: ${formatCurrency(clinicNeeds.reduce((sum, need) => {
               const quantity = need.quantity || 0
               const unitPrice = need.price || 0
@@ -1677,8 +1679,8 @@ export class EnhancedPdfReports {
                 <th>اسم المصروف</th>
                 <th>النوع</th>
                 <th>المبلغ</th>
-                <th>طريقة الدفع</th>
                 <th>تاريخ الدفع</th>
+                <th>طريقة الدفع</th>
                 <th>المورد</th>
               </tr>
             </thead>
@@ -1688,8 +1690,8 @@ export class EnhancedPdfReports {
                   <td>${expense.expense_name || ''}</td>
                   <td>${expense.expense_type || ''}</td>
                   <td>${formatCurrency(expense.amount || 0)}</td>
+                  <td>${formatDate(expense.payment_date)}</td>
                   <td>${expense.payment_method || ''}</td>
-                  <td>${expense.payment_date ? formatDate(expense.payment_date) : ''}</td>
                   <td>${expense.vendor || ''}</td>
                 </tr>
               `).join('')}
@@ -1706,7 +1708,7 @@ export class EnhancedPdfReports {
               <p class="report-time">وقت التقرير: ${new Date().toLocaleTimeString('ar-SA')}</p>
             </div>
             <div class="footer-right">
-              <p class="clinic-name">${settings?.clinic_name || 'عيادة الأسنان الحديثة'}</p>
+              <p class="clinic-name">${settings?.clinic_name || 'عيادة الأسنان'}</p>
               ${settings?.clinic_address ? `<p class="clinic-address">${settings.clinic_address}</p>` : ''}
               ${settings?.clinic_phone ? `<p class="clinic-phone">📞 ${settings.clinic_phone}</p>` : ''}
             </div>
@@ -1716,5 +1718,486 @@ export class EnhancedPdfReports {
       </body>
       </html>
     `
+  }
+
+  // Create enhanced HTML report for lab orders
+  static createEnhancedLabReportHTML(data: LabReportData, settings?: ClinicSettings | null): string {
+    const header = PdfService.getEnhancedHeader('تقرير طلبات المختبرات', settings, 'تقرير شامل عن طلبات المختبرات وحالتها')
+    const styles = PdfService.getEnhancedStyles()
+
+    const formatCurrencySafe = (amount: number) => {
+      const convertedAmount = convertCurrency(amount || 0, 'USD', settings?.currency || 'USD')
+      return formatCurrency(convertedAmount, settings?.currency || 'USD', false)
+    }
+
+    const formatDateSafe = (dateString: string) => {
+      try {
+        const date = new Date(dateString)
+        if (isNaN(date.getTime())) return 'غير محدد'
+        return date.toLocaleDateString('ar-SA')
+      } catch (error) {
+        return 'غير محدد'
+      }
+    }
+
+    return `
+      <!DOCTYPE html>
+      <html dir="rtl" lang="ar">
+      <head>
+        <meta charset="UTF-8">
+        <title>تقرير المختبرات - ${settings?.clinic_name || 'عيادة الأسنان'}</title>
+        ${styles}
+      </head>
+      <body>
+        ${header}
+
+        <!-- Summary Cards with Enhanced Design -->
+        <div class="summary-cards">
+          <div class="summary-card primary">
+            <div class="card-icon">🔬</div>
+            <div class="card-content">
+              <h3>إجمالي طلبات المختبرات</h3>
+              <div class="number">${data.totalOrders.toLocaleString()}</div>
+            </div>
+          </div>
+          <div class="summary-card success">
+            <div class="card-icon">✅</div>
+            <div class="card-content">
+              <h3>طلبات مكتملة</h3>
+              <div class="number">${data.completedOrders.toLocaleString()}</div>
+            </div>
+          </div>
+          <div class="summary-card warning">
+            <div class="card-icon">⏳</div>
+            <div class="card-content">
+              <h3>طلبات قيد الانتظار</h3>
+              <div class="number warning">${data.pendingOrders.toLocaleString()}</div>
+            </div>
+          </div>
+          <div class="summary-card danger">
+            <div class="card-icon">❌</div>
+            <div class="card-content">
+              <h3>طلبات ملغية</h3>
+              <div class="number danger">${data.cancelledOrders.toLocaleString()}</div>
+            </div>
+          </div>
+          <div class="summary-card info">
+            <div class="card-icon">💰</div>
+            <div class="card-content">
+              <h3>التكلفة الإجمالية</h3>
+              <div class="number">${formatCurrencySafe(data.totalCost)}</div>
+            </div>
+          </div>
+          <div class="summary-card info">
+            <div class="card-icon">💸</div>
+            <div class="card-content">
+              <h3>المبلغ المتبقي</h3>
+              <div class="number">${formatCurrencySafe(data.totalRemaining)}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lab Orders List Section -->
+        ${data.labOrdersList && data.labOrdersList.length > 0 ? `
+        <div class="section">
+          <div class="section-title">
+            <span class="section-icon">📋</span>
+            قائمة طلبات المختبرات
+          </div>
+          <div class="section-content">
+            <div class="data-table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>رقم الطلب</th>
+                    <th>اسم المختبر</th>
+                    <th>اسم المريض</th>
+                    <th>تاريخ الطلب</th>
+                    <th>تاريخ الاستلام</th>
+                    <th>التكلفة</th>
+                    <th>المدفوع</th>
+                    <th>المتبقي</th>
+                    <th>الحالة</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${data.labOrdersList.slice(0, 50).map((order: any, _index: number) => {
+                    const statusClass = order.status === 'completed' ? 'status-success' : order.status === 'pending' ? 'status-warning' : 'status-danger'
+                    const statusText = order.status === 'completed' ? 'مكتمل' : order.status === 'pending' ? 'قيد الانتظار' : 'ملغي'
+                    return `
+                      <tr>
+                        <td>#${order.id || (_index + 1).toString().padStart(3, '0')}</td>
+                        <td>${order.lab?.name || 'غير محدد'}</td>
+                        <td>${order.patient?.full_name || 'غير محدد'}</td>
+                        <td>${formatDateSafe(order.order_date)}</td>
+                        <td>${order.expected_delivery_date ? formatDateSafe(order.expected_delivery_date) : 'غير محدد'}</td>
+                        <td>${formatCurrencySafe(order.cost || 0)}</td>
+                        <td>${formatCurrencySafe(order.paid_amount || 0)}</td>
+                        <td>${formatCurrencySafe((order.cost || 0) - (order.paid_amount || 0))}</td>
+                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                      </tr>
+                    `
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+            ${data.labOrdersList.length > 50 ? `
+            <div class="pagination-info">
+              <p>عرض أول 50 طلب من إجمالي ${data.labOrdersList.length.toLocaleString()} طلب</p>
+            </div>
+            ` : ''}
+          </div>
+        </div>
+        ` : ''}
+
+        <div class="report-footer">
+          <div class="footer-content">
+            <div class="footer-left">
+              <p class="footer-title">تم إنشاء هذا التقرير بواسطة نظام إدارة العيادة</p>
+              <p class="generated-info">تاريخ الإنشاء: ${(() => {
+                // Format date as DD/MM/YYYY (Gregorian calendar)
+                const date = new Date()
+                const day = date.getDate().toString().padStart(2, '0')
+                const month = (date.getMonth() + 1).toString().padStart(2, '0')
+                const year = date.getFullYear()
+                const time = date.toLocaleTimeString('ar-SA', {
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })
+                return `${day}/${month}/${year} - ${time}`
+              })()} | ${settings?.clinic_name || 'عيادة الأسنان'}</p>
+              ${data.filterInfo ? `<p class="filter-info">📊 ${data.filterInfo}</p>` : ''}
+            </div>
+            <div class="footer-right">
+              <div class="footer-stats">
+                <span class="stat-item">🔬 ${data.totalOrders?.toLocaleString() || '0'} طلب</span>
+                <span class="stat-item">✅ ${data.completedOrders?.toLocaleString() || '0'} مكتمل</span>
+                <span class="stat-item">⏳ ${data.pendingOrders?.toLocaleString() || '0'} بانتظار</span>
+                <span class="stat-item">💰 ${formatCurrencySafe(data.totalCost)} إجمالي</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+  }
+
+  // Create enhanced HTML report for clinic needs
+  static createEnhancedClinicNeedsReportHTML(data: ClinicNeedsReportData, settings?: ClinicSettings | null): string {
+    const header = PdfService.getEnhancedHeader('تقرير احتياجات العيادة', settings, 'تقرير شامل عن احتياجات العيادة وحالتها')
+    const styles = PdfService.getEnhancedStyles()
+
+    const formatCurrencySafe = (amount: number) => {
+      const convertedAmount = convertCurrency(amount || 0, 'USD', settings?.currency || 'USD')
+      return formatCurrency(convertedAmount, settings?.currency || 'USD', false)
+    }
+
+    const formatDateSafe = (dateString: string) => {
+      try {
+        const date = new Date(dateString)
+        if (isNaN(date.getTime())) return 'غير محدد'
+        return date.toLocaleDateString('ar-SA')
+      } catch (error) {
+        return 'غير محدد'
+      }
+    }
+
+    return `
+      <!DOCTYPE html>
+      <html dir="rtl" lang="ar">
+      <head>
+        <meta charset="UTF-8">
+        <title>تقرير احتياجات العيادة - ${settings?.clinic_name || 'عيادة الأسنان'}</title>
+        ${styles}
+      </head>
+      <body>
+        ${header}
+
+        <!-- Summary Cards with Enhanced Design -->
+        <div class="summary-cards">
+          <div class="summary-card primary">
+            <div class="card-icon">🏥</div>
+            <div class="card-content">
+              <h3>إجمالي الاحتياجات</h3>
+              <div class="number">${data.totalNeeds.toLocaleString()}</div>
+            </div>
+          </div>
+          <div class="summary-card success">
+            <div class="card-icon">✅</div>
+            <div class="card-content">
+              <h3>احتياجات مستلمة</h3>
+              <div class="number">${data.receivedCount.toLocaleString()}</div>
+            </div>
+          </div>
+          <div class="summary-card warning">
+            <div class="card-icon">📦</div>
+            <div class="card-content">
+              <h3>احتياجات مطلوبة</h3>
+              <div class="number warning">${data.orderedCount.toLocaleString()}</div>
+            </div>
+          </div>
+          <div class="summary-card danger">
+            <div class="card-icon">⏳</div>
+            <div class="card-content">
+              <h3>احتياجات آجلة</h3>
+              <div class="number danger">${data.pendingCount.toLocaleString()}</div>
+            </div>
+          </div>
+          <div class="summary-card info">
+            <div class="card-icon">💰</div>
+            <div class="card-content">
+              <h3>التكلفة الإجمالية</h3>
+              <div class="number">${formatCurrencySafe(data.totalCost)}</div>
+            </div>
+          </div>
+          <div class="summary-card info">
+            <div class="card-icon">💸</div>
+            <div class="card-content">
+              <h3>المبلغ المتبقي</h3>
+              <div class="number">${formatCurrencySafe(data.totalRemaining)}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Clinic Needs List Section -->
+        ${data.clinicNeedsList && data.clinicNeedsList.length > 0 ? `
+        <div class="section">
+          <div class="section-title">
+            <span class="section-icon">📋</span>
+            قائمة احتياجات العيادة
+          </div>
+          <div class="section-content">
+            <div class="data-table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>اسم الحاجة</th>
+                    <th>الكمية</th>
+                    <th>سعر الوحدة</th>
+                    <th>التكلفة الإجمالية</th>
+                    <th>الأولوية</th>
+                    <th>الحالة</th>
+                    <th>تاريخ الطلب</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${data.clinicNeedsList.slice(0, 50).map((need: ClinicNeed, _index: number) => {
+                    const statusClass = need.status === 'received' ? 'status-success' : need.status === 'ordered' ? 'status-info' : 'status-warning'
+                    const statusText = need.status === 'received' ? 'مستلمة' : need.status === 'ordered' ? 'مطلوبة' : 'آجلة'
+                    const priorityText = need.priority === 'urgent' ? 'عاجل' : need.priority === 'high' ? 'عالي' : need.priority === 'medium' ? 'متوسط' : 'منخفض'
+                    return `
+                      <tr>
+                        <td>${need.need_name || 'غير محدد'}</td>
+                        <td>${need.quantity.toLocaleString()}</td>
+                        <td>${formatCurrencySafe(need.price || 0)}</td>
+                        <td>${formatCurrencySafe((need.quantity || 0) * (need.price || 0))}</td>
+                        <td>${priorityText}</td>
+                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                        <td>${formatDateSafe(need.created_at)}</td>
+                      </tr>
+                    `
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+            ${data.clinicNeedsList.length > 50 ? `
+            <div class="pagination-info">
+              <p>عرض أول 50 حاجة من إجمالي ${data.clinicNeedsList.length.toLocaleString()} حاجة</p>
+            </div>
+            ` : ''}
+          </div>
+        </div>
+        ` : ''}
+
+        <div class="report-footer">
+          <div class="footer-content">
+            <div class="footer-left">
+              <p class="footer-title">تم إنشاء هذا التقرير بواسطة نظام إدارة العيادة</p>
+              <p class="generated-info">تاريخ الإنشاء: ${(() => {
+                // Format date as DD/MM/YYYY (Gregorian calendar)
+                const date = new Date()
+                const day = date.getDate().toString().padStart(2, '0')
+                const month = (date.getMonth() + 1).toString().padStart(2, '0')
+                const year = date.getFullYear()
+                const time = date.toLocaleTimeString('ar-SA', {
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })
+                return `${day}/${month}/${year} - ${time}`
+              })()} | ${settings?.clinic_name || 'عيادة الأسنان'}</p>
+              ${data.filterInfo ? `<p class="filter-info">📊 ${data.filterInfo}</p>` : ''}
+            </div>
+            <div class="footer-right">
+              <div class="footer-stats">
+                <span class="stat-item">🏥 ${data.totalNeeds?.toLocaleString() || '0'} حاجة</span>
+                <span class="stat-item">✅ ${data.receivedCount?.toLocaleString() || '0'} مستلمة</span>
+                <span class="stat-item">⏳ ${data.pendingCount?.toLocaleString() || '0'} آجلة</span>
+                <span class="stat-item">💰 ${formatCurrencySafe(data.totalCost)} إجمالي</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+  }
+
+  // Create enhanced HTML report for clinic expenses
+  static createEnhancedExpenseReportHTML(data: ExpenseReportData, settings?: ClinicSettings | null): string {
+    const header = PdfService.getEnhancedHeader('تقرير المصروفات', settings, 'تقرير شامل عن مصروفات العيادة')
+    const styles = PdfService.getEnhancedStyles()
+
+    const formatCurrencySafe = (amount: number) => {
+      const convertedAmount = convertCurrency(amount || 0, 'USD', settings?.currency || 'USD')
+      return formatCurrency(convertedAmount, settings?.currency || 'USD', false)
+    }
+
+    const formatDateSafe = (dateString: string) => {
+      try {
+        const date = new Date(dateString)
+        if (isNaN(date.getTime())) return 'غير محدد'
+        return date.toLocaleDateString('ar-SA')
+      } catch (error) {
+        return 'غير محدد'
+      }
+    }
+
+    return `
+      <!DOCTYPE html>
+      <html dir="rtl" lang="ar">
+      <head>
+        <meta charset="UTF-8">
+        <title>تقرير المصروفات - ${settings?.clinic_name || 'عيادة الأسنان'}</title>
+        ${styles}
+      </head>
+      <body>
+        ${header}
+
+        <!-- Summary Cards with Enhanced Design -->
+        <div class="summary-cards">
+          <div class="summary-card primary">
+            <div class="card-icon">💸</div>
+            <div class="card-content">
+              <h3>إجمالي المصروفات</h3>
+              <div class="number">${formatCurrencySafe(data.totalExpenses)}</div>
+            </div>
+          </div>
+          <div class="summary-card success">
+            <div class="card-icon">✅</div>
+            <div class="card-content">
+              <h3>مصروفات مدفوعة</h3>
+              <div class="number">${data.paidExpenses.toLocaleString()}</div>
+            </div>
+          </div>
+          <div class="summary-card warning">
+            <div class="card-icon">⏳</div>
+            <div class="card-content">
+              <h3>مصروفات آجلة</h3>
+              <div class="number warning">${data.pendingExpenses.toLocaleString()}</div>
+            </div>
+          </div>
+          <div class="summary-card info">
+            <div class="card-icon">📊</div>
+            <div class="card-content">
+              <h3>عدد المصروفات</h3>
+              <div class="number">${data.dataCount.toLocaleString()}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Expense List Section -->
+        ${data.expensesList && data.expensesList.length > 0 ? `
+        <div class="section">
+          <div class="section-title">
+            <span class="section-icon">📋</span>
+            قائمة المصروفات
+          </div>
+          <div class="section-content">
+            <div class="data-table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>اسم المصروف</th>
+                    <th>النوع</th>
+                    <th>المبلغ</th>
+                    <th>تاريخ الدفع</th>
+                    <th>طريقة الدفع</th>
+                    <th>المورد</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${data.expensesList.slice(0, 50).map((expense: any, _index: number) => `
+                    <tr>
+                      <td>${expense.expense_name || 'غير محدد'}</td>
+                      <td>${expense.expense_type || 'غير محدد'}</td>
+                      <td>${formatCurrencySafe(expense.amount || 0)}</td>
+                      <td>${formatDateSafe(expense.payment_date)}</td>
+                      <td>${expense.payment_method || 'غير محدد'}</td>
+                      <td>${expense.vendor || 'غير محدد'}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+            ${data.expensesList.length > 50 ? `
+            <div class="pagination-info">
+              <p>عرض أول 50 مصروف من إجمالي ${data.expensesList.length.toLocaleString()} مصروف</p>
+            </div>
+            ` : ''}
+          </div>
+        </div>
+        ` : ''}
+
+        <div class="report-footer">
+          <div class="footer-content">
+            <div class="footer-left">
+              <p class="footer-title">تم إنشاء هذا التقرير بواسطة نظام إدارة العيادة</p>
+              <p class="generated-info">تاريخ الإنشاء: ${(() => {
+                // Format date as DD/MM/YYYY (Gregorian calendar)
+                const date = new Date()
+                const day = date.getDate().toString().padStart(2, '0')
+                const month = (date.getMonth() + 1).toString().padStart(2, '0')
+                const year = date.getFullYear()
+                const time = date.toLocaleTimeString('ar-SA', {
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })
+                return `${day}/${month}/${year} - ${time}`
+              })()} | ${settings?.clinic_name || 'عيادة الأسنان'}</p>
+              ${data.filterInfo ? `<p class="filter-info">📊 ${data.filterInfo}</p>` : ''}
+            </div>
+            <div class="footer-right">
+              <div class="footer-stats">
+                <span class="stat-item">💸 ${formatCurrencySafe(data.totalExpenses)} إجمالي</span>
+                <span class="stat-item">✅ ${data.paidExpenses?.toLocaleString() || '0'} مدفوع</span>
+                <span class="stat-item">⏳ ${data.pendingExpenses?.toLocaleString() || '0'} آجل</span>
+                <span class="stat-item">📊 ${data.dataCount?.toLocaleString() || '0'} مصروف</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+  }
+
+  // Export clinic needs report to PDF
+  static async exportClinicNeedsReport(data: ClinicNeedsReportData, settings: ClinicSettings | null, options?: { fileName?: string }): Promise<void> {
+    if (!data || data.totalNeeds === 0) {
+      window.api.sendNotification('لا توجد بيانات لتصديرها.', 'error')
+      return
+    }
+    const htmlContent = this.createEnhancedClinicNeedsReportHTML(data, settings)
+    const defaultFileName = `ClinicNeedsReport-${new Date().toLocaleDateString('en-CA')}.pdf`
+    const fileName = options?.fileName || defaultFileName
+
+    try {
+      await window.api.exportPdf({ html: htmlContent, fileName: fileName })
+      window.api.sendNotification('تم تصدير تقرير احتياجات العيادة بنجاح', 'success')
+    } catch (error) {
+      console.error('Failed to export clinic needs report:', error)
+      window.api.sendNotification('فشل تصدير تقرير احتياجات العيادة.', 'error')
+    }
   }
 }

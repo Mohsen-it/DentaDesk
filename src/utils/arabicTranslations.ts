@@ -34,6 +34,12 @@ const loadCustomTreatments = async (): Promise<void> => {
 
 // دالة للحصول على اسم العلاج المخصص
 const getCustomTreatmentName = (treatmentId: string): string => {
+  // التأكد من أن treatmentId هو string
+  if (typeof treatmentId !== 'string') {
+    console.warn('getCustomTreatmentName: treatmentId is not a string:', treatmentId)
+    return 'غير محدد'
+  }
+
   // إذا كان في الكاش، أرجعه
   if (customTreatmentsCache[treatmentId]) {
     return customTreatmentsCache[treatmentId]
@@ -66,6 +72,12 @@ export const reloadCustomTreatments = async (): Promise<void> => {
 
 // ترجمة أنواع العلاجات
 export const getTreatmentNameInArabic = (treatmentType: string): string => {
+  // التأكد من أن treatmentType هو string أو null/undefined
+  if (typeof treatmentType !== 'string') {
+    console.warn('getTreatmentNameInArabic: treatmentType is not a string:', treatmentType)
+    return 'غير محدد'
+  }
+
   if (!treatmentType) return 'غير محدد'
 
   // أولاً، تحقق من العلاجات المحددة مسبقاً في TREATMENT_TYPES
@@ -81,6 +93,12 @@ export const getTreatmentNameInArabic = (treatmentType: string): string => {
 
 // ترجمة فئات العلاجات
 export const getCategoryNameInArabic = (category: string): string => {
+  // التأكد من أن category هو string أو null/undefined
+  if (typeof category !== 'string') {
+    console.warn('getCategoryNameInArabic: category is not a string:', category)
+    return 'غير محدد'
+  }
+
   if (!category) return 'غير محدد'
 
   // If category is already in Arabic, return it
@@ -106,6 +124,12 @@ export const getCategoryNameInArabic = (category: string): string => {
 
 // ترجمة حالات العلاجات
 export const getStatusLabelInArabic = (status: string): string => {
+  // التأكد من أن status هو string أو null/undefined
+  if (typeof status !== 'string') {
+    console.warn('getStatusLabelInArabic: status is not a string:', status)
+    return 'غير محدد'
+  }
+
   if (!status) return 'غير محدد'
 
   const statusLabels: { [key: string]: string } = {

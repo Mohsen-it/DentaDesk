@@ -208,11 +208,11 @@ export default function Payments() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem
-                onClick={async () => {
-                  if (payments.length === 0) {
-                    notify.noDataToExport('لا توجد بيانات مدفوعات للتصدير')
-                    return
-                  }
+            onClick={async () => {
+              if (payments.length === 0) {
+                notify.noDataToExport('لا توجد بيانات مدفوعات للتصدير')
+                return
+              }
                   try {
                     let dataToExport = [...payments]
                     if (paymentStats.timeFilter.startDate && paymentStats.timeFilter.endDate) {
@@ -263,38 +263,38 @@ export default function Payments() {
                     return
                   }
                   try {
-                    let dataToExport = [...payments]
-                    if (paymentStats.timeFilter.startDate && paymentStats.timeFilter.endDate) {
-                      const startDate = new Date(paymentStats.timeFilter.startDate)
-                      const endDate = new Date(paymentStats.timeFilter.endDate)
-                      endDate.setHours(23, 59, 59, 999)
-                      dataToExport = dataToExport.filter(payment => {
-                        const paymentDate = new Date(payment.payment_date)
-                        return paymentDate >= startDate && paymentDate <= endDate
-                      })
-                    }
-                    if (searchQuery) {
-                      dataToExport = dataToExport.filter(payment => {
+                let dataToExport = [...payments]
+                if (paymentStats.timeFilter.startDate && paymentStats.timeFilter.endDate) {
+                  const startDate = new Date(paymentStats.timeFilter.startDate)
+                  const endDate = new Date(paymentStats.timeFilter.endDate)
+                  endDate.setHours(23, 59, 59, 999)
+                  dataToExport = dataToExport.filter(payment => {
+                    const paymentDate = new Date(payment.payment_date)
+                    return paymentDate >= startDate && paymentDate <= endDate
+                  })
+                }
+                if (searchQuery) {
+                  dataToExport = dataToExport.filter(payment => {
                         const patientName = patients.find(p => p.id === payment.patient_id)?.full_name || ''
-                        return (
-                          payment.receipt_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          payment.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          payment.amount.toString().includes(searchQuery) ||
-                          payment.payment_method.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          payment.status.toLowerCase().includes(searchQuery.toLowerCase())
-                        )
-                      })
-                    }
-                    if (statusFilter !== 'all') {
-                      dataToExport = dataToExport.filter(payment => payment.status === statusFilter)
-                    }
-                    if (paymentMethodFilter !== 'all') {
-                      dataToExport = dataToExport.filter(payment => payment.payment_method === paymentMethodFilter)
-                    }
+                  return (
+                    payment.receipt_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    payment.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    payment.amount.toString().includes(searchQuery) ||
+                    payment.payment_method.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    payment.status.toLowerCase().includes(searchQuery.toLowerCase())
+                  )
+                })
+              }
+              if (statusFilter !== 'all') {
+                dataToExport = dataToExport.filter(payment => payment.status === statusFilter)
+              }
+              if (paymentMethodFilter !== 'all') {
+                dataToExport = dataToExport.filter(payment => payment.payment_method === paymentMethodFilter)
+              }
                     await ExportService.exportPaymentsToPDF(dataToExport)
                     notify.exportSuccess(`تم تصدير ${dataToExport.length} دفعة كملف PDF بنجاح!`)
-                  } catch (error) {
+              } catch (error) {
                     console.error('Error exporting payments (PDF):', error)
                     notify.exportError('فشل في تصدير بيانات المدفوعات (PDF)')
                   }

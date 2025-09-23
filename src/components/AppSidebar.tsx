@@ -7,6 +7,9 @@ import {
   Stethoscope,
   User2,
   UserCheck,
+  Microscope, // Added Microscope import
+  Receipt, // Added Receipt import
+  FileBarChart, // Added FileBarChart import
 } from "lucide-react"
 
 import {

@@ -20,6 +20,7 @@ import {
 import { useLabStore } from '@/store/labStore'
 import { useLabOrderStore } from '@/store/labOrderStore'
 import { usePatientStore } from '@/store/patientStore'
+import { useSettingsStore } from '@/store/settingsStore'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { getCardStyles, getIconStyles } from '@/lib/cardStyles'
 import { useRealTimeSync } from '@/hooks/useRealTimeSync'
@@ -27,6 +28,7 @@ import TimeFilter, { TimeFilterOptions } from '@/components/ui/time-filter'
 import useTimeFilteredStats from '@/hooks/useTimeFilteredStats'
 import { notify } from '@/services/notificationService'
 import { ExportService } from '@/services/exportService'
+import { PdfService } from '@/services/pdfService'
 import LabTable from '@/components/labs/LabTable'
 import AddLabDialog from '@/components/labs/AddLabDialog'
 import DeleteLabDialog from '@/components/labs/DeleteLabDialog'
@@ -73,6 +75,7 @@ export default function Labs() {
     isLoading: ordersLoading
   } = useLabOrderStore()
   const { patients, loadPatients } = usePatientStore()
+  const { settings } = useSettingsStore()
 
   // Time filtering for lab orders
   const labOrderStats = useTimeFilteredStats({
@@ -209,6 +212,28 @@ export default function Labs() {
     }
   }
 
+  const handleExportPDF = async () => {
+    try {
+      if (activeTab === 'orders') {
+        if (filteredLabOrders.length === 0) {
+          notify.info('لا توجد طلبات مختبرات لتصديرها بصيغة PDF.')
+          return
+        }
+
+        const clinicName = settings?.clinic_name || 'عيادة الأسنان الحديثة'
+
+        await ExportService.exportLabsToPDF(labs, filteredLabOrders, clinicName)
+        notify.success(`تم تصدير ${filteredLabOrders.length} طلب مختبر بنجاح إلى ملف PDF مع التنسيق الجميل!`)
+      } else {
+        // For the 'labs' tab, currently no specific PDF report is defined, so notify.
+        notify.info('تصدير PDF للمختبرات (القائمة) سيُضاف قريباً.')
+      }
+    } catch (error) {
+      console.error('Export PDF error:', error)
+      notify.error('فشل في تصدير البيانات إلى PDF')
+    }
+  }
+
   const handleRefresh = async () => {
     try {
       await Promise.all([loadLabs(), loadLabOrders(), loadPatients()])
@@ -333,23 +358,15 @@ export default function Labs() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem
-                onClick={handleExportCSV}
+            onClick={handleExportCSV}
                 className="arabic-enhanced"
-              >
-                <Download className="w-4 h-4 mr-2" />
+          >
+            <Download className="w-4 h-4 mr-2" />
                 تصدير Excel
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={async () => {
-                  try {
-                    // لا يوجد مسار PDF مخصص للمختبرات حالياً
-                    notify.info('تصدير PDF للمختبرات سيُضاف قريباً')
-                  } catch (error) {
-                    console.error('Error exporting labs (PDF):', error)
-                    notify.error('فشل في تصدير بيانات المختبرات (PDF)')
-                  }
-                }}
+                onClick={handleExportPDF}
                 className="arabic-enhanced"
               >
                 <FileText className="w-4 h-4 mr-2" />

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useClinicNeedsStore } from '../store/clinicNeedsStore'
+import { useSettingsStore } from '@/store/settingsStore'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
@@ -21,6 +22,7 @@ import ClinicNeedsTable from '../components/clinic-needs/ClinicNeedsTable'
 import ClinicNeedsFilters from '../components/clinic-needs/ClinicNeedsFilters'
 import { useToast } from '@/hooks/use-toast'
 import { ExportService } from '../services/exportService'
+import { PdfService } from '../services/pdfService'
 import { notify } from '../services/notificationService'
 import type { ClinicNeed } from '../types'
 
@@ -47,6 +49,8 @@ const ClinicNeeds: React.FC = () => {
     setFilters,
     clearError
   } = useClinicNeedsStore()
+
+  const { settings } = useSettingsStore()
 
   const { toast } = useToast()
   const [showAddDialog, setShowAddDialog] = useState(false)
@@ -212,11 +216,19 @@ const ClinicNeeds: React.FC = () => {
                     return
                   }
                   try {
-                    // استخدام pdfService عبر ExportService موحد لاحقاً إن لزم
-                    // حالياً لا يوجد دالة PDF مباشرة لاحتياجات العيادة في ExportService
-                    // يمكننا الاستفادة من تقارير صفحة التقارير لاحقاً
-                    // لإبقاء الواجهة متسقة سنحاول تصدير عبر comprehensiveExportService إن توفر
-                    await notify.info('تصدير PDF قيد التطوير في تقارير احتياجات العيادة')
+                    const clinicNeedsReportData = {
+                      totalNeeds: totalNeeds,
+                      totalCost: totalValue,
+                      pendingNeeds: pendingCount,
+                      orderedNeeds: orderedCount,
+                      receivedNeeds: receivedCount,
+                      totalRemaining: totalValue - (receivedCount > 0 ? filteredNeeds.filter(n => n.status === 'received').reduce((sum, n) => sum + (n.quantity * n.price), 0) : 0),
+                      clinicNeedsList: filteredNeeds,
+                      filterInfo: JSON.stringify(filters),
+                      dataCount: filteredNeeds.length,
+                    }
+                    await PdfService.exportClinicNeedsReport(clinicNeedsReportData, settings)
+                    notify.exportSuccess('تم تصدير احتياجات العيادة بنجاح إلى ملف PDF!')
                   } catch (error) {
                     console.error('Error exporting clinic needs (PDF):', error)
                     notify.exportError('فشل في تصدير بيانات الاحتياجات (PDF)')

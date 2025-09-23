@@ -3,7 +3,10 @@ import {
   AppointmentReportData,
   FinancialReportData,
   InventoryReportData,
-  ClinicSettings
+  ClinicSettings,
+  LabReportData,
+  ClinicNeedsReportData,
+  ExpenseReportData
 } from '../types'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
@@ -4098,16 +4101,6 @@ export class PdfService {
     return htmlContent
   }
 
-  static async exportClinicNeedsReport(reportData: any, options: { title: string; currency: string; isDarkMode: boolean }): Promise<void> {
-    try {
-      const htmlContent = this.createClinicNeedsReportHTML(reportData, options)
-      const fileName = this.generatePDFFileName('clinic-needs')
-      await this.convertHTMLToPDF(htmlContent, fileName)
-    } catch (error) {
-      console.error('Error exporting clinic needs report:', error)
-      throw new Error('فشل في تصدير تقرير احتياجات العيادة')
-    }
-  }
 
   static createClinicNeedsReportHTML(data: any, options: { title: string; currency: string; isDarkMode: boolean }): string {
     const { title, currency, isDarkMode } = options
@@ -5978,7 +5971,7 @@ export class PdfService {
               <tr>
                 <td>${formatDate(prescription.prescription_date)}</td>
                 <td>${medication.medication_name || medication.name || '-'}</td>
-                <td>${medication.dose || medication.dosage || '-'}</td>
+                <td>${medication.dose || '-'}</td>
                 <td>${medication.medication_instructions || medication.instructions || '-'}</td>
                 <td>${prescription.notes || '-'}</td>
               </tr>`)
@@ -6023,5 +6016,44 @@ export class PdfService {
       </html>`
 
     return htmlContent
+  }
+
+  // Export lab report to PDF
+  static async exportLabReport(data: LabReportData, settings: ClinicSettings | null, options?: { fileName?: string }): Promise<void> {
+    if (!data || data.totalOrders === 0) {
+      if (typeof window !== 'undefined' && (window as any).api) {
+        (window as any).api.sendNotification('لا توجد بيانات لتصديرها.', 'error')
+      }
+      return
+    }
+    const htmlContent = EnhancedPdfReports.createEnhancedLabReportHTML(data, settings)
+    const filename = options?.fileName || `تقرير_المختبرات_${new Date().toISOString().slice(0, 10)}.pdf`
+    await this.convertHTMLToPDF(htmlContent, filename)
+  }
+
+  // Export clinic needs report to PDF
+  static async exportClinicNeedsReport(data: ClinicNeedsReportData, settings: ClinicSettings | null, options?: { fileName?: string }): Promise<void> {
+    if (!data || data.totalNeeds === 0) {
+      if (typeof window !== 'undefined' && (window as any).api) {
+        (window as any).api.sendNotification('لا توجد بيانات لتصديرها.', 'error')
+      }
+      return
+    }
+    const htmlContent = EnhancedPdfReports.createEnhancedClinicNeedsReportHTML(data, settings)
+    const filename = options?.fileName || `تقرير_احتياجات_العيادة_${new Date().toISOString().slice(0, 10)}.pdf`
+    await this.convertHTMLToPDF(htmlContent, filename)
+  }
+
+  // Export expense report to PDF
+  static async exportExpenseReport(data: ExpenseReportData, settings: ClinicSettings | null, options?: { fileName?: string }): Promise<void> {
+    if (!data || data.totalExpenses === 0) {
+      if (typeof window !== 'undefined' && (window as any).api) {
+        (window as any).api.sendNotification('لا توجد بيانات لتصديرها.', 'error')
+      }
+      return
+    }
+    const htmlContent = EnhancedPdfReports.createEnhancedExpenseReportHTML(data, settings)
+    const filename = options?.fileName || `تقرير_المصروفات_${new Date().toISOString().slice(0, 10)}.pdf`
+    await this.convertHTMLToPDF(htmlContent, filename)
   }
 }

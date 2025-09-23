@@ -378,7 +378,7 @@ export default function Appointments() {
             جدولة ومتابعة مواعيد المرضى
           </p>
         </div>
-      <div className="flex items-center space-x-2 space-x-reverse">
+        <div className="flex items-center space-x-2 space-x-reverse">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline">
@@ -388,22 +388,22 @@ export default function Appointments() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">
             <DropdownMenuItem
-              onClick={async () => {
-                if (filteredAppointments.length === 0) {
-                  notify.noDataToExport('لا توجد بيانات مواعيد للتصدير')
-                  return
-                }
-                try {
-                  await ExportService.exportAppointmentsToExcel(filteredAppointments)
+            onClick={async () => {
+              if (filteredAppointments.length === 0) {
+                notify.noDataToExport('لا توجد بيانات مواعيد للتصدير')
+                return
+              }
+              try {
+                await ExportService.exportAppointmentsToExcel(filteredAppointments)
                   notify.exportSuccess(`تم تصدير ${filteredAppointments.length} موعد بنجاح إلى ملف Excel!`)
-                } catch (error) {
+              } catch (error) {
                   console.error('Error exporting appointments (Excel):', error)
                   notify.exportError('فشل في تصدير بيانات المواعيد (Excel)')
-                }
-              }}
+              }
+            }}
               className="arabic-enhanced"
-            >
-              <Download className="w-4 h-4 ml-2" />
+          >
+            <Download className="w-4 h-4 ml-2" />
               تصدير Excel
             </DropdownMenuItem>
             <DropdownMenuSeparator />

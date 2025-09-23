@@ -267,7 +267,12 @@ export const useClinicNeedsStore = create<ClinicNeedsStore>()(
         const { needs } = get()
 
         const totalNeeds = needs.length
-        const totalValue = needs.reduce((sum, need) => sum + (need.price * need.quantity), 0)
+        // Ensure price and quantity are numbers to prevent "Cannot convert object to primitive value" error
+        const totalValue = needs.reduce((sum, need) => {
+          const price = Number(need.price) || 0
+          const quantity = Number(need.quantity) || 0
+          return sum + (price * quantity)
+        }, 0)
         const pendingCount = needs.filter(need => need.status === 'pending').length
         const orderedCount = needs.filter(need => need.status === 'ordered').length
         const receivedCount = needs.filter(need => need.status === 'received').length
@@ -294,13 +299,13 @@ export const useClinicNeedsStore = create<ClinicNeedsStore>()(
       // Categories and suppliers
       updateCategories: () => {
         const { needs } = get()
-        const categories = [...new Set(needs.map(need => need.category).filter(Boolean))]
+        const categories = [...new Set(needs.map(need => need.category).filter((cat): cat is string => Boolean(cat)))]
         set({ categories })
       },
 
       updateSuppliers: () => {
         const { needs } = get()
-        const suppliers = [...new Set(needs.map(need => need.supplier).filter(Boolean))]
+        const suppliers = [...new Set(needs.map(need => need.supplier).filter((sup): sup is string => Boolean(sup)))]
         set({ suppliers })
       },
 

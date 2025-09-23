@@ -102,6 +102,72 @@ function TreatmentReportsComponent() {
   const { currency, settings } = useSettingsStore()
   const { isDarkMode } = useTheme()
 
+  // Helper function to safely convert values to numbers
+  const safeNumber = (value: any): number => {
+    if (typeof value === 'number') {
+      return isNaN(value) || !isFinite(value) ? 0 : value
+    }
+    if (typeof value === 'string') {
+      const parsed = parseFloat(value)
+      return isNaN(parsed) || !isFinite(parsed) ? 0 : parsed
+    }
+    if (typeof value === 'object' && value !== null) {
+      if (value instanceof Date) {
+        return value.getTime() // Convert Date to timestamp if treated as number
+      }
+      if (value.value !== undefined) {
+        return safeNumber(value.value)
+      }
+      if (value.amount !== undefined) {
+        return safeNumber(value.amount)
+      }
+      if (value.count !== undefined) {
+        return safeNumber(value.count)
+      }
+      // Attempt to convert object to number directly as a last resort
+      const numValue = Number(value)
+      return isNaN(numValue) || !isFinite(numValue) ? 0 : numValue
+    }
+    return 0
+  }
+
+  // Helper function to safely convert values to strings
+  const safeString = (value: any): string => {
+    if (typeof value === 'string') {
+      return value
+    }
+    if (typeof value === 'number') {
+      return value.toString()
+    }
+    if (value instanceof Date) {
+      return formatDate(value.toISOString()) // Format Date objects
+    }
+    if (typeof value === 'object' && value !== null) {
+      if (value.name !== undefined) {
+        return safeString(value.name)
+      }
+      if (value.title !== undefined) {
+        return safeString(value.title)
+      }
+      if (value.text !== undefined) {
+        return safeString(value.text)
+      }
+      // Attempt to convert to string, but handle errors
+      try {
+        // Check if the object has a toString method other than the default Object.prototype.toString
+        if (typeof value.toString === 'function' && value.toString !== Object.prototype.toString) {
+          return value.toString()
+        }
+        // Fallback for plain objects or arrays, stringify them
+        return JSON.stringify(value)
+      } catch (error) {
+        console.warn('safeString: Could not stringify object:', value, error)
+        return 'غير محدد'
+      }
+    }
+    return 'غير محدد'
+  }
+
   // Load custom treatment names for proper display
   const { refreshTreatmentNames } = useTreatmentNames()
 
@@ -406,7 +472,7 @@ function TreatmentReportsComponent() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="إجمالي العلاجات"
-          value={filteredTreatmentStats.totalTreatments}
+          value={safeNumber(filteredTreatmentStats.totalTreatments).toFixed(0)}
           icon={Activity}
           color="blue"
           description="العدد الكلي للعلاجات"
@@ -414,10 +480,10 @@ function TreatmentReportsComponent() {
         />
         <StatCard
           title="العلاجات المكتملة"
-          value={filteredTreatmentStats.completedTreatments}
+          value={safeNumber(filteredTreatmentStats.completedTreatments).toFixed(0)}
           icon={CheckCircle}
           color="green"
-          description={`معدل الإنجاز: ${filteredTreatmentStats.completionRate}%`}
+          description={`معدل الإنجاز: ${safeNumber(filteredTreatmentStats.completionRate).toFixed(1)}%`}
         />
         <StatCard
           title="إجمالي الإيرادات"
@@ -428,10 +494,10 @@ function TreatmentReportsComponent() {
         />
         <StatCard
           title="العلاجات الآجلة"
-          value={filteredTreatmentStats.pendingTreatments.length}
+          value={safeNumber(filteredTreatmentStats.pendingTreatments.length).toFixed(0)}
           icon={Clock}
           color="yellow"
-          description={`متأخرة: ${filteredTreatmentStats.overdueTreatments.length}`}
+          description={`متأخرة: ${safeNumber(filteredTreatmentStats.overdueTreatments.length).toFixed(0)}`}
         />
       </div>
 
@@ -470,7 +536,7 @@ function TreatmentReportsComponent() {
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={({ status, percentage }) => `${status}: ${percentage}%`}
+                        label={({ status, percentage }) => `${safeString(status)}: ${safeNumber(percentage).toFixed(1)}%`}
                         outerRadius={80}
                         fill="#8884d8"
                         dataKey="count"
@@ -482,8 +548,8 @@ function TreatmentReportsComponent() {
                         ))}
                       </Pie>
                       <Tooltip
-                        formatter={(value, name) => [value, name]}
-                        labelFormatter={(label) => `الحالة: ${label}`}
+                        formatter={(value, name) => [`${safeNumber(value).toFixed(0)}`, `${safeString(name)}`]}
+                        labelFormatter={(label) => `الحالة: ${safeString(label)}`}
                       />
                     </PieChart>
                   </ResponsiveContainer>
@@ -513,6 +579,7 @@ function TreatmentReportsComponent() {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis
                         dataKey="category"
+                        tickFormatter={(value) => safeString(value)}
                         tick={{ fontSize: 12 }}
                         interval={0}
                         angle={-45}
@@ -521,8 +588,8 @@ function TreatmentReportsComponent() {
                       />
                       <YAxis />
                       <Tooltip
-                        formatter={(value, name) => [value, 'عدد العلاجات']}
-                        labelFormatter={(label) => `الفئة: ${label}`}
+                        formatter={(value) => [safeNumber(value).toFixed(0), 'عدد العلاجات']}
+                        labelFormatter={(label) => `الفئة: ${safeString(label)}`}
                       />
                       <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} isAnimationActive={false} animationDuration={0} />
                     </BarChart>
@@ -574,17 +641,22 @@ function TreatmentReportsComponent() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {treatmentReports.mostPopularTreatments.slice(0, 5).map((item, index) => (
-                    <div key={index} className="flex justify-between items-center">
-                      <span className="font-medium">{item.name}</span>
-                      <div className="text-left">
-                        <div className="font-bold">{item.count} مرة</div>
-                        <div className="text-sm text-muted-foreground">
-                          <CurrencyDisplay amount={item.revenue} currency={currency} />
+                  {Array.isArray(treatmentReports.mostPopularTreatments) ?
+                    treatmentReports.mostPopularTreatments.slice(0, 5).map((item, index) => (
+                      <div key={index} className="flex justify-between items-center">
+                        <span className="font-medium">{safeString(item.name)}</span>
+                        <div className="text-left">
+                          <div className="font-bold">{safeNumber(item.count)} مرة</div>
+                          <div className="text-sm text-muted-foreground">
+                            <CurrencyDisplay amount={safeNumber(item.revenue)} currency={currency} />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    )) : (
+                      <div className="text-center text-muted-foreground py-4">
+                        لا توجد بيانات أشهر العلاجات متاحة
+                      </div>
+                    )}
                 </div>
               </CardContent>
             </Card>
@@ -598,7 +670,7 @@ function TreatmentReportsComponent() {
                 <CardTitle>اتجاه العلاجات الشهري</CardTitle>
               </CardHeader>
               <CardContent>
-                {(!treatmentReports.treatmentTrend || treatmentReports.treatmentTrend.length === 0) ? (
+                {(!treatmentReports.treatmentTrend || !Array.isArray(treatmentReports.treatmentTrend) || treatmentReports.treatmentTrend.length === 0) ? (
                   <div className="flex items-center justify-center h-80 text-muted-foreground">
                     <div className="text-center">
                       <TrendingUp className="w-12 h-12 mx-auto mb-4 opacity-50" />
@@ -609,11 +681,14 @@ function TreatmentReportsComponent() {
                   <ResponsiveContainer width="100%" height={300}>
                     <LineChart data={treatmentReports.treatmentTrend}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="period" />
+                      <XAxis
+                        dataKey="period"
+                        tickFormatter={(value) => safeString(value)}
+                      />
                       <YAxis />
                       <Tooltip
-                        formatter={(value, name) => [value, name]}
-                        labelFormatter={(label) => `الفترة: ${label}`}
+                        formatter={(value, name) => [`${safeNumber(value).toFixed(0)}`, `${safeString(name)}`]}
+                        labelFormatter={(label) => `الفترة: ${safeString(label)}`}
                       />
                       <Line
                         type="monotone"
@@ -649,19 +724,27 @@ function TreatmentReportsComponent() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span>معدل الإنجاز</span>
-                    <Badge variant="secondary">{treatmentReports.completionRate}%</Badge>
+                    <Badge variant="secondary">
+                      {safeNumber(treatmentReports.completionRate).toFixed(1)}%
+                    </Badge>
                   </div>
                   <div className="flex justify-between items-center">
                     <span>متوسط وقت الإنجاز</span>
-                    <Badge variant="secondary">{Math.round(treatmentReports.averageCompletionTime)} يوم</Badge>
+                    <Badge variant="secondary">
+                      {Math.round(safeNumber(treatmentReports.averageCompletionTime))} يوم
+                    </Badge>
                   </div>
                   <div className="flex justify-between items-center">
                     <span>المرضى بعلاجات متعددة</span>
-                    <Badge variant="secondary">{treatmentReports.patientsWithMultipleTreatments}</Badge>
+                    <Badge variant="secondary">
+                      {safeNumber(treatmentReports.patientsWithMultipleTreatments)}
+                    </Badge>
                   </div>
                   <div className="flex justify-between items-center">
                     <span>متوسط العلاجات لكل مريض</span>
-                    <Badge variant="secondary">{treatmentReports.averageTreatmentsPerPatient.toFixed(1)}</Badge>
+                    <Badge variant="secondary">
+                      {safeNumber(treatmentReports.averageTreatmentsPerPatient).toFixed(1)}
+                    </Badge>
                   </div>
                 </div>
               </CardContent>
@@ -703,10 +786,10 @@ function TreatmentReportsComponent() {
                         {filteredTreatmentStats.pendingTreatments.slice(0, 10).map((treatment) => (
                         <TableRow key={treatment.id}>
                           <TableCell className="text-right">{getTreatmentNameInArabic(treatment.treatment_type)}</TableCell>
-                          <TableCell className="text-right">{treatment.patient_name || `مريض ${treatment.patient_id}`}</TableCell>
+                          <TableCell className="text-right">{safeString(treatment.patient_name)}</TableCell>
                           <TableCell className="text-right">
-                            <Badge variant={treatment.status === 'planned' ? 'secondary' : 'default'}>
-                              {getStatusLabelInArabic(treatment.status || 'غير محدد')}
+                            <Badge variant={treatment.treatment_status === 'planned' ? 'secondary' : 'default'}>
+                              {getStatusLabelInArabic(treatment.treatment_status || 'غير محدد')}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
@@ -760,7 +843,7 @@ function TreatmentReportsComponent() {
                         return (
                           <TableRow key={treatment.id}>
                             <TableCell className="text-right">{getTreatmentNameInArabic(treatment.treatment_type)}</TableCell>
-                            <TableCell className="text-right">{treatment.patient_name || `مريض ${treatment.patient_id}`}</TableCell>
+                            <TableCell className="text-right">{safeString(treatment.patient_name)}</TableCell>
                             <TableCell className="text-right">
                               {treatment.created_at ? formatDate(treatment.created_at) : 'غير محدد'}
                             </TableCell>

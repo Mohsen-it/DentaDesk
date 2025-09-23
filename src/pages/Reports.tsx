@@ -141,6 +141,28 @@ export default function Reports() {
     }
   }
 
+  // Helper function to safely convert values to numbers
+  const safeNumber = (value: any): number => {
+    if (typeof value === 'number') {
+      return isNaN(value) || !isFinite(value) ? 0 : value
+    }
+    if (typeof value === 'string') {
+      const parsed = parseFloat(value)
+      return isNaN(parsed) || !isFinite(parsed) ? 0 : parsed
+    }
+    if (typeof value === 'object' && value !== null) {
+      const numValue = Number(value)
+      return isNaN(numValue) || !isFinite(numValue) ? 0 : numValue
+    }
+    return 0
+  }
+
+  // Helper function to safely sum array values
+  const safeSum = (array: any[], valueExtractor: (item: any) => number): number => {
+    if (!Array.isArray(array)) return 0
+    return array.reduce((sum, item) => sum + safeNumber(valueExtractor(item)), 0)
+  }
+
   // Apply filtering directly based on selected period
   const getFilteredData = (data: any[], dateField: string) => {
     if (selectedPeriod === 'all') return data
@@ -217,71 +239,29 @@ export default function Reports() {
     // تحقق من جميع الحالات المحتملة للمدفوعات الآجلة
     const status = p.status?.toLowerCase()
     return status === 'pending' || status === 'آجل' || status === 'unpaid' ||
-           (!p.status && p.amount > 0 && !p.amount_paid)
+           (!p.status && safeNumber(p.amount) > 0 && !p.amount_paid)
   })
 
-  // Calculate total amount for filtered pending payments
-  const filteredPendingAmount = filteredPendingPayments.reduce((sum: number, p: any) => {
+  // Calculate total amount for filtered pending payments with safe number conversion
+  const filteredPendingAmount = safeSum(filteredPendingPayments, (p: any) => {
     // للمدفوعات الآجلة، استخدم المبلغ الإجمالي المطلوب أو تكلفة العلاج
-    let pendingAmount = p.amount || 0
+    let pendingAmount = safeNumber(p.amount)
 
     if (p.tooth_treatment_id) {
       // للمدفوعات المرتبطة بعلاجات، استخدم التكلفة الإجمالية للعلاج
-      const treatmentCost = p.treatment_total_cost || p.total_amount_due || 0
+      const treatmentCost = safeNumber(p.treatment_total_cost) || safeNumber(p.total_amount_due)
       pendingAmount = treatmentCost
-    } else if (pendingAmount === 0 && (p.total_amount_due || 0) > 0) {
+    } else if (pendingAmount === 0 && safeNumber(p.total_amount_due) > 0) {
       // إذا كان المبلغ المدفوع 0 والمبلغ الإجمالي المطلوب أكبر من 0، استخدم المبلغ الإجمالي
-      pendingAmount = p.total_amount_due
-    } else if (pendingAmount === 0 && (p.remaining_balance || 0) > 0) {
+      pendingAmount = safeNumber(p.total_amount_due)
+    } else if (pendingAmount === 0 && safeNumber(p.remaining_balance) > 0) {
       // استخدم الرصيد المتبقي إذا كان متوفراً
-      pendingAmount = p.remaining_balance
+      pendingAmount = safeNumber(p.remaining_balance)
     }
 
-    return sum + pendingAmount
-  }, 0)
-
-  // Debug: تسجيل البيانات للتحقق من المشكلة
-  console.log('🔍 Debug Pending Payments:', {
-    totalPayments: payments.length,
-    filteredPayments: filteredPayments.length,
-    filteredPendingPayments: filteredPendingPayments.length,
-    filteredPendingAmount,
-    selectedPeriod,
-    allPayments: payments.map(p => ({
-      id: p.id,
-      status: p.status,
-      amount: p.amount,
-      date: p.payment_date,
-      patient: p.patient?.full_name
-    })),
-    filteredPendingDetails: filteredPendingPayments.map(p => {
-      // حساب المبلغ الآجل لكل دفعة (نفس المنطق المستخدم في الحساب أعلاه)
-      let calculatedPendingAmount = p.amount || 0
-
-      if (p.tooth_treatment_id) {
-        const treatmentCost = p.treatment_total_cost || p.total_amount_due || 0
-        calculatedPendingAmount = treatmentCost
-      } else if (calculatedPendingAmount === 0 && (p.total_amount_due || 0) > 0) {
-        calculatedPendingAmount = p.total_amount_due
-      } else if (calculatedPendingAmount === 0 && (p.remaining_balance || 0) > 0) {
-        calculatedPendingAmount = p.remaining_balance
-      }
-
-      return {
-        id: p.id,
-        status: p.status,
-        amount: p.amount,
-        total_amount_due: p.total_amount_due,
-        treatment_total_cost: p.treatment_total_cost,
-        amount_paid: p.amount_paid,
-        remaining_balance: p.remaining_balance,
-        calculatedPendingAmount,
-        date: p.payment_date,
-        patient: p.patient?.full_name,
-        tooth_treatment_id: p.tooth_treatment_id
-      }
-    })
+    return pendingAmount
   })
+
 
   useEffect(() => {
     // Load initial reports with fresh data
@@ -806,7 +786,7 @@ export default function Reports() {
                       <p className="text-sm text-muted-foreground">الإيرادات المفلترة</p>
                       <p className="text-xl font-bold">
                         <CurrencyDisplay
-                          amount={filteredPayments.reduce((sum: number, p: any) => sum + (p.amount || 0), 0)}
+                          amount={safeSum(filteredPayments, (p: any) => safeNumber(p.amount))}
                           currency={currency}
                         />
                       </p>
@@ -844,7 +824,7 @@ export default function Reports() {
                     <span className="text-sm font-medium text-green-800 dark:text-green-200">الإيرادات المفلترة</span>
                     <span className="text-lg font-bold text-green-700 dark:text-green-100">
                       <CurrencyDisplay
-                        amount={filteredPayments.reduce((sum: number, p: any) => sum + (p.amount || 0), 0)}
+                        amount={safeSum(filteredPayments, (p: any) => safeNumber(p.amount))}
                         currency={currency}
                       />
                     </span>
@@ -853,7 +833,7 @@ export default function Reports() {
                     <span className="text-sm font-medium text-yellow-800 dark:text-yellow-200">المدفوعات الآجلة المفلترة</span>
                     <span className="text-lg font-bold text-yellow-700 dark:text-yellow-100">
                       <CurrencyDisplay
-                        amount={filteredPendingAmount}
+                        amount={safeNumber(filteredPendingAmount)}
                         currency={currency}
                       />
                     </span>
@@ -862,12 +842,15 @@ export default function Reports() {
                     <span className="text-sm font-medium text-orange-800 dark:text-orange-200">المدفوعات الجزئية المفلترة</span>
                     <span className="text-lg font-bold text-orange-700 dark:text-orange-100">
                       <CurrencyDisplay
-                        amount={filteredPayments.filter((p: any) => p.status === 'partial').reduce((sum: number, p: any) => {
-                          // للمدفوعات الجزئية: المبلغ المتبقي = المبلغ الإجمالي - المدفوع
-                          const totalAmount = Number(p.total_amount_due || p.amount) || 0
-                          const paidAmount = Number(p.amount_paid || p.amount) || 0
-                          return sum + Math.max(0, totalAmount - paidAmount)
-                        }, 0)}
+                        amount={safeSum(
+                          filteredPayments.filter((p: any) => p.status === 'partial'),
+                          (p: any) => {
+                            // للمدفوعات الجزئية: المبلغ المتبقي = المبلغ الإجمالي - المدفوع
+                            const totalAmount = safeNumber(p.total_amount_due) || safeNumber(p.amount)
+                            const paidAmount = safeNumber(p.amount_paid) || safeNumber(p.amount)
+                            return Math.max(0, totalAmount - paidAmount)
+                          }
+                        )}
                         currency={currency}
                       />
                     </span>
@@ -876,7 +859,7 @@ export default function Reports() {
                     <span className="text-sm font-medium text-red-800 dark:text-red-200">المصروفات المفلترة</span>
                     <span className="text-lg font-bold text-red-700 dark:text-red-100">
                       <CurrencyDisplay
-                        amount={filteredExpenses.reduce((sum: number, e: any) => sum + (e.amount || 0), 0)}
+                        amount={safeSum(filteredExpenses, (e: any) => safeNumber(e.amount))}
                         currency={currency}
                       />
                     </span>

@@ -130,7 +130,7 @@ async function generateComprehensiveFinancialCSV(payments: any[], timeFilter: an
   csv += '==================\n'
   csv += `إجمالي المعاملات,${financialStats.totalTransactions}\n`
   csv += `المعاملات المكتملة,${financialStats.completedTransactions}\n`
-  csv += `المعاملات الجزئية,${financialStats.partialTransactions}\n`
+  csv += `المعاملات الجزئية,${JSON.stringify(financialStats.partialTransactions)}\n`
   csv += `المعاملات الآجلة,${financialStats.pendingTransactions}\n\n`
 
   // === تحليل طرق الدفع ===

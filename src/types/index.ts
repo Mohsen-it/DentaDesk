@@ -697,6 +697,50 @@ export interface InventoryReportData {
   dataCount?: number
 }
 
+export interface LabReportData {
+  totalLabs: number
+  totalOrders: number
+  totalCost: number
+  totalPaid: number
+  totalRemaining: number
+  pendingOrders: number
+  completedOrders: number
+  cancelledOrders: number
+  labsList: Lab[]
+  labOrdersList: LabOrder[]
+  filterInfo?: string
+  dataCount?: number
+}
+
+export interface ClinicNeedsReportData {
+  totalNeeds: number
+  totalValue: number
+  pendingCount: number
+  orderedCount: number
+  receivedCount: number
+  cancelledCount: number
+  urgentCount: number
+  needsByStatus: { status: string; count: number; percentage: number; value: number }[]
+  needsByPriority: { priority: string; count: number; percentage: number; value: number }[]
+  needsByCategory: { category: string; count: number; value: number }[]
+  needsList: ClinicNeed[]
+  filterInfo?: string
+  dataCount?: number
+}
+
+export interface ExpenseReportData {
+  totalExpenses: number
+  paidExpenses: number
+  pendingExpenses: number
+  overdueExpenses: number
+  cancelledExpenses: number
+  expensesByType: { type: string; amount: number; count: number; percentage: number }[]
+  expensesByPaymentMethod: { method: string; amount: number; count: number; percentage: number }[]
+  expensesList: ClinicExpense[]
+  filterInfo?: string
+  dataCount?: number
+}
+
 export interface AnalyticsReportData {
   kpis: {
     patientGrowthRate: number
@@ -721,35 +765,6 @@ export interface AnalyticsReportData {
     nextMonthAppointments: number
     confidence: number
   }
-}
-
-export interface ClinicNeedsReportData {
-  totalNeeds: number
-  totalValue: number
-  pendingCount: number
-  orderedCount: number
-  receivedCount: number
-  cancelledCount: number
-  urgentCount: number
-  highPriorityCount: number
-  mediumPriorityCount: number
-  lowPriorityCount: number
-  averageNeedValue: number
-  completionRate: number
-  urgencyRate: number
-  needsByStatus: { status: string; count: number; percentage: number; value: number }[]
-  needsByPriority: { priority: string; count: number; percentage: number; value: number }[]
-  needsByCategory: { category: string; count: number; value: number }[]
-  needsBySupplier: { supplier: string; count: number; value: number }[]
-  needsTrend: { period: string; count: number; value: number }[]
-  topExpensiveNeeds: { need_name: string; value: number; quantity: number }[]
-  pendingNeeds: ClinicNeed[]
-  urgentNeeds: ClinicNeed[]
-  overdueNeeds: ClinicNeed[]
-  recentlyReceived: ClinicNeed[]
-  needsList?: ClinicNeed[]
-  filterInfo?: string
-  dataCount?: number
 }
 
 export interface ReportData {

@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 import ExcelJS from 'exceljs'
-import type { Patient, Appointment, Payment, Lab, LabOrder, ReportExportOptions, PatientReportData, AppointmentReportData, FinancialReportData, InventoryReportData } from '../types'
+import type { Patient, Appointment, Payment, Lab, LabOrder, ClinicExpense, ClinicNeed, InventoryItem, ReportExportOptions, PatientReportData, AppointmentReportData, FinancialReportData, InventoryReportData, LabReportData, ExpenseReportData } from '../types'
 import { formatCurrency, formatDate, getDefaultCurrency } from '../lib/utils'
 import { getTreatmentNameInArabic, getCategoryNameInArabic } from '../data/teethData'
 
@@ -320,6 +320,10 @@ export class ExportService {
         return this.generateFinancialReportContent(data, options)
       case 'inventory':
         return this.generateInventoryReportContent(data, options)
+      case 'labs':
+        return this.generateLabReportContent(data, options)
+      case 'clinic-expenses':
+        return this.generateClinicExpensesReportContent(data, options)
       case 'overview':
         return this.generateOverviewReportContent(data, options)
       default:
@@ -564,6 +568,291 @@ export class ExportService {
                 <td>${formatCurrency(item.value)} $</td>
               </tr>
             `).join('')}
+          </tbody>
+        </table>
+      </div>
+      ` : ''}
+    `
+  }
+
+  // Generate Lab Report HTML Content
+  private static generateLabReportContent(data: LabReportData, options: ReportExportOptions): string {
+    return `
+      <div class="summary-cards">
+        <div class="summary-card">
+          <h3>إجمالي المختبرات</h3>
+          <div class="number">${data.totalLabs || 0}</div>
+        </div>
+        <div class="summary-card">
+          <h3>إجمالي الطلبات</h3>
+          <div class="number">${data.totalOrders || 0}</div>
+        </div>
+        <div class="summary-card">
+          <h3>إجمالي التكلفة</h3>
+          <div class="number">${formatCurrency(data.totalCost || 0)}</div>
+        </div>
+        <div class="summary-card">
+          <h3>إجمالي المدفوع</h3>
+          <div class="number">${formatCurrency(data.totalPaid || 0)}</div>
+        </div>
+        <div class="summary-card">
+          <h3>إجمالي المتبقي</h3>
+          <div class="number">${formatCurrency(data.totalRemaining || 0)}</div>
+        </div>
+      </div>
+
+      <div class="summary-cards">
+        <div class="summary-card">
+          <h3>الطلبات الآجلة</h3>
+          <div class="number" style="color: #f59e0b;">${data.pendingOrders || 0}</div>
+        </div>
+        <div class="summary-card">
+          <h3>الطلبات المكتملة</h3>
+          <div class="number" style="color: #10b981;">${data.completedOrders || 0}</div>
+        </div>
+        <div class="summary-card">
+          <h3>الطلبات الملغية</h3>
+          <div class="number" style="color: #ef4444;">${data.cancelledOrders || 0}</div>
+        </div>
+        <div class="summary-card">
+          <h3>متوسط التكلفة</h3>
+          <div class="number">${formatCurrency((data.totalOrders || 0) > 0 ? (data.totalCost || 0) / (data.totalOrders || 1) : 0)}</div>
+        </div>
+      </div>
+
+      ${data.labsList && data.labsList.length > 0 ? `
+      <div class="section">
+        <div class="section-title">قائمة المختبرات</div>
+        <table>
+          <thead>
+            <tr>
+              <th>اسم المختبر</th>
+              <th>معلومات الاتصال</th>
+              <th>العنوان</th>
+              <th>عدد الطلبات</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.labsList.slice(0, 20).map(lab => {
+              const ordersCount = data.labOrdersList ? data.labOrdersList.filter(order => order.lab_id === lab.id).length : 0
+              return `
+                <tr>
+                  <td>${lab.name || 'غير محدد'}</td>
+                  <td>${lab.contact_info || 'غير محدد'}</td>
+                  <td>${lab.address || 'غير محدد'}</td>
+                  <td>${ordersCount}</td>
+                </tr>
+              `
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+      ` : ''}
+
+      ${options.includeDetails && data.labOrdersList && data.labOrdersList.length > 0 ? `
+      <div class="section">
+        <div class="section-title">تفاصيل طلبات المختبرات</div>
+        <table>
+          <thead>
+            <tr>
+              <th>اسم المختبر</th>
+              <th>اسم المريض</th>
+              <th>نوع الخدمة</th>
+              <th>التكلفة</th>
+              <th>المدفوع</th>
+              <th>المتبقي</th>
+              <th>الحالة</th>
+              <th>تاريخ الطلب</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.labOrdersList.slice(0, 30).map(order => {
+              const labName = order.lab?.name || 'غير محدد'
+              const patientName = order.patient?.full_name || 'غير محدد'
+              const serviceName = order.service_name || 'غير محدد'
+              const cost = formatCurrency(order.cost || 0)
+              const paid = formatCurrency(order.paid_amount || 0)
+              const remaining = formatCurrency(order.remaining_balance || 0)
+              const status = order.status === 'مكتمل' ? 'مكتمل' : order.status === 'آجل' ? 'آجل' : 'ملغي'
+              const orderDate = order.order_date ? new Date(order.order_date).toLocaleDateString('ar-SA') : 'غير محدد'
+
+              return `
+                <tr>
+                  <td>${labName}</td>
+                  <td>${patientName}</td>
+                  <td>${serviceName}</td>
+                  <td>${cost}</td>
+                  <td>${paid}</td>
+                  <td>${remaining}</td>
+                  <td>${status}</td>
+                  <td>${orderDate}</td>
+                </tr>
+              `
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+      ` : ''}
+    `
+  }
+
+  // Generate Clinic Expenses Report HTML Content
+  private static generateClinicExpensesReportContent(data: ExpenseReportData, options: ReportExportOptions): string {
+    return `
+      <div class="summary-cards">
+        <div class="summary-card">
+          <h3>إجمالي المصروفات</h3>
+          <div class="number">${formatCurrency(data.totalExpenses || 0)}</div>
+        </div>
+        <div class="summary-card">
+          <h3>المصروفات المدفوعة</h3>
+          <div class="number" style="color: #10b981;">${formatCurrency(data.paidExpenses || 0)}</div>
+        </div>
+        <div class="summary-card">
+          <h3>المصروفات الآجلة</h3>
+          <div class="number" style="color: #f59e0b;">${formatCurrency(data.pendingExpenses || 0)}</div>
+        </div>
+        <div class="summary-card">
+          <h3>المصروفات المتأخرة</h3>
+          <div class="number" style="color: #ef4444;">${formatCurrency(data.overdueExpenses || 0)}</div>
+        </div>
+        <div class="summary-card">
+          <h3>المصروفات الملغية</h3>
+          <div class="number">${formatCurrency(data.cancelledExpenses || 0)}</div>
+        </div>
+      </div>
+
+      ${data.expensesByType && data.expensesByType.length > 0 ? `
+      <div class="section">
+        <div class="section-title">توزيع المصروفات حسب النوع</div>
+        <table>
+          <thead>
+            <tr>
+              <th>نوع المصروف</th>
+              <th>المبلغ</th>
+              <th>عدد المعاملات</th>
+              <th>النسبة المئوية</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.expensesByType.map(item => {
+              const typeLabels: { [key: string]: string } = {
+                'salary': 'رواتب',
+                'utilities': 'مرافق',
+                'rent': 'إيجار',
+                'maintenance': 'صيانة',
+                'supplies': 'مستلزمات',
+                'insurance': 'تأمين',
+                'other': 'أخرى'
+              }
+              const typeLabel = typeLabels[item.type] || item.type
+              return `
+                <tr>
+                  <td>${typeLabel}</td>
+                  <td>${formatCurrency(item.amount)}</td>
+                  <td>${item.count}</td>
+                  <td>${item.percentage?.toFixed(1) || 0}%</td>
+                </tr>
+              `
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+      ` : ''}
+
+      ${data.expensesByPaymentMethod && data.expensesByPaymentMethod.length > 0 ? `
+      <div class="section">
+        <div class="section-title">توزيع المصروفات حسب طريقة الدفع</div>
+        <table>
+          <thead>
+            <tr>
+              <th>طريقة الدفع</th>
+              <th>المبلغ</th>
+              <th>عدد المعاملات</th>
+              <th>النسبة المئوية</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.expensesByPaymentMethod.map(item => {
+              const methodLabels: { [key: string]: string } = {
+                'cash': 'نقدي',
+                'bank_transfer': 'تحويل بنكي',
+                'check': 'شيك',
+                'credit_card': 'بطاقة ائتمان'
+              }
+              const methodLabel = methodLabels[item.method] || item.method
+              return `
+                <tr>
+                  <td>${methodLabel}</td>
+                  <td>${formatCurrency(item.amount)}</td>
+                  <td>${item.count}</td>
+                  <td>${item.percentage?.toFixed(1) || 0}%</td>
+                </tr>
+              `
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+      ` : ''}
+
+      ${options.includeDetails && data.expensesList && data.expensesList.length > 0 ? `
+      <div class="section">
+        <div class="section-title">تفاصيل المصروفات</div>
+        <table>
+          <thead>
+            <tr>
+              <th>اسم المصروف</th>
+              <th>نوع المصروف</th>
+              <th>المبلغ</th>
+              <th>طريقة الدفع</th>
+              <th>تاريخ الدفع</th>
+              <th>المورد</th>
+              <th>الحالة</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.expensesList.slice(0, 30).map(expense => {
+              const typeLabels: { [key: string]: string } = {
+                'salary': 'راتب',
+                'utilities': 'مرافق',
+                'rent': 'إيجار',
+                'maintenance': 'صيانة',
+                'supplies': 'مستلزمات',
+                'insurance': 'تأمين',
+                'other': 'أخرى'
+              }
+              const methodLabels: { [key: string]: string } = {
+                'cash': 'نقدي',
+                'bank_transfer': 'تحويل بنكي',
+                'check': 'شيك',
+                'credit_card': 'بطاقة ائتمان'
+              }
+              const statusLabels: { [key: string]: string } = {
+                'paid': 'مدفوع',
+                'pending': 'آجل',
+                'overdue': 'متأخر',
+                'cancelled': 'ملغي'
+              }
+
+              const typeLabel = typeLabels[expense.expense_type] || expense.expense_type
+              const methodLabel = methodLabels[expense.payment_method] || expense.payment_method
+              const statusLabel = statusLabels[expense.status] || expense.status
+              const paymentDate = expense.payment_date ? new Date(expense.payment_date).toLocaleDateString('ar-SA') : 'غير محدد'
+              const vendor = expense.vendor || 'غير محدد'
+              const expenseName = expense.expense_name || 'غير محدد'
+
+              return `
+                <tr>
+                  <td>${expenseName}</td>
+                  <td>${typeLabel}</td>
+                  <td>${formatCurrency(expense.amount || 0)}</td>
+                  <td>${methodLabel}</td>
+                  <td>${paymentDate}</td>
+                  <td>${vendor}</td>
+                  <td>${statusLabel}</td>
+                </tr>
+              `
+            }).join('')}
           </tbody>
         </table>
       </div>
@@ -1181,12 +1470,7 @@ export class ExportService {
     // عنوان التقرير
     worksheet.mergeCells(currentRow, 1, currentRow, 7)
     const titleCell = worksheet.getCell(currentRow, 1)
-    {
-      const globalAny: any = (typeof window !== 'undefined') ? (window as any) : undefined
-      const settingsFromWindow = globalAny?.__CLINIC_SETTINGS__ || globalAny?.clinicSettings || undefined
-      const clinicNameTitle = `عيادة الأسنان${settingsFromWindow?.clinic_name && String(settingsFromWindow.clinic_name).trim() !== '' ? ' - ' + String(settingsFromWindow.clinic_name) : ''}`
-      titleCell.value = `تقرير مصروفات العيادة - ${clinicNameTitle}`
-    }
+    titleCell.value = 'تقرير مصروفات العيادة'
     titleCell.font = { name: 'Arial', size: 18, bold: true }
     titleCell.alignment = { horizontal: 'center', vertical: 'middle' }
     titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4472C4' } }
@@ -2928,10 +3212,9 @@ export class ExportService {
 
     const patientData: PatientReportData = {
       totalPatients: patients.length,
-      newPatientsThisMonth: newPatientsThisMonth,
+      newPatients: newPatientsThisMonth,
       activePatients: patients.length,
-      averageAge: averageAge,
-      patients: patients,
+      inactivePatients: 0,
       ageDistribution: [
         { ageGroup: 'أطفال (0-12)', count: ageGroups.children },
         { ageGroup: 'مراهقون (13-19)', count: ageGroups.teens },
@@ -2942,7 +3225,8 @@ export class ExportService {
         { gender: 'ذكور', count: genderGroups.male },
         { gender: 'إناث', count: genderGroups.female }
       ],
-      registrationTrend: []
+      registrationTrend: [],
+      patientsList: patients
     }
 
     const options: ReportExportOptions = {
@@ -2962,7 +3246,7 @@ export class ExportService {
     const totalAppointments = appointments.length
     const completedAppointments = appointments.filter(a => a.status === 'completed').length
     const cancelledAppointments = appointments.filter(a => a.status === 'cancelled').length
-    const noShowAppointments = appointments.filter(a => a.status === 'no-show').length
+    const noShowAppointments = appointments.filter(a => a.status === 'no_show').length
     const scheduledAppointments = appointments.filter(a => a.status === 'scheduled').length
 
     // Calculate rates
@@ -3017,7 +3301,7 @@ export class ExportService {
       return sum + Number(p.amount)
     }, 0)
     const pendingPayments = payments.filter(p => p.status === 'pending').reduce((sum, p) => sum + Number(p.amount), 0)
-    const overduePayments = payments.filter(p => p.status === 'overdue').reduce((sum, p) => sum + Number(p.amount), 0)
+    const overduePayments = payments.filter(p => p.status === 'pending').reduce((sum, p) => sum + Number(p.amount), 0)
 
     // Calculate payment method statistics
     const paymentMethods = payments
@@ -3042,16 +3326,26 @@ export class ExportService {
 
     const financialData: FinancialReportData = {
       totalRevenue: totalRevenue,
-      completedPayments: completedPayments + partialPayments, // Include partial payments in completed
-      pendingPayments: pendingPayments,
-      overduePayments: overduePayments,
-      paymentMethodStats: paymentMethodStats,
-      monthlyRevenue: [],
+      totalPaid: completedPayments + partialPayments, // Include partial payments in completed
+      totalPending: pendingPayments,
+      totalOverdue: overduePayments,
+      totalExpenses: 0,
+      netProfit: totalRevenue - 0,
+      profitMargin: 0,
+      revenueByPaymentMethod: paymentMethodStats.map(stat => ({
+        method: stat.method,
+        amount: stat.amount,
+        percentage: totalRevenue > 0 ? (stat.amount / totalRevenue) * 100 : 0
+      })),
+      revenueByTreatment: [],
+      expensesByType: [],
       revenueTrend: [],
-      topTreatments: [],
-      outstandingBalance: pendingPayments + overduePayments,
-      filterInfo: `البيانات المصدرة: ${payments.length} دفعة (مكتملة: ${payments.filter(p => p.status === 'completed').length}, جزئية: ${payments.filter(p => p.status === 'partial').length})`,
-      dataCount: payments.length
+      expenseTrend: [],
+      cashFlow: [],
+      outstandingPayments: [],
+      recentTransactions: [],
+      recentExpenses: [],
+      outstandingBalance: pendingPayments + overduePayments
     }
 
     const options: ReportExportOptions = {
@@ -3105,9 +3399,8 @@ export class ExportService {
 
     const patientData: PatientReportData = {
       totalPatients: patients.length,
-      newPatientsThisMonth: newPatientsThisMonth,
+      newPatients: newPatientsThisMonth,
       activePatients: patients.length,
-      averageAge: averageAge,
       patients: patients,
       ageDistribution: [
         { ageGroup: 'أطفال (0-12)', count: ageGroups.children },
@@ -3137,7 +3430,7 @@ export class ExportService {
     const totalAppointments = appointments.length
     const completedAppointments = appointments.filter(a => a.status === 'completed').length
     const cancelledAppointments = appointments.filter(a => a.status === 'cancelled').length
-    const noShowAppointments = appointments.filter(a => a.status === 'no-show').length
+    const noShowAppointments = appointments.filter(a => a.status === 'no_show').length
     const scheduledAppointments = appointments.filter(a => a.status === 'scheduled').length
 
     // Calculate rates
@@ -3346,7 +3639,7 @@ export class ExportService {
         if (payment.appointment_id) {
           // مدفوعات مرتبطة بمواعيد
           const appointmentId = payment.appointment_id
-          const totalDue = Number(payment.total_amount_due || payment.appointment_total_cost || 0)
+          const totalDue = Number(payment.total_amount_due || payment.treatment_total_cost || 0)
           const paidAmount = Number(payment.amount || 0)
 
           if (!appointmentGroups.has(appointmentId)) {
@@ -3374,11 +3667,14 @@ export class ExportService {
 
     const financialData: FinancialReportData = {
       totalRevenue: totalRevenue,
-      completedPayments: completedPayments + partialPayments, // Include partial payments in completed
-      pendingPayments: pendingPayments,
-      overduePayments: overduePayments,
-      paymentMethodStats: paymentMethodStats,
-      monthlyRevenue: [],
+      totalPaid: completedPayments + partialPayments, // Include partial payments in completed
+      totalPending: pendingPayments,
+      totalOverdue: overduePayments,
+      revenueByPaymentMethod: paymentMethodStats.map(stat => ({
+        method: stat.method,
+        amount: stat.amount,
+        percentage: totalRevenue > 0 ? (stat.amount / totalRevenue) * 100 : 0
+      })),
       revenueTrend: [],
       topTreatments: [],
       outstandingBalance: pendingPayments + overduePayments + totalRemainingFromPartialPayments,
@@ -3476,7 +3772,7 @@ export class ExportService {
         if (payment.appointment_id) {
           // مدفوعات مرتبطة بمواعيد
           const appointmentId = payment.appointment_id
-          const totalDue = Number(payment.total_amount_due || payment.appointment_total_cost || 0)
+          const totalDue = Number(payment.total_amount_due || payment.treatment_total_cost || 0)
           const paidAmount = Number(payment.amount || 0)
 
           if (!appointmentGroups2.has(appointmentId)) {
@@ -3505,9 +3801,9 @@ export class ExportService {
     // Enhanced financial data with detailed payment information
     const financialData: FinancialReportData = {
       totalRevenue: totalRevenue,
-      completedPayments: completedPayments + partialPayments, // Include partial payments in completed
-      pendingPayments: pendingPayments,
-      overduePayments: overduePayments,
+      totalPaid: completedPayments + partialPayments, // Include partial payments in completed
+      totalPending: pendingPayments,
+      totalOverdue: overduePayments,
       paymentMethodStats: paymentMethodStats,
       monthlyRevenue: [],
       revenueTrend: [],
@@ -3529,43 +3825,199 @@ export class ExportService {
     await this.exportToCSV('financial', financialData, options)
   }
 
-  static async exportLabsToExcel(labs: Lab[], labOrders: LabOrder[]): Promise<void> {
-    // Calculate statistics from the provided data
-    const totalLabs = labs.length
-    const totalOrders = labOrders.length
-    const totalCost = labOrders.reduce((sum, order) => sum + Number(order.cost), 0)
-    const totalPaid = labOrders.reduce((sum, order) => sum + Number(order.paid_amount || 0), 0)
-    const totalRemaining = labOrders.reduce((sum, order) => sum + Number(order.remaining_balance || 0), 0)
+ static async exportLabsToExcel(labs: Lab[], labOrders: LabOrder[]): Promise<void> {
+   // Calculate statistics from the provided data
+   const totalLabs = labs.length
+   const totalOrders = labOrders.length
+   const totalCost = labOrders.reduce((sum, order) => sum + Number(order.cost), 0)
+   const totalPaid = labOrders.reduce((sum, order) => sum + Number(order.paid_amount || 0), 0)
+   const totalRemaining = labOrders.reduce((sum, order) => sum + Number(order.remaining_balance || 0), 0)
 
-    const labData = {
-      summary: {
-        'إجمالي المختبرات': totalLabs,
-        'إجمالي الطلبات': totalOrders,
-        'إجمالي التكلفة': formatCurrency(totalCost),
-        'إجمالي المدفوع': formatCurrency(totalPaid),
-        'إجمالي المتبقي': formatCurrency(totalRemaining),
-        'تاريخ التقرير': formatDate(new Date())
-      },
-      labs: labs.map(lab => ({
-        ...lab,
-        ordersCount: labOrders.filter(order => order.lab_id === lab.id).length
-      })),
-      labOrders: labOrders,
-      filterInfo: `البيانات المصدرة: ${labs.length} مختبر، ${labOrders.length} طلب`,
-      dataCount: labs.length + labOrders.length
-    }
+   const labData = {
+     summary: {
+       'إجمالي المختبرات': totalLabs,
+       'إجمالي الطلبات': totalOrders,
+       'إجمالي التكلفة': formatCurrency(totalCost),
+       'إجمالي المدفوع': formatCurrency(totalPaid),
+       'إجمالي المتبقي': formatCurrency(totalRemaining),
+       'تاريخ التقرير': formatDate(new Date())
+     },
+     labs: labs.map(lab => ({
+       ...lab,
+       ordersCount: labOrders.filter(order => order.lab_id === lab.id).length
+     })),
+     labOrders: labOrders,
+     filterInfo: `البيانات المصدرة: ${labs.length} مختبر، ${labOrders.length} طلب`,
+     dataCount: labs.length + labOrders.length
+   }
 
+   const options: ReportExportOptions = {
+     format: 'excel',
+     includeCharts: false,
+     includeDetails: true,
+     language: 'ar'
+   }
 
+   await this.exportToExcel('labs', labData, options)
+ }
 
-    const options: ReportExportOptions = {
-      format: 'excel',
-      includeCharts: false,
-      includeDetails: true,
-      language: 'ar'
-    }
+ // Clinic Expenses PDF Export
+ static async exportClinicExpensesToPDF(expenses: ClinicExpense[], clinicName: string = 'عيادة الأسنان الحديثة'): Promise<void> {
+   // Calculate statistics from the provided data
+   const totalExpenses = expenses.length
+   const totalAmount = expenses.reduce((sum, expense) => sum + Number(expense.amount), 0)
+   const paidExpenses = expenses.filter(expense => expense.status === 'paid').reduce((sum, expense) => sum + Number(expense.amount), 0)
+   const pendingExpenses = expenses.filter(expense => expense.status === 'pending').reduce((sum, expense) => sum + Number(expense.amount), 0)
+   const overdueExpenses = expenses.filter(expense => expense.status === 'overdue').reduce((sum, expense) => sum + Number(expense.amount), 0)
+   const cancelledExpenses = expenses.filter(expense => expense.status === 'cancelled').reduce((sum, expense) => sum + Number(expense.amount), 0)
 
-    await this.exportToExcel('labs', labData, options)
-  }
+   // Calculate expenses by type
+   const expensesByType = expenses.reduce((acc, expense) => {
+     const type = expense.expense_type
+     if (!acc[type]) {
+       acc[type] = { amount: 0, count: 0 }
+     }
+     acc[type].amount += Number(expense.amount)
+     acc[type].count++
+     return acc
+   }, {} as Record<string, { amount: number; count: number }>)
+
+   const expensesByTypeArray = Object.entries(expensesByType).map(([type, stats]) => ({
+     type,
+     amount: stats.amount,
+     count: stats.count,
+     percentage: totalAmount > 0 ? (stats.amount / totalAmount) * 100 : 0
+   }))
+
+   // Calculate expenses by payment method
+   const expensesByPaymentMethod = expenses.reduce((acc, expense) => {
+     const method = expense.payment_method
+     if (!acc[method]) {
+       acc[method] = { amount: 0, count: 0 }
+     }
+     acc[method].amount += Number(expense.amount)
+     acc[method].count++
+     return acc
+   }, {} as Record<string, { amount: number; count: number }>)
+
+   const expensesByPaymentMethodArray = Object.entries(expensesByPaymentMethod).map(([method, stats]) => ({
+     method,
+     amount: stats.amount,
+     count: stats.count,
+     percentage: totalAmount > 0 ? (stats.amount / totalAmount) * 100 : 0
+   }))
+
+   const expensesData: ExpenseReportData = {
+     totalExpenses: totalAmount,
+     paidExpenses: paidExpenses,
+     pendingExpenses: pendingExpenses,
+     overdueExpenses: overdueExpenses,
+     cancelledExpenses: cancelledExpenses,
+     expensesByType: expensesByTypeArray,
+     expensesByPaymentMethod: expensesByPaymentMethodArray,
+     expensesList: expenses,
+     filterInfo: `البيانات المصدرة: ${expenses.length} مصروف`,
+     dataCount: expenses.length
+   }
+
+   const options: ReportExportOptions = {
+     format: 'pdf',
+     includeCharts: false,
+     includeDetails: true,
+     language: 'ar',
+     orientation: 'landscape',
+     pageSize: 'A4'
+   }
+
+   await this.exportToPDF('clinic-expenses', expensesData, options)
+ }
+
+ // Test function to verify PDF generation
+ static async testLabReportGeneration(labs: Lab[], labOrders: LabOrder[]): Promise<boolean> {
+   try {
+     console.log('🧪 Testing lab report PDF generation...')
+
+     if (!labs || labs.length === 0) {
+       console.warn('⚠️ No labs data provided for testing')
+       return false
+     }
+
+     if (!labOrders || labOrders.length === 0) {
+       console.warn('⚠️ No lab orders data provided for testing')
+       return false
+     }
+
+     await this.exportLabsToPDF(labs, labOrders, 'عيادة الأسنان للاختبار')
+     console.log('✅ Lab report PDF generation test completed successfully')
+     return true
+   } catch (error) {
+     console.error('❌ Lab report PDF generation test failed:', error)
+     return false
+   }
+ }
+
+ // Test function to verify clinic expenses PDF generation
+ static async testClinicExpensesReportGeneration(expenses: ClinicExpense[]): Promise<boolean> {
+   try {
+     console.log('🧪 Testing clinic expenses report PDF generation...')
+
+     if (!expenses || expenses.length === 0) {
+       console.warn('⚠️ No expenses data provided for testing')
+       return false
+     }
+
+     await this.exportClinicExpensesToPDF(expenses, 'عيادة الأسنان للاختبار')
+     console.log('✅ Clinic expenses report PDF generation test completed successfully')
+     return true
+   } catch (error) {
+     console.error('❌ Clinic expenses report PDF generation test failed:', error)
+     return false
+   }
+ }
+
+ // Lab Report PDF Export
+ static async exportLabsToPDF(labs: Lab[], labOrders: LabOrder[], clinicName: string = 'عيادة الأسنان الحديثة'): Promise<void> {
+   // Calculate statistics from the provided data
+   const totalLabs = labs.length
+   const totalOrders = labOrders.length
+   const totalCost = labOrders.reduce((sum, order) => sum + Number(order.cost), 0)
+   const totalPaid = labOrders.reduce((sum, order) => sum + Number(order.paid_amount || 0), 0)
+   const totalRemaining = labOrders.reduce((sum, order) => sum + Number(order.remaining_balance || 0), 0)
+
+   // Calculate order status distribution
+   const pendingOrders = labOrders.filter(order => order.status === 'آجل').length
+   const completedOrders = labOrders.filter(order => order.status === 'مكتمل').length
+   const cancelledOrders = labOrders.filter(order => order.status === 'ملغي').length
+
+   // Calculate average order cost
+   const averageOrderCost = totalOrders > 0 ? totalCost / totalOrders : 0
+
+   const labData: LabReportData = {
+     totalLabs: totalLabs,
+     totalOrders: totalOrders,
+     totalCost: totalCost,
+     totalPaid: totalPaid,
+     totalRemaining: totalRemaining,
+     pendingOrders: pendingOrders,
+     completedOrders: completedOrders,
+     cancelledOrders: cancelledOrders,
+     labsList: labs,
+     labOrdersList: labOrders,
+     filterInfo: `البيانات المصدرة: ${labs.length} مختبر، ${labOrders.length} طلب`,
+     dataCount: labs.length + labOrders.length
+   }
+
+   const options: ReportExportOptions = {
+     format: 'pdf',
+     includeCharts: false,
+     includeDetails: true,
+     language: 'ar',
+     orientation: 'landscape',
+     pageSize: 'A4'
+   }
+
+   await this.exportToPDF('labs', labData, options)
+ }
 
   static async exportClinicNeedsToExcel(needs: ClinicNeed[]): Promise<void> {
     // Calculate statistics from the provided data

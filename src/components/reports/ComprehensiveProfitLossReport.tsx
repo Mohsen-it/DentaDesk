@@ -453,7 +453,7 @@ function ComprehensiveProfitLossReportComponent() {
                     </Pie>
                     <Tooltip
                       formatter={(value) => [
-                        <CurrencyDisplay amount={Number(value)} currency={currency} />,
+                        Number(value).toLocaleString('ar-EG', { style: 'currency', currency }),
                         'المبلغ'
                       ]}
                       labelFormatter={(label) => `نوع الإيراد: ${label}`}
@@ -526,7 +526,7 @@ function ComprehensiveProfitLossReportComponent() {
                     </Pie>
                     <Tooltip
                       formatter={(value) => [
-                        <CurrencyDisplay amount={Number(value)} currency={currency} />,
+                        Number(value).toLocaleString('ar-EG', { style: 'currency', currency }),
                         'المبلغ'
                       ]}
                       labelFormatter={(label) => `نوع المصروف: ${label}`}
@@ -598,7 +598,7 @@ function ComprehensiveProfitLossReportComponent() {
                 />
                 <Tooltip
                   formatter={(value) => [
-                    <CurrencyDisplay amount={Number(value)} currency={currency} />,
+                    Number(value).toLocaleString('ar-EG', { style: 'currency', currency }),
                     'المبلغ'
                   ]}
                   labelFormatter={(label) => label}
@@ -726,7 +726,7 @@ function ComprehensiveProfitLossReportComponent() {
                           formatter={(value, _, props) => [
                             `${value} مدفوعة`,
                             'العدد',
-                            <CurrencyDisplay amount={props.payload.amount} currency={currency} />
+                            Number(props?.payload?.amount ?? 0).toLocaleString('ar-EG', { style: 'currency', currency })
                           ]}
                           labelFormatter={(label) => `الحالة: ${label}`}
                           contentStyle={chartConfig.tooltip}

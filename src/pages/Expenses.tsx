@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { useExpensesStore } from '@/store/expensesStore'
+import { useSettingsStore } from '@/store/settingsStore'
 import { useCurrency } from '@/contexts/CurrencyContext'
 import CurrencyDisplay from '@/components/ui/currency-display'
 import { getCardStyles, getIconStyles } from '@/lib/cardStyles'
@@ -13,6 +14,13 @@ import { useToast } from '@/hooks/use-toast'
 import { notify } from '@/services/notificationService'
 import { ExportService } from '@/services/exportService'
 import { ClinicExpense } from '@/types'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
+} from '@/components/ui/dropdown-menu'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,7 +47,8 @@ import {
   AlertTriangle,
   Download,
   Filter,
-  X
+  X,
+  FileText
 } from 'lucide-react'
 
 export default function Expenses() {
@@ -62,6 +71,7 @@ export default function Expenses() {
     clearError
   } = useExpensesStore()
 
+  const { settings } = useSettingsStore()
   const { formatAmount } = useCurrency()
   const { toast } = useToast()
   const [showAddDialog, setShowAddDialog] = useState(false)
@@ -189,20 +199,96 @@ export default function Expenses() {
     }
   }
 
-  const handleExport = async () => {
+  const handleExportExcel = async () => {
     try {
-      if (filteredExpenses.length === 0) {
+      if (filteredExpensesWithAdvancedFilters.length === 0) {
         notify.noDataToExport('لا توجد بيانات مصروفات للتصدير')
         return
       }
 
-      // تصدير إلى Excel مع التنسيق الجميل والمقروء
-      await ExportService.exportClinicExpensesToExcel(filteredExpenses)
+      await ExportService.exportClinicExpensesToExcel(filteredExpensesWithAdvancedFilters)
 
-      notify.exportSuccess(`تم تصدير ${filteredExpenses.length} مصروف بنجاح إلى ملف Excel مع التنسيق الجميل!`)
+      notify.exportSuccess(`تم تصدير ${filteredExpensesWithAdvancedFilters.length} مصروف بنجاح إلى ملف Excel مع التنسيق الجميل!`)
     } catch (error) {
       console.error('Error exporting clinic expenses:', error)
       notify.exportError('فشل في تصدير بيانات المصروفات')
+    }
+  }
+
+  const handleExportPDF = async () => {
+    try {
+      console.log('🔄 Starting PDF export process...')
+
+      if (filteredExpensesWithAdvancedFilters.length === 0) {
+        console.warn('⚠️ No expenses data to export')
+        notify.noDataToExport('لا توجد بيانات مصروفات للتصدير بصيغة PDF.')
+        return
+      }
+
+      console.log(`📊 Exporting ${filteredExpensesWithAdvancedFilters.length} expenses`)
+
+      // Calculate comprehensive statistics for the report
+      const totalAmount = filteredExpensesWithAdvancedFilters.reduce((sum, expense) => sum + expense.amount, 0)
+      const paidAmount = filteredExpensesWithAdvancedFilters.filter(expense => expense.status === 'paid').reduce((sum, expense) => sum + expense.amount, 0)
+      const pendingAmount = filteredExpensesWithAdvancedFilters.filter(expense => expense.status === 'pending').reduce((sum, expense) => sum + expense.amount, 0)
+      const overdueAmount = filteredExpensesWithAdvancedFilters.filter(expense => expense.status === 'overdue').reduce((sum, expense) => sum + expense.amount, 0)
+      const cancelledAmount = filteredExpensesWithAdvancedFilters.filter(expense => expense.status === 'cancelled').reduce((sum, expense) => sum + expense.amount, 0)
+
+      console.log('📈 Calculated statistics:', {
+        totalAmount,
+        paidAmount,
+        pendingAmount,
+        overdueAmount,
+        cancelledAmount
+      })
+
+      // Calculate expenses by type
+      const expensesByType = filteredExpensesWithAdvancedFilters.reduce((acc, expense) => {
+        const type = expense.expense_type
+        if (!acc[type]) {
+          acc[type] = { amount: 0, count: 0 }
+        }
+        acc[type].amount += expense.amount
+        acc[type].count++
+        return acc
+      }, {} as Record<string, { amount: number; count: number }>)
+
+      const expensesByTypeArray = Object.entries(expensesByType).map(([type, stats]) => ({
+        type,
+        amount: stats.amount,
+        count: stats.count,
+        percentage: totalAmount > 0 ? (stats.amount / totalAmount) * 100 : 0
+      }))
+
+      // Calculate expenses by payment method
+      const expensesByPaymentMethod = filteredExpensesWithAdvancedFilters.reduce((acc, expense) => {
+        const method = expense.payment_method
+        if (!acc[method]) {
+          acc[method] = { amount: 0, count: 0 }
+        }
+        acc[method].amount += expense.amount
+        acc[method].count++
+        return acc
+      }, {} as Record<string, { amount: number; count: number }>)
+
+      const expensesByPaymentMethodArray = Object.entries(expensesByPaymentMethod).map(([method, stats]) => ({
+        method,
+        amount: stats.amount,
+        count: stats.count,
+        percentage: totalAmount > 0 ? (stats.amount / totalAmount) * 100 : 0
+      }))
+
+      const clinicName = settings?.clinic_name || 'عيادة الأسنان الحديثة'
+      console.log('🏥 Clinic name for export:', clinicName)
+
+      console.log('🚀 Calling ExportService.exportClinicExpensesToPDF...')
+      await ExportService.exportClinicExpensesToPDF(filteredExpensesWithAdvancedFilters, clinicName)
+      console.log('✅ PDF export completed successfully')
+
+      notify.exportSuccess(`تم تصدير ${filteredExpensesWithAdvancedFilters.length} مصروف بنجاح إلى ملف PDF مع التنسيق الجميل!`)
+    } catch (error) {
+      console.error('❌ Error exporting expenses (PDF):', error)
+      notify.exportError('فشل في تصدير بيانات المصروفات إلى PDF')
     }
   }
 
@@ -235,14 +321,25 @@ export default function Expenses() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={handleExport}
-            disabled={filteredExpenses.length === 0}
-          >
-            <Download className="w-4 h-4 ml-2" />
-            تصدير
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" disabled={filteredExpensesWithAdvancedFilters.length === 0}>
+                <Download className="w-4 h-4 ml-2" />
+                تصدير
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={handleExportExcel} className="arabic-enhanced">
+                <Download className="w-4 h-4 ml-2" />
+                تصدير Excel
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleExportPDF} className="arabic-enhanced">
+                <FileText className="w-4 h-4 ml-2" />
+                تصدير PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button onClick={() => setShowAddDialog(true)}>
             <Plus className="w-4 h-4 ml-2" />
             إضافة مصروف
