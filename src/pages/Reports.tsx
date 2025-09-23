@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -17,18 +17,8 @@ import { useRealTimeReports } from '@/hooks/useRealTimeReports'
 import useTimeFilteredStats from '@/hooks/useTimeFilteredStats'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { getCardStyles, getIconStyles } from '@/lib/cardStyles'
-import PageLoading from '@/components/ui/PageLoading'
-import ErrorBoundary from '@/components/ErrorBoundary'
+import ReportsErrorBoundary from '@/components/ReportsErrorBoundary'
 
-// Lazy load heavy report components
-const PatientReports = React.lazy(() => import('@/components/reports/PatientReports'))
-const InventoryReports = React.lazy(() => import('@/components/reports/InventoryReports'))
-const AppointmentReports = React.lazy(() => import('@/components/reports/AppointmentReports'))
-const FinancialReports = React.lazy(() => import('@/components/reports/FinancialReports'))
-const TreatmentReports = React.lazy(() => import('@/components/reports/TreatmentReports'))
-const ClinicNeedsReports = React.lazy(() => import('@/components/reports/ClinicNeedsReports'))
-const ExpenseReports = React.lazy(() => import('@/components/reports/ExpenseReports'))
-const ComprehensiveProfitLossReport = React.lazy(() => import('@/components/reports/ComprehensiveProfitLossReport'))
 import CurrencyDisplay from '@/components/ui/currency-display'
 import { ComprehensiveExportService, TIME_PERIODS, TimePeriod } from '@/services/comprehensiveExportService'
 import { useDentalTreatmentStore } from '@/store/dentalTreatmentStore'
@@ -38,6 +28,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import RealTimeIndicator from '@/components/ui/real-time-indicator'
 import TimeFilter from '@/components/ui/time-filter'
+
 import {
   Table,
   TableBody,
@@ -46,6 +37,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+
+// Import components directly instead of lazy loading to avoid issues
+import PatientReports from '@/components/reports/PatientReports'
+import InventoryReports from '@/components/reports/InventoryReports'
+import AppointmentReports from '@/components/reports/AppointmentReports'
+import FinancialReports from '@/components/reports/FinancialReports'
+import TreatmentReports from '@/components/reports/TreatmentReports'
+import ClinicNeedsReports from '@/components/reports/ClinicNeedsReports'
+import ExpenseReports from '@/components/reports/ExpenseReports'
+import ComprehensiveProfitLossReport from '@/components/reports/ComprehensiveProfitLossReport'
+
 import {
   BarChart3,
   Users,
@@ -965,67 +967,51 @@ export default function Reports() {
 
         {/* Patient Reports Tab */}
         <TabsContent value="patients" dir="rtl">
-          <ErrorBoundary>
-            <Suspense fallback={<PageLoading message="جاري تحميل تقرير المرضى..." />}>
-              <PatientReports />
-            </Suspense>
-          </ErrorBoundary>
+          <ReportsErrorBoundary>
+            <PatientReports />
+          </ReportsErrorBoundary>
         </TabsContent>
 
         <TabsContent value="appointments" dir="rtl">
-          <ErrorBoundary>
-            <Suspense fallback={<PageLoading message="جاري تحميل تقرير المواعيد..." />}>
-              <AppointmentReports />
-            </Suspense>
-          </ErrorBoundary>
+          <ReportsErrorBoundary>
+            <AppointmentReports />
+          </ReportsErrorBoundary>
         </TabsContent>
 
         <TabsContent value="financial" dir="rtl">
-          <ErrorBoundary>
-            <Suspense fallback={<PageLoading message="جاري تحميل التقرير المالي..." />}>
-              <FinancialReports />
-            </Suspense>
-          </ErrorBoundary>
+          <ReportsErrorBoundary>
+            <FinancialReports />
+          </ReportsErrorBoundary>
         </TabsContent>
 
         <TabsContent value="treatments" dir="rtl">
-          <ErrorBoundary>
-            <Suspense fallback={<PageLoading message="جاري تحميل تقرير العلاجات..." />}>
-              <TreatmentReports />
-            </Suspense>
-          </ErrorBoundary>
+          <ReportsErrorBoundary>
+            <TreatmentReports />
+          </ReportsErrorBoundary>
         </TabsContent>
 
         <TabsContent value="inventory" dir="rtl">
-          <ErrorBoundary>
-            <Suspense fallback={<PageLoading message="جاري تحميل تقرير المخزون..." />}>
-              <InventoryReports />
-            </Suspense>
-          </ErrorBoundary>
+          <ReportsErrorBoundary>
+            <InventoryReports />
+          </ReportsErrorBoundary>
         </TabsContent>
 
         <TabsContent value="clinicNeeds" dir="rtl">
-          <ErrorBoundary>
-            <Suspense fallback={<PageLoading message="جاري تحميل تقرير احتياجات العيادة..." />}>
-              <ClinicNeedsReports />
-            </Suspense>
-          </ErrorBoundary>
+          <ReportsErrorBoundary>
+            <ClinicNeedsReports />
+          </ReportsErrorBoundary>
         </TabsContent>
 
         <TabsContent value="expenses" dir="rtl">
-          <ErrorBoundary>
-            <Suspense fallback={<PageLoading message="جاري تحميل تقرير المصروفات..." />}>
-              <ExpenseReports />
-            </Suspense>
-          </ErrorBoundary>
+          <ReportsErrorBoundary>
+            <ExpenseReports />
+          </ReportsErrorBoundary>
         </TabsContent>
 
         <TabsContent value="profitLoss" dir="rtl">
-          <ErrorBoundary>
-            <Suspense fallback={<PageLoading message="جاري تحميل التقرير الشامل للأرباح والخسائر..." />}>
-              <ComprehensiveProfitLossReport />
-            </Suspense>
-          </ErrorBoundary>
+          <ReportsErrorBoundary>
+            <ComprehensiveProfitLossReport />
+          </ReportsErrorBoundary>
         </TabsContent>
       </Tabs>
     </div>

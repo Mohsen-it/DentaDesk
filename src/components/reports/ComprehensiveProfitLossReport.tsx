@@ -51,6 +51,7 @@ import { PdfService } from '@/services/pdfService'
 import { notify } from '@/services/notificationService'
 import { TIME_PERIODS, TimePeriod } from '@/services/comprehensiveExportService'
 import type { ComprehensiveProfitLossReport } from '@/types'
+import { safeString, safeNumber } from '@/utils/safeStringUtils'
 
 function ComprehensiveProfitLossReportComponent() {
   const { payments } = usePaymentStore()
@@ -83,8 +84,8 @@ function ComprehensiveProfitLossReportComponent() {
   // دالة مساعدة لتحويل التاريخ إلى تنسيق محلي YYYY-MM-DD
   const formatDateToLocal = (date: Date): string => {
     const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const day = date.getDate().toString().padStart(2, '0')
     return `${year}-${month}-${day}`
   }
 
@@ -593,7 +594,7 @@ function ComprehensiveProfitLossReportComponent() {
                     if (Math.abs(value) >= 1000) {
                       return `${(value / 1000).toFixed(0)}k`
                     }
-                    return value.toString()
+                    return safeString(value)
                   }}
                 />
                 <Tooltip
@@ -1177,3 +1178,5 @@ function ComprehensiveProfitLossReportComponent() {
   )
 
 }
+
+export default ComprehensiveProfitLossReportComponent

@@ -694,3 +694,5 @@ function InventoryReportsComponent() {
     </div>
   )
 }
+
+export default InventoryReportsComponent
