@@ -190,6 +190,36 @@ export default function QuickAccessDashboard({
         </Card>
       </div>
 
+      {/* Quick Actions - moved here from Analytics */}
+      <Card className="bg-card border-border hover:shadow-lg dark:hover:shadow-xl transition-all duration-200">
+        <CardHeader className="p-4 md:p-5 lg:p-6">
+          <CardTitle className="flex items-center gap-2 font-tajawal text-lg md:text-xl lg:text-2xl">
+            <Plus className="w-5 h-5 md:w-6 md:h-6" />
+            إجراءات سريعة
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Button onClick={onNavigateToPatients} className="h-12 justify-start transition-all duration-200" aria-label="الانتقال إلى إدارة المرضى">
+              <Users className="w-4 h-4 mr-2" />
+              إدارة المرضى
+            </Button>
+            <Button onClick={onNavigateToAppointments} variant="outline" className="h-12 justify-start transition-all duration-200" aria-label="الانتقال إلى إدارة المواعيد">
+              <Calendar className="w-4 h-4 mr-2" />
+              إدارة المواعيد
+            </Button>
+            <Button onClick={onNavigateToPayments} variant="outline" className="h-12 justify-start transition-all duration-200" aria-label="الانتقال إلى إدارة المدفوعات">
+              <DollarSign className="w-4 h-4 mr-2" />
+              إدارة المدفوعات
+            </Button>
+            <Button onClick={onNavigateToTreatments} variant="outline" className="h-12 justify-start transition-all duration-200" aria-label="الانتقال إلى إدارة العلاجات">
+              <Activity className="w-4 h-4 mr-2" />
+              إدارة العلاجات
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Quick Actions */}
       {/* <Card >
         <CardHeader className='dark:bg-slate-900'> 

@@ -1181,7 +1181,12 @@ export class ExportService {
     // عنوان التقرير
     worksheet.mergeCells(currentRow, 1, currentRow, 7)
     const titleCell = worksheet.getCell(currentRow, 1)
-    titleCell.value = 'تقرير مصروفات العيادة'
+    {
+      const globalAny: any = (typeof window !== 'undefined') ? (window as any) : undefined
+      const settingsFromWindow = globalAny?.__CLINIC_SETTINGS__ || globalAny?.clinicSettings || undefined
+      const clinicNameTitle = `عيادة الأسنان${settingsFromWindow?.clinic_name && String(settingsFromWindow.clinic_name).trim() !== '' ? ' - ' + String(settingsFromWindow.clinic_name) : ''}`
+      titleCell.value = `تقرير مصروفات العيادة - ${clinicNameTitle}`
+    }
     titleCell.font = { name: 'Arial', size: 18, bold: true }
     titleCell.alignment = { horizontal: 'center', vertical: 'middle' }
     titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4472C4' } }

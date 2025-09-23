@@ -846,32 +846,7 @@ function DashboardAnalyticsComponent({
             </Card>
           </div>
 
-          {/* Quick Actions */}
-          <Card className="bg-white dark:bg-card border-slate-200 dark:border-slate-700">
-            <CardHeader>
-              <CardTitle >إجراءات سريعة</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Button onClick={onNavigateToPatients} className="h-12 justify-start transition-all duration-200 interactive-card" aria-label="الانتقال إلى إدارة المرضى">
-                  <Users className="w-4 h-4 mr-2" />
-                  إدارة المرضى
-                </Button>
-                <Button onClick={onNavigateToAppointments} variant="outline" className="h-12 justify-start transition-all duration-200 interactive-card" aria-label="الانتقال إلى إدارة المواعيد">
-                  <Calendar className="w-4 h-4 mr-2" />
-                  إدارة المواعيد
-                </Button>
-                <Button onClick={onNavigateToPayments} variant="outline" className="h-12 justify-start transition-all duration-200 interactive-card" aria-label="الانتقال إلى إدارة المدفوعات">
-                  <DollarSign className="w-4 h-4 mr-2" />
-                  إدارة المدفوعات
-                </Button>
-                <Button onClick={onNavigateToTreatments} variant="outline" className="h-12 justify-start transition-all duration-200 interactive-card" aria-label="الانتقال إلى إدارة العلاجات">
-                  <Activity className="w-4 h-4 mr-2" />
-                  إدارة العلاجات
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Quick Actions moved to Today tab (QuickAccessDashboard) */}
         </TabsContent>
       </Tabs>
     </div>

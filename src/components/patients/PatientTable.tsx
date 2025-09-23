@@ -439,9 +439,9 @@ function PatientTableComponent({
                     <TableCell className="font-medium text-center">
                       <div className="flex items-center justify-center space-x-2 space-x-reverse">
                         <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-sm font-medium">
-                          {patient.full_name.charAt(0)}
+                          {patient.full_name && patient.full_name.length > 0 ? patient.full_name.charAt(0) : '?'}
                         </div>
-                        <span>{patient.full_name}</span>
+                        <span>{patient.full_name ?? 'غير محدد'}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-center hidden md:table-cell">
