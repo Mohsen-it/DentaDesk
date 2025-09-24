@@ -28,6 +28,7 @@ import {
 import { useReportsStore } from '@/store/reportsStore'
 import { useDentalTreatmentStore } from '@/store/dentalTreatmentStore'
 import { usePatientStore } from '@/store/patientStore'
+import { safeString, safeNumber } from '@/utils/safeStringUtils'
 import { useSettingsStore } from '@/store/settingsStore'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useRealTimeReportsByType } from '@/hooks/useRealTimeReports'
@@ -131,42 +132,7 @@ function TreatmentReportsComponent() {
     return 0
   }
 
-  // Helper function to safely convert values to strings
-  const safeString = (value: any): string => {
-    if (typeof value === 'string') {
-      return value
-    }
-    if (typeof value === 'number') {
-      return value.toString()
-    }
-    if (value instanceof Date) {
-      return formatDate(value.toISOString()) // Format Date objects
-    }
-    if (typeof value === 'object' && value !== null) {
-      if (value.name !== undefined) {
-        return safeString(value.name)
-      }
-      if (value.title !== undefined) {
-        return safeString(value.title)
-      }
-      if (value.text !== undefined) {
-        return safeString(value.text)
-      }
-      // Attempt to convert to string, but handle errors
-      try {
-        // Check if the object has a toString method other than the default Object.prototype.toString
-        if (typeof value.toString === 'function' && value.toString !== Object.prototype.toString) {
-          return value.toString()
-        }
-        // Fallback for plain objects or arrays, stringify them
-        return JSON.stringify(value)
-      } catch (error) {
-        console.warn('safeString: Could not stringify object:', value, error)
-        return 'غير محدد'
-      }
-    }
-    return 'غير محدد'
-  }
+  // Using shared safe string utilities
 
   // Load custom treatment names for proper display
   const { refreshTreatmentNames } = useTreatmentNames()
@@ -868,3 +834,5 @@ function TreatmentReportsComponent() {
     </div>
   )
 }
+
+export default TreatmentReportsComponent

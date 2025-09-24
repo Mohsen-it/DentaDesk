@@ -1906,7 +1906,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                 </div>
                 <div>
                   <h4 className="text-sm font-medium text-foreground">اسم الفريق</h4>
-                  <p className="text-lg font-bold text-foreground">AgorraCode</p>
+                  <p className="text-lg font-bold text-foreground">ORalSoft</p>
                   <p className="text-sm text-muted-foreground">فريق تطوير تطبيقات إدارة العيادات</p>
                 </div>
               </div>
@@ -1918,12 +1918,12 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                 </div>
                 <div className="flex-1">
                   <h4 className="text-sm font-medium text-foreground">رقم التواصل</h4>
-                  <p className="text-lg font-bold text-foreground">00963959669628</p>
+                  <p className="text-lg font-bold text-foreground">00963938352132</p>
                   <p className="text-sm text-muted-foreground">متاح للدعم الفني من 9 صباحاً إلى 6 مساءً</p>
                 </div>
                 <button
                   onClick={async () => {
-                    const whatsappUrl = `https://api.whatsapp.com/send/?phone=963959669628`;
+                    const whatsappUrl = `https://api.whatsapp.com/send/?phone=963938352132`;
 
                     // Try multiple methods to open external URL
                     try {
@@ -1963,11 +1963,11 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                 </div>
                 <div className="flex-1">
                   <h4 className="text-sm font-medium text-foreground">البريد الإلكتروني</h4>
-                  <p className="text-lg font-bold text-foreground">AgorraCode@gmail.com</p>
+                  <p className="text-lg font-bold text-foreground">ORalSoft@gmail.com</p>
                   <p className="text-sm text-muted-foreground">للاستفسارات والدعم الفني</p>
                 </div>
                 <button
-                  onClick={() => window.open('mailto:AgorraCode@gmail.com', '_blank')}
+                  onClick={() => window.open('mailto:ORalSoft@gmail.com', '_blank')}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 interactive-card w-full sm:w-auto"
                 >
                   إرسال إيميل

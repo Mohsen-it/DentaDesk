@@ -3,9 +3,36 @@ import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './App.css'
 import './styles/globals.css'
+import { initGlobalErrorHandler } from './utils/globalErrorHandler'
 
 // ✅ معالج الأخطاء الشامل لـ React
 console.log('🚀 Starting React application...')
+
+// Initialize global error handler
+initGlobalErrorHandler()
+
+// Additional safety measures
+if (typeof window !== 'undefined') {
+  // Override Object.prototype.toString to prevent primitive conversion errors
+  const originalToString = Object.prototype.toString
+  Object.prototype.toString = function() {
+    try {
+      return originalToString.call(this)
+    } catch (error) {
+      return '[Object]'
+    }
+  }
+
+  // Override Array.prototype.toString
+  const originalArrayToString = Array.prototype.toString
+  Array.prototype.toString = function() {
+    try {
+      return originalArrayToString.call(this)
+    } catch (error) {
+      return '[Array]'
+    }
+  }
+}
 
 // التحقق من وجود عنصر root
 const rootElement = document.getElementById('root')

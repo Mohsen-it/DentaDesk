@@ -43,6 +43,7 @@ import { PdfService } from '@/services/pdfService'
 import { useSettingsStore } from '@/store/settingsStore'
 import { shallow } from 'zustand/shallow'
 import { useToast } from '@/hooks/use-toast'
+import { safeString } from '@/utils/safeStringUtils'
 
 interface PatientTableProps {
   patients: Patient[]
@@ -268,9 +269,9 @@ function PatientTableComponent({
         if (aValue == null) return sortDirection === 'asc' ? 1 : -1
         if (bValue == null) return sortDirection === 'asc' ? -1 : 1
 
-        // Convert to string for comparison
-        aValue = String(aValue).toLowerCase()
-        bValue = String(bValue).toLowerCase()
+        // Convert to string for comparison safely
+        aValue = safeString(aValue).toLowerCase()
+        bValue = safeString(bValue).toLowerCase()
 
         if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1
         if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1
