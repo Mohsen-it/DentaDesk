@@ -75,7 +75,7 @@ function createWindow() {
       height: 40
     },
     show: false,
-    title: 'DentalClinic - agorracode',
+    title: 'DORalSoft',
     icon: join(__dirname, '../assets/icon.png'),
     // ✅ إعدادات إضافية للنافذة
     backgroundColor: '#ffffff', // لون خلفية أبيض لتجنب الشاشة السوداء

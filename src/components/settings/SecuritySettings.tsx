@@ -9,7 +9,6 @@ import {
   Lock,
   Unlock,
   AlertTriangle,
-  CheckCircle,
   Info,
   HelpCircle,
   Edit
@@ -64,7 +63,7 @@ export default function SecuritySettings({ showNotification }: SecuritySettingsP
 
   const loadSecurityQuestion = async () => {
     try {
-      const settings = await window.electronAPI.settings.get()
+      const settings = await window.electronAPI.settings.get() as any
       if (settings?.security_question) {
         setSecurityQuestion(settings.security_question)
         setHasSecurityQuestion(true)
@@ -106,7 +105,7 @@ export default function SecuritySettings({ showNotification }: SecuritySettingsP
         setNewPassword('')
         setConfirmPassword('')
         // Reset password visibility
-        setShowPasswords({ new: false, confirm: false, old: false })
+        setShowPasswords({ new: false, confirm: false, old: false, remove: false })
       } else {
         showNotification('فشل في تعيين كلمة المرور', 'error')
       }
@@ -149,7 +148,7 @@ export default function SecuritySettings({ showNotification }: SecuritySettingsP
         setNewPassword('')
         setConfirmPassword('')
         // Reset password visibility
-        setShowPasswords({ new: false, confirm: false, old: false })
+        setShowPasswords({ new: false, confirm: false, old: false, remove: false })
       } else {
         showNotification('كلمة المرور القديمة غير صحيحة', 'error')
       }
@@ -246,30 +245,41 @@ export default function SecuritySettings({ showNotification }: SecuritySettingsP
   }
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <div className="space-y-8" dir="rtl">
       {/* Password Protection Status */}
-      <div className="bg-card rounded-lg shadow border border-border">
-        <div className="p-6 border-b border-border">
-          <h3 className="text-lg font-medium text-foreground">حماية التطبيق بكلمة مرور</h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            تأمين التطبيق بكلمة مرور لمنع الوصول غير المصرح به
-          </p>
+      <div className="bg-gradient-to-br from-card/50 to-card/30 dark:from-gray-800/50 dark:to-gray-800/30 rounded-2xl shadow-xl border border-border/40 dark:border-gray-700/40 overflow-hidden">
+        <div className="p-8 border-b border-border/30 dark:border-gray-700/30 bg-gradient-to-r from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/20">
+          <div className="flex items-center gap-4 mb-3">
+            <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 dark:from-primary/30 dark:to-primary/20">
+              <Shield className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold text-foreground dark:text-white">حماية التطبيق بكلمة مرور</h3>
+              <p className="text-sm text-muted-foreground dark:text-gray-300 mt-1">
+                تأمين التطبيق بكلمة مرور لمنع الوصول غير المصرح به
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-3 space-x-reverse">
-              <div className={`p-2 rounded-lg ${passwordEnabled ? 'bg-green-100 dark:bg-green-900/20' : 'bg-gray-100 dark:bg-card/20'}`}>
+        <div className="p-8">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center space-x-4 space-x-reverse">
+              <div className={`p-4 rounded-2xl shadow-lg transition-all duration-300 ${
+                passwordEnabled 
+                  ? 'bg-gradient-to-br from-green-100 to-green-50 dark:from-green-900/30 dark:to-green-800/20' 
+                  : 'bg-gradient-to-br from-gray-100 to-gray-50 dark:from-gray-800/50 dark:to-gray-700/30'
+              }`}>
                 {passwordEnabled ? (
-                  <Lock className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  <Lock className="w-6 h-6 text-green-600 dark:text-green-400" />
                 ) : (
-                  <Unlock className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                  <Unlock className="w-6 h-6 text-gray-600 dark:text-gray-400" />
                 )}
               </div>
               <div>
-                <p className="text-sm font-medium text-foreground">
+                <p className="text-lg font-bold text-foreground dark:text-white">
                   {passwordEnabled ? 'كلمة المرور مفعلة' : 'كلمة المرور معطلة'}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground dark:text-gray-300">
                   {passwordEnabled
                     ? 'التطبيق محمي بكلمة مرور'
                     : 'التطبيق غير محمي بكلمة مرور'
@@ -277,58 +287,72 @@ export default function SecuritySettings({ showNotification }: SecuritySettingsP
                 </p>
               </div>
             </div>
-            <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+            <div className={`px-4 py-2 rounded-full text-sm font-bold shadow-lg transition-all duration-300 ${
               passwordEnabled
-                ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200'
-                : 'bg-gray-100 dark:bg-card/20 text-gray-800 dark:text-gray-200'
+                ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-green-500/25'
+                : 'bg-gradient-to-r from-gray-500 to-gray-600 text-white shadow-gray-500/25'
             }`}>
               {passwordEnabled ? 'مفعل' : 'معطل'}
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-4">
             {!passwordEnabled ? (
               <button
                 onClick={() => setShowSetPassword(true)}
-                className="flex items-center space-x-2 space-x-reverse px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                className="group flex items-center space-x-3 space-x-reverse px-6 py-3 bg-gradient-to-r from-primary to-primary/90 text-white rounded-xl hover:from-primary/90 hover:to-primary/80 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
               >
-                <Key className="w-4 h-4" />
-                <span>تعيين كلمة مرور</span>
+                <Key className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
+                <span className="font-semibold">تعيين كلمة مرور</span>
               </button>
             ) : (
               <>
                 <button
                   onClick={() => setShowChangePassword(true)}
-                  className="flex items-center space-x-2 space-x-reverse px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="group flex items-center space-x-3 space-x-reverse px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
                 >
-                  <Key className="w-4 h-4" />
-                  <span>تغيير كلمة المرور</span>
+                  <Key className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
+                  <span className="font-semibold">تغيير كلمة المرور</span>
                 </button>
                 <button
                   onClick={() => setShowRemovePassword(true)}
-                  className="flex items-center space-x-2 space-x-reverse px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                  className="group flex items-center space-x-3 space-x-reverse px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
                 >
-                  <Unlock className="w-4 h-4" />
-                  <span>إزالة كلمة المرور</span>
+                  <Unlock className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
+                  <span className="font-semibold">إزالة كلمة المرور</span>
                 </button>
               </>
             )}
           </div>
 
           {/* Security Info */}
-          <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-            <div className="flex items-start space-x-3 space-x-reverse">
-              <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+          <div className="mt-8 p-6 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 border border-blue-200/50 dark:border-blue-800/50 rounded-2xl shadow-lg">
+            <div className="flex items-start space-x-4 space-x-reverse">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-800/30 dark:to-blue-700/20">
+                <Info className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              </div>
               <div>
-                <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
+                <h4 className="text-lg font-bold text-blue-800 dark:text-blue-200 mb-4">
                   معلومات مهمة حول الأمان
                 </h4>
-                <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
-                  <li>• عند تفعيل كلمة المرور، ستحتاج لإدخالها في كل مرة تفتح فيها التطبيق</li>
-                  <li>• يُنصح باستخدام كلمة مرور قوية تحتوي على أرقام وحروف</li>
-                  <li>• احتفظ بكلمة المرور في مكان آمن</li>
-                  <li>• في حالة نسيان كلمة المرور، يمكنك استخدام سؤال الأمان لاستعادتها</li>
+                <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-3">
+                  <li className="flex items-start space-x-3 space-x-reverse">
+                    <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0"></div>
+                    <span>عند تفعيل كلمة المرور، ستحتاج لإدخالها في كل مرة تفتح فيها التطبيق</span>
+                  </li>
+                  <li className="flex items-start space-x-3 space-x-reverse">
+                    <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0"></div>
+                    <span>يُنصح باستخدام كلمة مرور قوية تحتوي على أرقام وحروف</span>
+                  </li>
+                  <li className="flex items-start space-x-3 space-x-reverse">
+                    <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0"></div>
+                    <span>احتفظ بكلمة المرور في مكان آمن</span>
+                  </li>
+                  <li className="flex items-start space-x-3 space-x-reverse">
+                    <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0"></div>
+                    <span>في حالة نسيان كلمة المرور، يمكنك استخدام سؤال الأمان لاستعادتها</span>
+                  </li>
                 </ul>
               </div>
             </div>
@@ -337,46 +361,57 @@ export default function SecuritySettings({ showNotification }: SecuritySettingsP
       </div>
 
       {/* Security Question Section */}
-      <div className="bg-card rounded-lg shadow border border-border">
-        <div className="p-6 border-b border-border">
-          <h3 className="text-lg font-medium text-foreground">سؤال الأمان</h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            إعداد سؤال أمان لاستعادة كلمة المرور في حالة نسيانها
-          </p>
+      <div className="bg-gradient-to-br from-card/50 to-card/30 dark:from-gray-800/50 dark:to-gray-800/30 rounded-2xl shadow-xl border border-border/40 dark:border-gray-700/40 overflow-hidden">
+        <div className="p-8 border-b border-border/30 dark:border-gray-700/30 bg-gradient-to-r from-amber/5 to-amber/10 dark:from-amber/10 dark:to-amber/20">
+          <div className="flex items-center gap-4 mb-3">
+            <div className="p-3 rounded-xl bg-gradient-to-br from-amber/20 to-amber/10 dark:from-amber/30 dark:to-amber/20">
+              <HelpCircle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold text-foreground dark:text-white">سؤال الأمان</h3>
+              <p className="text-sm text-muted-foreground dark:text-gray-300 mt-1">
+                إعداد سؤال أمان لاستعادة كلمة المرور في حالة نسيانها
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-3 space-x-reverse">
-              <div className={`p-2 rounded-lg ${hasSecurityQuestion ? 'bg-green-100 dark:bg-green-900/20' : 'bg-gray-100 dark:bg-card/20'}`}>
+        <div className="p-8">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center space-x-4 space-x-reverse">
+              <div className={`p-4 rounded-2xl shadow-lg transition-all duration-300 ${
+                hasSecurityQuestion 
+                  ? 'bg-gradient-to-br from-green-100 to-green-50 dark:from-green-900/30 dark:to-green-800/20' 
+                  : 'bg-gradient-to-br from-gray-100 to-gray-50 dark:from-gray-800/50 dark:to-gray-700/30'
+              }`}>
                 {hasSecurityQuestion ? (
-                  <HelpCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  <HelpCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
                 ) : (
-                  <HelpCircle className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                  <HelpCircle className="w-6 h-6 text-gray-600 dark:text-gray-400" />
                 )}
               </div>
               <div>
-                <h4 className="font-medium text-foreground">
+                <h4 className="text-lg font-bold text-foreground dark:text-white">
                   {hasSecurityQuestion ? 'تم إعداد سؤال الأمان' : 'لم يتم إعداد سؤال أمان'}
                 </h4>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground dark:text-gray-300">
                   {hasSecurityQuestion ? 'يمكنك استخدام سؤال الأمان لاستعادة كلمة المرور' : 'قم بإعداد سؤال أمان لاستعادة كلمة المرور'}
                 </p>
               </div>
             </div>
-            <div className="flex space-x-2 space-x-reverse">
+            <div className="flex space-x-3 space-x-reverse">
               <button
                 onClick={() => setShowSecurityQuestionDialog(true)}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors duration-200 flex items-center space-x-2 space-x-reverse"
+                className="group px-6 py-3 bg-gradient-to-r from-primary to-primary/90 text-white rounded-xl hover:from-primary/90 hover:to-primary/80 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 flex items-center space-x-3 space-x-reverse"
               >
                 {hasSecurityQuestion ? (
                   <>
-                    <Edit className="w-4 h-4" />
-                    <span>تحديث</span>
+                    <Edit className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
+                    <span className="font-semibold">تحديث</span>
                   </>
                 ) : (
                   <>
-                    <HelpCircle className="w-4 h-4" />
-                    <span>إعداد</span>
+                    <HelpCircle className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
+                    <span className="font-semibold">إعداد</span>
                   </>
                 )}
               </button>
@@ -385,14 +420,16 @@ export default function SecuritySettings({ showNotification }: SecuritySettingsP
 
           {/* Current Security Question Display */}
           {hasSecurityQuestion && securityQuestion && (
-            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <div className="flex items-start space-x-3 space-x-reverse">
-                <HelpCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+            <div className="mb-8 p-6 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 border border-blue-200/50 dark:border-blue-800/50 rounded-2xl shadow-lg">
+              <div className="flex items-start space-x-4 space-x-reverse">
+                <div className="p-2 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-800/30 dark:to-blue-700/20">
+                  <HelpCircle className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                </div>
                 <div>
-                  <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">
+                  <h4 className="text-lg font-bold text-blue-800 dark:text-blue-200 mb-2">
                     سؤال الأمان الحالي
                   </h4>
-                  <p className="text-blue-700 dark:text-blue-300">
+                  <p className="text-blue-700 dark:text-blue-300 font-medium">
                     {securityQuestion}
                   </p>
                 </div>
@@ -401,18 +438,32 @@ export default function SecuritySettings({ showNotification }: SecuritySettingsP
           )}
 
           {/* Security Question Info */}
-          <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-            <div className="flex items-start space-x-3 space-x-reverse">
-              <Info className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+          <div className="p-6 bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-900/20 dark:to-amber-800/10 border border-amber-200/50 dark:border-amber-800/50 rounded-2xl shadow-lg">
+            <div className="flex items-start space-x-4 space-x-reverse">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-800/30 dark:to-amber-700/20">
+                <Info className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+              </div>
               <div>
-                <h4 className="text-sm font-medium text-amber-800 dark:text-amber-200 mb-2">
+                <h4 className="text-lg font-bold text-amber-800 dark:text-amber-200 mb-4">
                   نصائح مهمة لسؤال الأمان
                 </h4>
-                <ul className="text-sm text-amber-700 dark:text-amber-300 space-y-1">
-                  <li>• اختر سؤالاً تتذكر إجابته بسهولة</li>
-                  <li>• تأكد من أن الإجابة لا يمكن للآخرين تخمينها</li>
-                  <li>• تجنب الأسئلة التي قد تتغير إجابتها مع الوقت</li>
-                  <li>• احتفظ بإجابة السؤال في مكان آمن</li>
+                <ul className="text-sm text-amber-700 dark:text-amber-300 space-y-3">
+                  <li className="flex items-start space-x-3 space-x-reverse">
+                    <div className="w-2 h-2 rounded-full bg-amber-500 mt-2 flex-shrink-0"></div>
+                    <span>اختر سؤالاً تتذكر إجابته بسهولة</span>
+                  </li>
+                  <li className="flex items-start space-x-3 space-x-reverse">
+                    <div className="w-2 h-2 rounded-full bg-amber-500 mt-2 flex-shrink-0"></div>
+                    <span>تأكد من أن الإجابة لا يمكن للآخرين تخمينها</span>
+                  </li>
+                  <li className="flex items-start space-x-3 space-x-reverse">
+                    <div className="w-2 h-2 rounded-full bg-amber-500 mt-2 flex-shrink-0"></div>
+                    <span>تجنب الأسئلة التي قد تتغير إجابتها مع الوقت</span>
+                  </li>
+                  <li className="flex items-start space-x-3 space-x-reverse">
+                    <div className="w-2 h-2 rounded-full bg-amber-500 mt-2 flex-shrink-0"></div>
+                    <span>احتفظ بإجابة السؤال في مكان آمن</span>
+                  </li>
                 </ul>
               </div>
             </div>

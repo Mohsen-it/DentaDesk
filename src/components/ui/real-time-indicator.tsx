@@ -75,7 +75,7 @@ export default function RealTimeIndicator({
     <Badge
       variant={isUpdating ? "default" : "secondary"}
       className={`flex items-center gap-1 ${className} ${
-        isUpdating ? 'bg-green-500 text-white' : 'bg-green-100 text-green-800'
+        isUpdating ? 'bg-green-500 text-white dark:bg-green-600' : 'bg-green-100 text-green-800 dark:bg-green-600/20 dark:text-green-400'
       }`}
     >
       {isUpdating ? (

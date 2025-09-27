@@ -455,13 +455,13 @@ function AppContent() {
   // Show loading screen while checking license or auth status
   if (licenseLoading || authLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground dark:text-gray-300">
             {licenseLoading ? 'جاري التحقق من الترخيص...' : 'جاري التحميل...'}
           </p>
-          <p className="text-sm text-muted-foreground mt-2">
+          <p className="text-sm text-muted-foreground dark:text-gray-400 mt-2">
             إذا استمر هذا التحميل، حاول إعادة تشغيل التطبيق
           </p>
         </div>
@@ -472,18 +472,18 @@ function AppContent() {
   // Show error screen if there's a license error
   if (licenseError && !isFirstRun) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center max-w-md">
-          <div className="text-red-500 mb-4">
+          <div className="text-red-500 dark:text-red-400 mb-4">
             <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
           </div>
-          <h2 className="text-lg font-semibold mb-2">خطأ في الترخيص</h2>
-          <p className="text-muted-foreground mb-4">{licenseError}</p>
+          <h2 className="text-lg font-semibold mb-2 dark:text-white">خطأ في الترخيص</h2>
+          <p className="text-muted-foreground dark:text-gray-300 mb-4">{licenseError}</p>
           <button
             onClick={() => window.location.reload()}
-            className="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90"
+            className="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90 dark:bg-blue-600 dark:hover:bg-blue-700"
           >
             إعادة المحاولة
           </button>
@@ -498,32 +498,32 @@ function AppContent() {
 
   if (showDiagnostics) {
     return (
-      <div className="min-h-screen bg-background p-8">
+      <div className="min-h-screen bg-background dark:bg-gray-900 p-8">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-2xl font-bold mb-6">تشخيص التطبيق</h1>
+          <h1 className="text-2xl font-bold mb-6 dark:text-white">تشخيص التطبيق</h1>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-card p-4 rounded-lg">
-              <h2 className="text-lg font-semibold mb-3">حالة التطبيق</h2>
+            <div className="bg-card dark:bg-gray-800 p-4 rounded-lg">
+              <h2 className="text-lg font-semibold mb-3 dark:text-white">حالة التطبيق</h2>
               <div className="space-y-2">
-                <p>ترخيص صالح: {isLicenseValid ? '✅' : '❌'}</p>
-                <p>مصادق عليه: {isAuthenticated ? '✅' : '❌'}</p>
-                <p>كلمة مرور مطلوبة: {passwordEnabled ? '✅' : '❌'}</p>
-                <p>أول تشغيل: {isFirstRun ? '✅' : '❌'}</p>
+                <p className="dark:text-gray-300">ترخيص صالح: {isLicenseValid ? '✅' : '❌'}</p>
+                <p className="dark:text-gray-300">مصادق عليه: {isAuthenticated ? '✅' : '❌'}</p>
+                <p className="dark:text-gray-300">كلمة مرور مطلوبة: {passwordEnabled ? '✅' : '❌'}</p>
+                <p className="dark:text-gray-300">أول تشغيل: {isFirstRun ? '✅' : '❌'}</p>
               </div>
             </div>
-            <div className="bg-card p-4 rounded-lg">
-              <h2 className="text-lg font-semibold mb-3">واجهات API</h2>
+            <div className="bg-card dark:bg-gray-800 p-4 rounded-lg">
+              <h2 className="text-lg font-semibold mb-3 dark:text-white">واجهات API</h2>
               <div className="space-y-2">
-                <p>electronAPI متوفر: {!!window.electronAPI ? '✅' : '❌'}</p>
-                <p>electron متوفر: {!!window.electron ? '✅' : '❌'}</p>
-                <p>window.electronAPI.patients: {!!window.electronAPI?.patients ? '✅' : '❌'}</p>
+                <p className="dark:text-gray-300">electronAPI متوفر: {!!window.electronAPI ? '✅' : '❌'}</p>
+                <p className="dark:text-gray-300">electron متوفر: {!!window.electron ? '✅' : '❌'}</p>
+                <p className="dark:text-gray-300">window.electronAPI.patients: {!!window.electronAPI?.patients ? '✅' : '❌'}</p>
               </div>
             </div>
           </div>
           <div className="mt-6">
             <button
               onClick={() => setShowDiagnostics(false)}
-              className="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90"
+              className="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90 dark:bg-blue-600 dark:hover:bg-blue-700"
             >
               إغلاق التشخيص
             </button>
@@ -642,10 +642,10 @@ function AppContent() {
         <SidebarInset 
           className="flex-1"
         >
-     <header className="flex flex-row-reverse items-center justify-between h-16 w-full bg-background/95 backdrop-blur border-b border-border/40 px-4 gap-4" dir="rtl">
+     <header className="flex flex-row-reverse items-center justify-between h-16 w-full bg-background/95 backdrop-blur border-b border-border/40 dark:bg-gray-900/95 dark:border-gray-700 px-4 gap-4" dir="rtl">
 
       {/* ✅ Right Side - التاريخ والساعة */}
-      <div className="flex items-center gap-2 text-sm text-muted-foreground bg-accent/20 px-4 py-1 rounded-full font-mono">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground dark:text-gray-300 bg-accent/20 dark:bg-gray-700/50 px-4 py-1 rounded-full font-mono">
         <LiveDateTime />
       </div>
 
@@ -659,14 +659,14 @@ function AppContent() {
         {/* زر الوضع الليلي */}
         <ThemeToggle />
         {/* فاصل بصري */}
-        <Separator orientation="vertical" className="h-6" />
+        <Separator orientation="vertical" className="h-6 dark:bg-gray-600" />
 
         {/* البحث الشامل */}
         <div className="relative w-64 max-w-xs">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground dark:text-gray-400 w-5 h-5" />
           <Input
             placeholder="بحث شامل... (F)"
-            className="pr-10 pl-4 py-2 bg-slate-50 dark:bg-card border border-border rounded-lg shadow-sm dark:shadow-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-slate-700 focus:border-transparent cursor-pointer text-right"
+            className="pr-10 pl-4 py-2 bg-slate-50 dark:bg-gray-800 dark:border-gray-600 border border-border rounded-lg shadow-sm dark:shadow-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent cursor-pointer text-right dark:text-white"
             readOnly
             onClick={() => setShowGlobalSearch(true)}
             aria-label="البحث الشامل"
@@ -680,7 +680,7 @@ function AppContent() {
             }}
           />
           <span
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground bg-background/70 px-2 py-0.5 rounded"
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground dark:text-gray-300 bg-background/70 dark:bg-gray-800/70 px-2 py-0.5 rounded"
             aria-hidden="true"
           >
             F
@@ -693,14 +693,14 @@ function AppContent() {
             <BreadcrumbItem className="hidden md:block">
               <BreadcrumbLink
                 href="#"
-                className="text-muted-foreground hover:text-foreground transition-colors duration-200"
+                className="text-muted-foreground dark:text-gray-300 hover:text-foreground dark:hover:text-white transition-colors duration-200"
               >
                 🦷 نظام إدارة العيادة السنية
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator className="hidden md:block" />
             <BreadcrumbItem>
-              <BreadcrumbPage className="font-semibold text-sky-600 dark:text-sky-400">
+              <BreadcrumbPage className="font-semibold text-sky-600 dark:text-blue-400">
                 {getCurrentPageTitle()}
               </BreadcrumbPage>
             </BreadcrumbItem>
@@ -710,7 +710,7 @@ function AppContent() {
         <SidebarTrigger />
       </div>
     </header>
-          <div className="flex flex-1 flex-col gap-4 p-10 pt-4 max-w-full overflow-hidden relative rtl-layout">
+          <div className="flex flex-1 flex-col gap-6 p-12 pt-6 max-w-full overflow-hidden relative rtl-layout dark:bg-gray-900">
             <div className="w-full max-w-none content-wrapper">
               <ErrorBoundary>
                 <Suspense fallback={<PageLoading message="جاري تحميل الصفحة..." />}>
@@ -824,9 +824,9 @@ function AppContent() {
 
         {/* Global Search Overlay */}
         {showGlobalSearch && (
-          <div className="fixed inset-0 bg-black/50 dark:bg-slate-900/50 z-50 flex items-start justify-center pt-24">
+          <div className="fixed inset-0 bg-black/50 dark:bg-gray-900/50 z-50 flex items-start justify-center pt-24">
             <div className="w-full max-w-2xl mx-4">
-              <Suspense fallback={<div className="flex items-center justify-center h-32"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 dark:border-slate-700"></div></div>}>
+              <Suspense fallback={<div className="flex items-center justify-center h-32"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 dark:border-blue-400"></div></div>}>
                 <GlobalSearch
                   onResultSelect={handleSearchResultSelect}
                   onClose={() => setShowGlobalSearch(false)}

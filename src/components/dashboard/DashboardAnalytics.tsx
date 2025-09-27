@@ -457,7 +457,7 @@ function DashboardAnalyticsComponent({
 
   if (isLoading || !analyticsData) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-8 p-6 md:p-8">
         <div className="flex items-center justify-center h-64">
           <RefreshCw className="w-8 h-8 animate-spin text-muted-foreground dark:text-slate-400" />
         </div>
@@ -466,60 +466,60 @@ function DashboardAnalyticsComponent({
   }
 
   return (
-    <div className="space-y-6 max-w-[1400px] mx-auto" dir="rtl">
+    <div className="space-y-8 max-w-[1400px] mx-auto p-6 md:p-8" dir="rtl">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-foreground dark:text-slate-200">التحليلات والإحصائيات</h2>
-          <p className="text-muted-foreground dark:text-slate-400">تحليل شامل لأداء العيادة والاتجاهات</p>
+          <h2 className="text-3xl font-bold text-foreground dark:text-slate-200 mb-2">التحليلات والإحصائيات</h2>
+          <p className="text-muted-foreground dark:text-slate-400 text-lg">تحليل شامل لأداء العيادة والاتجاهات</p>
           {lastUpdate && (
             <p className="text-sm text-muted-foreground dark:text-slate-500 mt-1">
               آخر تحديث: {format(lastUpdate, 'HH:mm:ss dd/MM/yyyy', { locale: ar })}
             </p>
           )}
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <Button
               variant={timeRange === '7d' ? 'default' : 'outline'}
-              size="sm"
+              size="default"
               onClick={() => setTimeRange('7d')}
               aria-label="عرض التحليلات لآخر 7 أيام"
               aria-pressed={timeRange === '7d'}
-              className="transition-all duration-200 interactive-card"
+              className="transition-all duration-200 interactive-card px-4 py-2"
             >
               7 أيام
             </Button>
             <Button
               variant={timeRange === '30d' ? 'default' : 'outline'}
-              size="sm"
+              size="default"
               onClick={() => setTimeRange('30d')}
               aria-label="عرض التحليلات لآخر 30 يوم"
               aria-pressed={timeRange === '30d'}
-              className="transition-all duration-200 interactive-card"
+              className="transition-all duration-200 interactive-card px-4 py-2"
             >
               30 يوم
             </Button>
             <Button
               variant={timeRange === '90d' ? 'default' : 'outline'}
-              size="sm"
+              size="default"
               onClick={() => setTimeRange('90d')}
               aria-label="عرض التحليلات لآخر 90 يوم"
               aria-pressed={timeRange === '90d'}
-              className="transition-all duration-200 interactive-card"
+              className="transition-all duration-200 interactive-card px-4 py-2"
             >
               90 يوم
             </Button>
           </div>
           <Button
             variant="outline"
-            size="sm"
+            size="default"
             onClick={() => {
               console.log('🔄 Manual refresh triggered')
               calculateAnalytics()
             }}
             aria-label="تحديث التحليلات"
-            className="transition-all duration-200 interactive-card"
+            className="transition-all duration-200 interactive-card px-4 py-2"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
             تحديث البيانات
@@ -528,8 +528,8 @@ function DashboardAnalyticsComponent({
       </div>
 
       {/* Analytics Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4 p-2">
           <TabsTrigger value="overview">نظرة عامة</TabsTrigger>
           <TabsTrigger value="trends">الاتجاهات</TabsTrigger>
           <TabsTrigger value="distributions">التوزيعات</TabsTrigger>
@@ -537,11 +537,11 @@ function DashboardAnalyticsComponent({
         </TabsList>
 
         {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-6">
+        <TabsContent value="overview" className="space-y-8">
           {/* Overview Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <Card className="cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-all duration-200 bg-white dark:bg-card border-slate-200 dark:border-slate-700 interactive-card" onClick={onNavigateToPatients} role="button" tabIndex={0} aria-label="عرض إدارة المرضى">
-              <CardContent className="p-6">
+              <CardContent className="p-8">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground dark:text-slate-400">إجمالي المرضى</p>
@@ -564,7 +564,7 @@ function DashboardAnalyticsComponent({
             </Card>
 
             <Card className="cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-all duration-200 bg-white dark:bg-card border-slate-200 dark:border-slate-700 interactive-card" onClick={onNavigateToAppointments} role="button" tabIndex={0} aria-label="عرض إدارة المواعيد">
-              <CardContent className="p-6">
+              <CardContent className="p-8">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground dark:text-slate-400">المواعيد</p>
@@ -581,7 +581,7 @@ function DashboardAnalyticsComponent({
             </Card>
 
             <Card className="cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-all duration-200 bg-white dark:bg-card border-slate-200 dark:border-slate-700 interactive-card" onClick={onNavigateToPayments} role="button" tabIndex={0} aria-label="عرض إدارة المدفوعات">
-              <CardContent className="p-6">
+              <CardContent className="p-8">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground dark:text-slate-400">الإيرادات</p>
@@ -598,7 +598,7 @@ function DashboardAnalyticsComponent({
             </Card>
 
             <Card className="bg-white dark:bg-card border-slate-200 dark:border-slate-700 transition-all duration-200 hover:shadow-md dark:hover:shadow-lg interactive-card">
-              <CardContent className="p-6">
+              <CardContent className="p-8">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground dark:text-slate-400">معدل الاستفادة</p>
@@ -617,11 +617,11 @@ function DashboardAnalyticsComponent({
         </TabsContent>
 
         {/* Trends Tab */}
-        <TabsContent value="trends" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <TabsContent value="trends" className="space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Patient Growth Trend */}
             <Card className="bg-white dark:bg-card border-slate-200 dark:border-slate-700">
-              <CardHeader>
+              <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="w-5 h-5" />
                   نمو المرضى
@@ -642,7 +642,7 @@ function DashboardAnalyticsComponent({
 
             {/* Revenue Growth Trend */}
             <Card className="bg-white dark:bg-card border-slate-200 dark:border-slate-700">
-              <CardHeader>
+              <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2">
                   <DollarSign className="w-5 h-5" />
                   نمو الإيرادات
@@ -663,7 +663,7 @@ function DashboardAnalyticsComponent({
 
             {/* Appointment Trend */}
             <Card className="lg:col-span-2 bg-white dark:bg-card border-slate-200 dark:border-slate-700">
-              <CardHeader>
+              <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2">
                   <Calendar className="w-5 h-5" />
                   اتجاه المواعيد
@@ -685,11 +685,11 @@ function DashboardAnalyticsComponent({
         </TabsContent>
 
         {/* Distributions Tab */}
-        <TabsContent value="distributions" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <TabsContent value="distributions" className="space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Appointment Status Distribution */}
             <Card className="bg-white dark:bg-card border-slate-200 dark:border-slate-700">
-              <CardHeader>
+              <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2">
                   <PieChart className="w-5 h-5" />
                   حالة المواعيد
@@ -720,7 +720,7 @@ function DashboardAnalyticsComponent({
 
             {/* Gender Distribution */}
             <Card className="bg-white dark:bg-card border-slate-200 dark:border-slate-700">
-              <CardHeader>
+              <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5" />
                   توزيع الجنس
@@ -751,7 +751,7 @@ function DashboardAnalyticsComponent({
 
             {/* Age Groups Distribution */}
             <Card className="bg-white dark:bg-card border-slate-200 dark:border-slate-700">
-              <CardHeader>
+              <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5" />
                   الفئات العمرية
@@ -783,10 +783,10 @@ function DashboardAnalyticsComponent({
         </TabsContent>
 
         {/* KPIs Tab */}
-        <TabsContent value="kpis" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <TabsContent value="kpis" className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <Card className="bg-white dark:bg-card border-slate-200 dark:border-slate-700">
-              <CardContent className="p-6">
+              <CardContent className="p-8">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground dark:text-slate-400">معدل الاحتفاظ بالمرضى</p>
@@ -801,7 +801,7 @@ function DashboardAnalyticsComponent({
             </Card>
 
             <Card className="bg-white dark:bg-card border-slate-200 dark:border-slate-700">
-              <CardContent className="p-6">
+              <CardContent className="p-8">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground dark:text-slate-400">معدل استغلال المواعيد</p>
@@ -816,7 +816,7 @@ function DashboardAnalyticsComponent({
             </Card>
 
             <Card className="bg-white dark:bg-card border-slate-200 dark:border-slate-700">
-              <CardContent className="p-6">
+              <CardContent className="p-8">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground dark:text-slate-400">متوسط الإيرادات لكل مريض</p>
@@ -831,7 +831,7 @@ function DashboardAnalyticsComponent({
             </Card>
 
             <Card className="bg-white dark:bg-card border-slate-200 dark:border-slate-700">
-              <CardContent className="p-6">
+              <CardContent className="p-8">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground dark:text-slate-400">معدل عدم الحضور</p>

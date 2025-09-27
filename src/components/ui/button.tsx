@@ -10,15 +10,15 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-md hover:bg-primary/90 hover:shadow-lg active:scale-[0.98] dark:shadow-lg dark:shadow-primary/20 before:absolute before:inset-0 before:bg-gradient-to-r before:from-white/10 before:to-transparent before:opacity-0 hover:before:opacity-100 before:transition-opacity",
+          "bg-primary text-primary-foreground shadow-md hover:bg-primary/90 hover:shadow-lg active:scale-[0.98] dark:bg-blue-600 dark:hover:bg-blue-700 dark:shadow-lg dark:shadow-blue-600/20 before:absolute before:inset-0 before:bg-gradient-to-r before:from-white/10 before:to-transparent before:opacity-0 hover:before:opacity-100 before:transition-opacity",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-md hover:bg-destructive/90 hover:shadow-lg active:scale-[0.98] dark:shadow-lg dark:shadow-destructive/20 before:absolute before:inset-0 before:bg-gradient-to-r before:from-white/10 before:to-transparent before:opacity-0 hover:before:opacity-100 before:transition-opacity",
+          "bg-destructive text-destructive-foreground shadow-md hover:bg-destructive/90 hover:shadow-lg active:scale-[0.98] dark:bg-red-600 dark:hover:bg-red-700 dark:shadow-lg dark:shadow-red-600/20 before:absolute before:inset-0 before:bg-gradient-to-r before:from-white/10 before:to-transparent before:opacity-0 hover:before:opacity-100 before:transition-opacity",
         outline:
-          "border-2 border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground hover:border-ring/50 active:scale-[0.98] dark:border-border dark:hover:bg-accent/80 dark:shadow-md",
+          "border-2 border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground hover:border-ring/50 active:scale-[0.98] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white dark:shadow-md",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-md hover:bg-secondary/80 hover:shadow-lg active:scale-[0.98] dark:shadow-lg dark:shadow-secondary/20 before:absolute before:inset-0 before:bg-gradient-to-r before:from-white/10 before:to-transparent before:opacity-0 hover:before:opacity-100 before:transition-opacity",
-        ghost: "hover:bg-accent hover:text-accent-foreground active:scale-[0.98] dark:hover:bg-accent/80 transition-colors",
-        link: "text-primary underline-offset-4 hover:underline active:scale-[0.98] dark:text-primary",
+          "bg-secondary text-secondary-foreground shadow-md hover:bg-secondary/80 hover:shadow-lg active:scale-[0.98] dark:bg-green-600 dark:hover:bg-green-700 dark:shadow-lg dark:shadow-green-600/20 before:absolute before:inset-0 before:bg-gradient-to-r before:from-white/10 before:to-transparent before:opacity-0 hover:before:opacity-100 before:transition-opacity",
+        ghost: "hover:bg-accent hover:text-accent-foreground active:scale-[0.98] dark:hover:bg-gray-700 dark:text-gray-300 dark:hover:text-white transition-colors",
+        link: "text-primary underline-offset-4 hover:underline active:scale-[0.98] dark:text-blue-400 dark:hover:text-blue-300",
         success:
           "bg-green-600 text-white shadow-md hover:bg-green-700 hover:shadow-lg active:scale-[0.98] dark:bg-green-700 dark:hover:bg-green-600 dark:shadow-lg dark:shadow-green-700/20",
         warning:

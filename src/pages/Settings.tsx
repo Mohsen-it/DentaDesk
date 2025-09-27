@@ -798,14 +798,14 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
   const backupStatus = getBackupStatus()
 
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
-      <div className="w-full">
-        <div className="space-y-6">
+    <div className="min-h-screen bg-background dark:bg-gray-900 flex flex-col" dir="rtl">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex-1 flex flex-col">
+        <div className="space-y-6 py-6 flex-1 flex flex-col min-h-0">
           {/* Header */}
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-card/50 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-border/50">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-card/50 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-border/50 dark:bg-gray-800/50 dark:border-gray-700/50">
             <div className="flex-1 min-w-0">
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground arabic-enhanced">الإعدادات</h1>
-              <p className="text-sm sm:text-base text-muted-foreground mt-2 arabic-enhanced">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground dark:text-white arabic-enhanced">الإعدادات</h1>
+              <p className="text-sm sm:text-base text-muted-foreground dark:text-gray-300 mt-2 arabic-enhanced">
                 إدارة إعدادات العيادة والنسخ الاحتياطية
               </p>
             </div>
@@ -813,7 +813,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
               <button
                 onClick={() => loadBackups()}
                 disabled={isLoading}
-                className="flex items-center justify-center space-x-2 space-x-reverse px-4 py-2 border border-input bg-background text-foreground rounded-lg hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 interactive-card focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 min-h-[44px]"
+                className="flex items-center justify-center space-x-2 space-x-reverse px-4 py-2 border border-input bg-background text-foreground dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700 rounded-lg hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 ease-in-out interactive-card focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 min-h-[44px] hover:scale-105 active:scale-95"
               >
                 <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
                 <span className="whitespace-nowrap">تحديث</span>
@@ -844,7 +844,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                     language: 'ar'
                   })
                 }}
-                className="flex items-center justify-center space-x-2 space-x-reverse px-4 py-2 border border-input bg-background text-foreground rounded-lg hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 interactive-card focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 min-h-[44px]"
+                className="flex items-center justify-center space-x-2 space-x-reverse px-4 py-2 border border-input bg-background text-foreground dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700 rounded-lg hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 ease-in-out interactive-card focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 min-h-[44px] hover:scale-105 active:scale-95"
               >
                 <Download className="w-4 h-4" />
                 <span className="whitespace-nowrap">تصدير الإعدادات</span>
@@ -853,8 +853,8 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
           </div>
 
       {/* Tabs */}
-      <div className="border-b border-border sticky top-0 bg-background/95 backdrop-blur-sm z-10 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
-        <nav className="flex space-x-1 space-x-reverse overflow-x-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent py-2">
+      <div className="border-b border-border dark:border-gray-700 sticky top-0 bg-background/95 dark:bg-gray-900/95 backdrop-blur-sm z-10 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
+        <nav className="flex space-x-1 space-x-reverse overflow-x-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent py-3">
           {[
             { id: 'backup', name: 'النسخ الاحتياطية', icon: Database },
             { id: 'diagnostics', name: 'تشخيص النظام', icon: AlertTriangle },
@@ -868,10 +868,10 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center space-x-2 space-x-reverse px-3 py-2 border-b-2 font-medium text-sm whitespace-nowrap rounded-t-lg transition-all duration-200 interactive-card w-full sm:w-auto justify-center ${
+              className={`flex items-center space-x-2 space-x-reverse px-4 py-3 border-b-2 font-medium text-sm whitespace-nowrap rounded-t-lg transition-all duration-300 ease-in-out interactive-card w-full sm:w-auto justify-center min-w-fit hover:scale-105 active:scale-95 ${
                 activeTab === tab.id
-                  ? 'border-primary text-primary bg-primary/5 shadow-sm'
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border/50 hover:bg-accent/30'
+                  ? 'border-primary text-primary bg-primary/5 dark:bg-blue-500/20 dark:border-blue-500 dark:text-blue-400 shadow-sm'
+                  : 'border-transparent text-muted-foreground dark:text-gray-300 hover:text-foreground dark:hover:text-white hover:border-border/50 dark:hover:border-gray-600 hover:bg-accent/30 dark:hover:bg-gray-700/50'
               }`}
               aria-selected={activeTab === tab.id}
             >
@@ -887,41 +887,41 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
       {activeTab === 'backup' && (
         <div className="space-y-6">
           {/* Backup Status Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            <div className="bg-card rounded-xl shadow-sm border border-border p-4 sm:p-6 interactive-card transition-all duration-200 hover:shadow-md">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+            <div className="bg-card dark:bg-gray-800 rounded-xl shadow-sm border border-border dark:border-gray-700 p-4 sm:p-6 interactive-card transition-all duration-200 hover:shadow-md">
               <div className="flex items-center">
-                <div className="p-3 bg-primary/10 rounded-xl transition-colors">
-                  <HardDrive className="w-6 h-6 text-primary" />
+                <div className="p-3 bg-primary/10 dark:bg-blue-500/20 rounded-xl transition-colors">
+                  <HardDrive className="w-6 h-6 text-primary dark:text-blue-400" />
                 </div>
                 <div className="mr-4 flex-1 min-w-0">
-                  <p className="text-sm font-medium text-muted-foreground">إجمالي النسخ</p>
-                  <p className="text-xl sm:text-2xl font-bold text-foreground">{backupStatus.totalBackups}</p>
+                  <p className="text-sm font-medium text-muted-foreground dark:text-gray-300">إجمالي النسخ</p>
+                  <p className="text-xl sm:text-2xl font-bold text-foreground dark:text-white">{backupStatus.totalBackups}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-card rounded-xl shadow-sm border border-border p-4 sm:p-6 interactive-card transition-all duration-200 hover:shadow-md">
+            <div className="bg-card dark:bg-gray-800 rounded-xl shadow-sm border border-border dark:border-gray-700 p-4 sm:p-6 interactive-card transition-all duration-200 hover:shadow-md">
               <div className="flex items-center">
                 <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-xl transition-colors">
                   <Clock className="w-6 h-6 text-green-600 dark:text-green-400" />
                 </div>
                 <div className="mr-4 flex-1 min-w-0">
-                  <p className="text-sm font-medium text-muted-foreground">آخر نسخة احتياطية</p>
-                  <p className="text-sm font-bold text-foreground break-words">
+                  <p className="text-sm font-medium text-muted-foreground dark:text-gray-300">آخر نسخة احتياطية</p>
+                  <p className="text-sm font-bold text-foreground dark:text-white break-words">
                     {backupStatus.lastBackup || 'لا توجد'}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-card rounded-xl shadow-sm border border-border p-4 sm:p-6 interactive-card transition-all duration-200 hover:shadow-md sm:col-span-2 lg:col-span-1">
+            <div className="bg-card dark:bg-gray-800 rounded-xl shadow-sm border border-border dark:border-gray-700 p-4 sm:p-6 interactive-card transition-all duration-200 hover:shadow-md sm:col-span-2 lg:col-span-1">
               <div className="flex items-center">
                 <div className="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-xl transition-colors">
                   <Calendar className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div className="mr-4 flex-1 min-w-0">
-                  <p className="text-sm font-medium text-muted-foreground">النسخة التالية</p>
-                  <p className="text-sm font-bold text-foreground break-words">
+                  <p className="text-sm font-medium text-muted-foreground dark:text-gray-300">النسخة التالية</p>
+                  <p className="text-sm font-bold text-foreground dark:text-white break-words">
                     {backupStatus.nextScheduledBackup || 'غير محدد'}
                   </p>
                 </div>
@@ -930,19 +930,19 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
           </div>
 
           {/* Manual Backup Actions */}
-          <div className="bg-card rounded-xl shadow-sm border border-border">
-            <div className="p-4 sm:p-6 border-b border-border">
-              <h3 className="text-lg sm:text-xl font-semibold text-foreground">النسخ الاحتياطية اليدوية</h3>
-              <p className="text-sm text-muted-foreground mt-1">
+          <div className="bg-card dark:bg-gray-800 rounded-xl shadow-sm border border-border dark:border-gray-700">
+            <div className="p-4 sm:p-6 border-b border-border dark:border-gray-700">
+              <h3 className="text-lg sm:text-xl font-semibold text-foreground dark:text-white">النسخ الاحتياطية اليدوية</h3>
+              <p className="text-sm text-muted-foreground dark:text-gray-300 mt-1">
                 إنشاء واستعادة النسخ الاحتياطية يدوياً (تنسيق SQLite)
               </p>
             </div>
             <div className="p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 flex-wrap">
                 <button
                   onClick={() => handleCreateBackup(false)}
                   disabled={isCreatingBackup}
-                  className="flex items-center justify-center space-x-2 space-x-reverse px-4 sm:px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 interactive-card focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 min-h-[44px] flex-1 sm:flex-none"
+                  className="flex items-center justify-center space-x-2 space-x-reverse px-4 sm:px-6 py-3 bg-primary dark:bg-blue-600 text-primary-foreground dark:text-white rounded-lg hover:bg-primary/90 dark:hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 ease-in-out interactive-card focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 min-h-[44px] flex-1 sm:flex-none hover:scale-105 active:scale-95 hover:shadow-lg dark:hover:shadow-blue-500/25"
                 >
                   <Download className="w-5 h-5" />
                   <span className="whitespace-nowrap">{isCreatingBackup ? 'جاري الإنشاء...' : 'إنشاء نسخة احتياطية'}</span>
@@ -951,7 +951,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                 <button
                   onClick={() => handleCreateBackup(true)}
                   disabled={isCreatingBackup}
-                  className="flex items-center justify-center space-x-2 space-x-reverse px-4 sm:px-6 py-3 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 interactive-card focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2 min-h-[44px] flex-1 sm:flex-none"
+                  className="flex items-center justify-center space-x-2 space-x-reverse px-4 sm:px-6 py-3 bg-blue-600 dark:bg-blue-600 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 ease-in-out interactive-card focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2 min-h-[44px] flex-1 sm:flex-none hover:scale-105 active:scale-95 hover:shadow-lg dark:hover:shadow-blue-500/25"
                 >
                   <Image className="w-5 h-5" />
                   <span className="whitespace-nowrap">{isCreatingBackup ? 'جاري الإنشاء...' : 'إنشاء نسخة مع صور'}</span>
@@ -960,7 +960,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                 <button
                   onClick={handleRestoreBackup}
                   disabled={isRestoringBackup}
-                  className="flex items-center justify-center space-x-2 space-x-reverse px-4 sm:px-6 py-3 bg-green-600 dark:bg-green-700 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 interactive-card focus:ring-2 focus:ring-green-500/50 focus:ring-offset-2 min-h-[44px] flex-1 sm:flex-none"
+                  className="flex items-center justify-center space-x-2 space-x-reverse px-4 sm:px-6 py-3 bg-green-600 dark:bg-green-600 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 ease-in-out interactive-card focus:ring-2 focus:ring-green-500/50 focus:ring-offset-2 min-h-[44px] flex-1 sm:flex-none hover:scale-105 active:scale-95 hover:shadow-lg dark:hover:shadow-green-500/25"
                 >
                   <Upload className="w-5 h-5" />
                   <span className="whitespace-nowrap">{isRestoringBackup ? 'جاري الاستعادة...' : 'استعادة نسخة احتياطية'}</span>
@@ -1011,7 +1011,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                   >
                     <span
                       className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform ${
-                        autoBackupEnabled ? 'translate-x-6' : 'translate-x-1'
+                        autoBackupEnabled ? 'translate-x-1' : 'translate-x-6'
                       }`}
                     />
                   </button>
@@ -1038,71 +1038,71 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
           )}
 
           {/* Backup List */}
-          <div className="bg-card rounded-xl shadow-sm border border-border">
-            <div className="p-4 sm:p-6 border-b border-border">
-              <h3 className="text-lg sm:text-xl font-semibold text-foreground">النسخ الاحتياطية المحفوظة</h3>
-              <p className="text-sm text-muted-foreground mt-1">
+          <div className="bg-card dark:bg-gray-800 rounded-xl shadow-sm border border-border dark:border-gray-700">
+            <div className="p-4 sm:p-6 border-b border-border dark:border-gray-700">
+              <h3 className="text-lg sm:text-xl font-semibold text-foreground dark:text-white">النسخ الاحتياطية المحفوظة</h3>
+              <p className="text-sm text-muted-foreground dark:text-gray-300 mt-1">
                 قائمة بجميع النسخ الاحتياطية المتاحة - اضغط على أي نسخة لاستعادتها
               </p>
             </div>
             <div className="p-4 sm:p-6">
               {isLoading ? (
                 <div className="text-center py-8">
-                  <RefreshCw className="w-8 h-8 animate-spin mx-auto text-muted-foreground" />
-                  <p className="mt-2 text-muted-foreground">جاري التحميل...</p>
+                  <RefreshCw className="w-8 h-8 animate-spin mx-auto text-muted-foreground dark:text-gray-400" />
+                  <p className="mt-2 text-muted-foreground dark:text-gray-300">جاري التحميل...</p>
                 </div>
               ) : backups.length === 0 ? (
                 <div className="text-center py-8">
-                  <Database className="w-12 h-12 mx-auto text-muted-foreground" />
-                  <h3 className="mt-2 text-sm font-medium text-foreground">لا توجد نسخ احتياطية</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">ابدأ بإنشاء أول نسخة احتياطية</p>
+                  <Database className="w-12 h-12 mx-auto text-muted-foreground dark:text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-foreground dark:text-white">لا توجد نسخ احتياطية</h3>
+                  <p className="mt-1 text-sm text-muted-foreground dark:text-gray-300">ابدأ بإنشاء أول نسخة احتياطية</p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-3 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
                   {backups.map((backup, index) => (
                     <div
                       key={`${backup.name}-${index}`}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 cursor-pointer transition-all duration-200"
+                      className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-border dark:border-gray-700 rounded-lg hover:bg-accent/50 dark:hover:bg-gray-700/50 cursor-pointer transition-all duration-200 group"
                       onClick={() => handleRestoreFromPath(backup.path)}
                     >
                       <div className="flex items-start space-x-3 space-x-reverse w-full">
-                        <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0">
-                          <Shield className="w-5 h-5 text-primary" />
+                        <div className="p-2 bg-primary/10 dark:bg-blue-500/20 rounded-lg flex-shrink-0">
+                          <Shield className="w-5 h-5 text-primary dark:text-blue-400" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-wrap items-center gap-2 mb-2">
-                            <h4 className="text-sm font-medium text-foreground break-words">{backup.name}</h4>
+                            <h4 className="text-sm font-medium text-foreground dark:text-white break-words">{backup.name}</h4>
                             {backup.isSqliteOnly && (
-                              <span className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 rounded-full whitespace-nowrap">
+                              <span className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-400 rounded-full whitespace-nowrap">
                                 SQLite
                               </span>
                             )}
                             {backup.includesImages && (
-                              <span className="px-2 py-1 text-xs bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200 rounded-full flex items-center gap-1 whitespace-nowrap">
+                              <span className="px-2 py-1 text-xs bg-green-100 dark:bg-green-500/20 text-green-800 dark:text-green-400 rounded-full flex items-center gap-1 whitespace-nowrap">
                                 <Image className="w-3 h-3" />
                                 مع صور
                               </span>
                             )}
                             {backup.isLegacy && (
-                              <span className="px-2 py-1 text-xs bg-gray-100 dark:bg-card/20 text-gray-800 dark:text-gray-200 rounded-full whitespace-nowrap">
+                              <span className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-500/20 text-gray-800 dark:text-gray-400 rounded-full whitespace-nowrap">
                                 قديم
                               </span>
                             )}
                           </div>
-                          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground dark:text-gray-300">
                             <span className="whitespace-nowrap">{formatBackupDate(backup.created_at)}</span>
                             <span className="whitespace-nowrap">{formatBackupSize(backup.size)}</span>
                             {backup.version && <span className="whitespace-nowrap">إصدار {backup.version}</span>}
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2 space-x-reverse mt-3 sm:mt-0 flex-shrink-0">
+                      <div className="flex items-center space-x-2 space-x-reverse mt-3 sm:mt-0 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
                             handleRestoreFromPath(backup.path)
                           }}
-                          className="p-2 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/20 rounded-lg transition-all duration-200 interactive-card min-h-[44px] min-w-[44px] flex items-center justify-center"
+                          className="p-2 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-500/20 rounded-lg transition-all duration-300 ease-in-out interactive-card min-h-[44px] min-w-[44px] flex items-center justify-center hover:scale-110 active:scale-95 hover:shadow-md"
                           title="استعادة"
                           aria-label="استعادة النسخة الاحتياطية"
                         >
@@ -1115,7 +1115,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                             console.log('🗑️ Delete button clicked for backup:', backup.name)
                             setShowDeleteConfirm(backup.name)
                           }}
-                          className="p-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-all duration-200 interactive-card min-h-[44px] min-w-[44px] flex items-center justify-center"
+                          className="p-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 rounded-lg transition-all duration-300 ease-in-out interactive-card min-h-[44px] min-w-[44px] flex items-center justify-center hover:scale-110 active:scale-95 hover:shadow-md"
                           title="حذف"
                           type="button"
                           aria-label="حذف النسخة الاحتياطية"
@@ -1134,15 +1134,15 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
 
       {/* Diagnostics Tab */}
       {activeTab === 'diagnostics' && (
-        <div className="space-y-6">
-          <div className="bg-card rounded-lg shadow border border-border">
-            <div className="p-6 border-b border-border">
-              <h3 className="text-lg font-medium text-foreground">تشخيص النظام</h3>
-              <p className="text-sm text-muted-foreground mt-1">
+        <div className="w-full h-full flex flex-col min-h-0">
+          <div className="bg-card dark:bg-gray-800 rounded-xl shadow-sm border border-border dark:border-gray-700 flex-1 flex flex-col min-h-0">
+            <div className="p-4 sm:p-6 border-b border-border dark:border-gray-700 flex-shrink-0">
+              <h3 className="text-lg sm:text-xl font-semibold text-foreground dark:text-white">تشخيص النظام</h3>
+              <p className="text-sm text-muted-foreground dark:text-gray-300 mt-1">
                 فحص حالة قاعدة البيانات والنظام
               </p>
             </div>
-            <div className="p-6">
+            <div className="p-4 sm:p-6 flex-1 overflow-auto min-h-0">
               <DatabaseDiagnostics />
             </div>
           </div>
@@ -1152,10 +1152,10 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
       {/* Appearance Settings Tab */}
       {activeTab === 'appearance' && (
         <div className="space-y-6">
-          <div className="bg-card rounded-xl shadow-sm border border-border">
-            <div className="p-4 sm:p-6 border-b border-border">
-              <h3 className="text-lg sm:text-xl font-semibold text-foreground">إعدادات المظهر</h3>
-              <p className="text-sm text-muted-foreground mt-1">
+          <div className="bg-card dark:bg-gray-800 rounded-xl shadow-sm border border-border dark:border-gray-700">
+            <div className="p-4 sm:p-6 border-b border-border dark:border-gray-700">
+              <h3 className="text-lg sm:text-xl font-semibold text-foreground dark:text-white">إعدادات المظهر</h3>
+              <p className="text-sm text-muted-foreground dark:text-gray-300 mt-1">
                 تخصيص مظهر التطبيق وفقاً لتفضيلاتك
               </p>
             </div>
@@ -1173,22 +1173,22 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                     )}
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-foreground">الوضع المظلم</label>
-                    <p className="text-sm text-muted-foreground">
+                    <label className="text-sm font-medium text-foreground dark:text-white">الوضع المظلم</label>
+                    <p className="text-sm text-muted-foreground dark:text-gray-300">
                       تبديل بين الوضع الفاتح والمظلم للتطبيق
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={toggleDarkMode}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 ${
-                    isDarkMode ? 'bg-primary' : 'bg-muted'
+                  className={`pr-7 relative inline-flex h-6 w-12 items-center rounded-full transition-all duration-300 ${
+                    isDarkMode ? 'bg-primary' : 'bg-blue-500'
                   } interactive-card focus:ring-2 focus:ring-primary/50 focus:ring-offset-2`}
                   aria-label={isDarkMode ? 'تفعيل الوضع الفاتح' : 'تفعيل الوضع المظلم'}
                 >
                   <span
                     className={`inline-block h-4 w-4 transform rounded-full bg-background transition-all duration-300 shadow-sm ${
-                      isDarkMode ? 'translate-x-6' : 'translate-x-1'
+                      isDarkMode ? 'translate-x-1' : 'translate-x-6'
                     }`}
                   />
                 </button>
@@ -1196,13 +1196,13 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
 
               {/* Theme Preview */}
               <div className="space-y-4">
-                <h4 className="text-sm font-medium text-foreground">معاينة المظهر</h4>
+                <h4 className="text-sm font-medium text-foreground dark:text-white">معاينة المظهر</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Light Theme Preview */}
                   <div className="p-4 border border-border rounded-lg bg-background">
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <h5 className="text-sm font-medium text-foreground">
+                        <h5 className="text-sm font-medium text-foreground dark:text-white">
                           {isDarkMode ? 'الوضع المظلم' : 'الوضع الفاتح'}
                         </h5>
                         <div className="w-3 h-3 rounded-full bg-primary"></div>
@@ -1221,9 +1221,9 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
           
                   </div>
                   {/* Theme Info */}
-                  <div className="p-4 border border-border rounded-lg bg-muted/50">
-                    <h5 className="text-sm font-medium text-foreground mb-2">مميزات المظهر</h5>
-                    <ul className="text-sm text-muted-foreground space-y-1">
+                  <div className="p-4 border border-border dark:border-gray-700 rounded-lg bg-muted/50 dark:bg-gray-700/50">
+                    <h5 className="text-sm font-medium text-foreground dark:text-white mb-2">مميزات المظهر</h5>
+                    <ul className="text-sm text-muted-foreground dark:text-gray-300 space-y-1">
                       <li>• تحسين قراءة النصوص العربية</li>
                       <li>• ألوان مناسبة للتطبيقات الطبية</li>
                       <li>• حفظ تلقائي للتفضيلات</li>
@@ -1243,10 +1243,10 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
       {activeTab === 'whatsapp' && (
         <div className="space-y-6">
           
-          <div className="bg-card rounded-lg shadow border border-border">
-            <div className="p-6 border-b border-border">
-              <h3 className="text-lg font-medium text-foreground">إعدادات تذكير واتساب</h3>
-              <p className="text-sm text-muted-foreground mt-1">
+          <div className="bg-card dark:bg-gray-800 rounded-xl shadow-sm border border-border dark:border-gray-700">
+            <div className="p-4 sm:p-6 border-b border-border dark:border-gray-700">
+              <h3 className="text-lg sm:text-xl font-semibold text-foreground dark:text-white">إعدادات تذكير واتساب</h3>
+              <p className="text-sm text-muted-foreground dark:text-gray-300 mt-1">
                 إعدادات إرسال التذكيرات عبر واتساب قبل المواعيد
               </p>
             </div>
@@ -1254,15 +1254,15 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
               {/* Enable Reminder Toggle */}
               <div className="flex items-start sm:items-center justify-between gap-3 flex-col sm:flex-row">
                 <div className="flex items-center space-x-3 space-x-reverse">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Phone className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground">تفعيل التذكير</label>
-                    <p className="text-sm text-muted-foreground">
-                      إرسال تذكيرات واتساب تلقائياً قبل المواعيد
-                    </p>
-                  </div>
+                <div className="p-2 bg-primary/10 dark:bg-blue-500/20 rounded-lg">
+                  <Phone className="w-5 h-5 text-primary dark:text-blue-400" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground dark:text-white">تفعيل التذكير</label>
+                  <p className="text-sm text-muted-foreground dark:text-gray-300">
+                    إرسال تذكيرات واتساب تلقائياً قبل المواعيد
+                  </p>
+                </div>
                 </div>
                 <Switch
                   checked={enableReminder}
@@ -1284,15 +1284,19 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                   max="10080"
                   value={minutesBefore}
                   onChange={(e) => setMinutesBefore(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-300 ease-in-out hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md shadow-sm"
                 />
-                <div className="flex flex-wrap gap-2 mt-2 justify-start">
+                <div className="flex flex-wrap gap-3 mt-4 justify-start">
                   {[15, 30, 60, 120, 180, 720, 1440].map((m) => (
                     <button
                       key={m}
                       type="button"
                       onClick={() => setMinutesBefore(m)}
-                      className="px-2 py-1 text-xs border border-input rounded-md hover:bg-accent transition-all duration-200 interactive-card"
+                      className={`px-4 py-2 text-sm font-medium rounded-full border-2 transition-all duration-300 ease-in-out transform hover:scale-105 active:scale-95 ${
+                        minutesBefore === m
+                          ? 'bg-blue-600 dark:bg-blue-600 text-white border-blue-600 dark:border-blue-600 shadow-lg shadow-blue-500/25'
+                          : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-400 dark:hover:border-blue-500 hover:text-blue-700 dark:hover:text-blue-300'
+                      }`}
                     >
                       {m >= 60 ? `${m / 60} ساعة` : `${m} دقيقة`}
                     </button>
@@ -1326,17 +1330,17 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                     value={messageText}
                     onChange={(e) => setMessageText(e.target.value)}
                     placeholder="مرحبًا {{patient_name}}، تذكير بموعدك في عيادة الأسنان بتاريخ {{appointment_date}} الساعة {{appointment_time}}. نشكرك على التزامك."
-                    className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-300 ease-in-out hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md shadow-sm"
                     ref={messageTextareaRef}
                   />
                   <p className="text-xs text-muted-foreground">
                     يمكنك استخدام متغيرات مثل: اسم المريض ({'{{patient_name}}'})، تاريخ الموعد ({'{{appointment_date}}'})، وقت الموعد ({'{{appointment_time}}'})
                   </p>
-                  <div className="flex flex-wrap gap-2 justify-start">
+                  <div className="flex flex-wrap gap-3 justify-start">
                     <button
                       type="button"
                       onClick={() => insertTokenAtCursor('{{patient_name}}')}
-                      className="px-2 py-1 text-xs border border-input rounded-md hover:bg-accent transition-all duration-200 interactive-card"
+                      className="px-4 py-2 text-sm font-medium bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-2 border-green-200 dark:border-green-700 rounded-full hover:bg-green-200 dark:hover:bg-green-900/30 hover:border-green-300 dark:hover:border-green-600 transition-all duration-300 ease-in-out transform hover:scale-105 active:scale-95 hover:shadow-md shadow-green-500/10"
                       title="إدراج اسم المريض"
                     >
                       اسم المريض
@@ -1344,7 +1348,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                     <button
                       type="button"
                       onClick={() => insertTokenAtCursor('{{appointment_date}}')}
-                      className="px-2 py-1 text-xs border border-input rounded-md hover:bg-accent transition-all duration-200 interactive-card"
+                      className="px-4 py-2 text-sm font-medium bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-2 border-blue-200 dark:border-blue-700 rounded-full hover:bg-blue-200 dark:hover:bg-blue-900/30 hover:border-blue-300 dark:hover:border-blue-600 transition-all duration-300 ease-in-out transform hover:scale-105 active:scale-95 hover:shadow-md shadow-blue-500/10"
                       title="إدراج تاريخ الموعد"
                     >
                       تاريخ الموعد
@@ -1352,7 +1356,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                     <button
                       type="button"
                       onClick={() => insertTokenAtCursor('{{appointment_time}}')}
-                      className="px-2 py-1 text-xs border border-input rounded-md hover:bg-accent transition-all duration-200 interactive-card"
+                      className="px-4 py-2 text-sm font-medium bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 border-2 border-purple-200 dark:border-purple-700 rounded-full hover:bg-purple-200 dark:hover:bg-purple-900/30 hover:border-purple-300 dark:hover:border-purple-600 transition-all duration-300 ease-in-out transform hover:scale-105 active:scale-95 hover:shadow-md shadow-purple-500/10"
                       title="إدراج وقت الموعد"
                     >
                       وقت الموعد
@@ -1367,23 +1371,23 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
           
 
               {/* WhatsApp Connection Management (simplified) */}
-              <div className="bg-card rounded-lg shadow border border-border mt-6">
-                <div className="p-6 border-b border-border">
-                  <h3 className="text-lg font-medium text-foreground">إدارة اتصال واتساب</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
+              <div className="bg-card dark:bg-gray-800 rounded-xl shadow-sm border border-border dark:border-gray-700 mt-6">
+                <div className="p-4 sm:p-6 border-b border-border dark:border-gray-700">
+                  <h3 className="text-lg sm:text-xl font-semibold text-foreground dark:text-white">إدارة اتصال واتساب</h3>
+                  <p className="text-sm text-muted-foreground dark:text-gray-300 mt-1">
                     إدارة حالة اتصال التطبيق مع واتساب.
                   </p>
                 </div>
                 <div className="p-6 space-y-4">
                   {/* QR Code Linking */}
-                  <div className="p-4 border-2 border-primary/20 rounded-lg bg-primary/5">
+                  <div className="p-4 border-2 border-primary/20 dark:border-blue-500/20 rounded-lg bg-primary/5 dark:bg-blue-500/10">
                     <div className="flex items-start md:items-center justify-between gap-4 flex-col md:flex-row">
                       <div className="flex-1">
-                        <label className="text-base font-semibold text-foreground mb-2 block">🔗 ربط عبر رمز QR</label>
-                        <p className="text-sm text-muted-foreground">
+                        <label className="text-base font-semibold text-foreground dark:text-white mb-2 block">🔗 ربط عبر رمز QR</label>
+                        <p className="text-sm text-muted-foreground dark:text-gray-300">
                           ربط حساب واتساب الخاص بك عبر رمز QR لتفعيل التذكيرات.
                         </p>
-                        <p className="text-xs text-muted-foreground mt-2">
+                        <p className="text-xs text-muted-foreground dark:text-gray-400 mt-2">
                           اضغط لعرض رمز QR ومسحه بتطبيق واتساب على هاتفك. سيتم إعادة تهيئة الجلسة تلقائياً.
                         </p>
                       </div>
@@ -1505,7 +1509,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                             showNotification('تعذر بدء عملية الربط عبر QR', 'error')
                           }
                         }}
-                        className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all duration-200 flex items-center justify-center space-x-2 space-x-reverse font-medium shadow-md interactive-card focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 w-full md:w-auto"
+                        className="px-8 py-4 bg-gradient-to-r from-green-500 to-green-600 dark:from-green-600 dark:to-green-700 text-white rounded-2xl hover:from-green-600 hover:to-green-700 dark:hover:from-green-700 dark:hover:to-green-800 transition-all duration-300 ease-in-out flex items-center justify-center space-x-3 space-x-reverse font-semibold shadow-xl hover:shadow-2xl focus:ring-4 focus:ring-green-500/30 focus:ring-offset-2 w-full md:w-auto hover:scale-105 active:scale-95 transform"
                       >
                         <Phone className="w-5 h-5" />
                         <span>ربط عبر QR</span>
@@ -1514,14 +1518,14 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                   </div>
 
                   {/* Reset WhatsApp Session */}
-                  <div className="flex items-start sm:items-center justify-between gap-3 p-4 border border-border rounded-lg bg-muted/30 flex-col sm:flex-row">
+                  <div className="flex items-start sm:items-center justify-between gap-3 p-4 border border-border dark:border-gray-700 rounded-lg bg-muted/30 dark:bg-gray-700/50 flex-col sm:flex-row">
                     <div>
-                      <label className="text-sm font-medium text-foreground">إعادة تهيئة اتصال واتساب</label>
-                      <p className="text-xs text-muted-foreground mt-1">حذف الجلسة الحالية لإظهار رمز QR من جديد وإعادة الربط.</p>
+                      <label className="text-sm font-medium text-foreground dark:text-white">إعادة تهيئة اتصال واتساب</label>
+                      <p className="text-xs text-muted-foreground dark:text-gray-300 mt-1">حذف الجلسة الحالية لإظهار رمز QR من جديد وإعادة الربط.</p>
                     </div>
                     <button
                       onClick={() => setConfirmDeleteQROpen(true)}
-                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors w-full sm:w-auto"
+                      className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 dark:from-red-600 dark:to-red-700 text-white rounded-xl hover:from-red-600 hover:to-red-700 dark:hover:from-red-700 dark:hover:to-red-800 transition-all duration-300 ease-in-out w-full sm:w-auto hover:scale-105 active:scale-95 hover:shadow-xl shadow-red-500/20 focus:ring-4 focus:ring-red-500/30 focus:ring-offset-2 transform font-medium"
                     >
                       حذف جلسة الربط (QR)
                     </button>
@@ -1539,23 +1543,17 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
 
       {/* Keyboard Shortcuts Tab */}
       {activeTab === 'shortcuts' && (
-        <div className="space-y-6">
-          <div className="bg-card rounded-lg shadow border border-border">
-            <div className="p-6 border-b border-border">
-              <h3 className="text-lg font-medium text-foreground">اختصارات لوحة المفاتيح</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                تعرف على جميع اختصارات لوحة المفاتيح المتاحة لتسريع عملك
-              </p>
-            </div>
-            <div className="p-6">
+        <div className="w-full h-full flex flex-col min-h-0">
+          <div className="bg-card dark:bg-gray-800 rounded-xl shadow-sm border border-border dark:border-gray-700 flex-1 flex flex-col min-h-0">
+            <div className="p-6 sm:p-8 flex-1 overflow-auto">
               <ElegantShortcutsDisplay />
             </div>
           </div>
 
           {/* Tips Section */}
-          <div className="bg-card rounded-lg shadow border border-border">
-            <div className="p-6 border-b border-border">
-              <h3 className="text-lg font-medium text-foreground">نصائح للاستخدام</h3>
+          <div className="bg-card dark:bg-gray-800 rounded-xl shadow-sm border border-border dark:border-gray-700">
+            <div className="p-4 sm:p-6 border-b border-border dark:border-gray-700">
+              <h3 className="text-lg sm:text-xl font-semibold text-foreground dark:text-white">نصائح للاستخدام</h3>
             </div>
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1681,10 +1679,10 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
       {/* Clinic Settings Tab */}
       {activeTab === 'clinic' && (
         <div className="space-y-6">
-          <div className="bg-card rounded-lg shadow border border-border">
-            <div className="p-6 border-b border-border">
-              <h3 className="text-lg font-medium text-foreground">معلومات العيادة</h3>
-              <p className="text-sm text-muted-foreground mt-1">
+          <div className="bg-card dark:bg-gray-800 rounded-xl shadow-sm border border-border dark:border-gray-700">
+            <div className="p-4 sm:p-6 border-b border-border dark:border-gray-700">
+              <h3 className="text-lg sm:text-xl font-semibold text-foreground dark:text-white">معلومات العيادة</h3>
+              <p className="text-sm text-muted-foreground dark:text-gray-300 mt-1">
                 إعدادات العيادة الأساسية والمعلومات التي تظهر في الإيصالات
               </p>
             </div>
@@ -1712,7 +1710,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                       id="clinic_name"
                       name="clinic_name"
                       defaultValue={settings?.clinic_name || ''}
-                      className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200 interactive-card"
+                      className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-300 ease-in-out hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md shadow-sm"
                       required
                     />
                   </div>
@@ -1727,7 +1725,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                       name="doctor_name"
                       defaultValue={settings?.doctor_name || ''}
                       placeholder="د. محمد أحمد"
-                      className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200 interactive-card"
+                      className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-300 ease-in-out hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md shadow-sm"
                       required
                     />
                   </div>
@@ -1743,7 +1741,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                       placeholder="96395 XXX XXXX"
 
                       defaultValue={settings?.clinic_phone || ''}
-                      className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200 interactive-card"
+                      className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-300 ease-in-out hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md shadow-sm"
                     />
                   </div>
 
@@ -1757,7 +1755,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                       name="clinic_email"
                       defaultValue={settings?.clinic_email || ''}
                       placeholder="clinic@example.com"
-                      className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200 interactive-card"
+                      className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-300 ease-in-out hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md shadow-sm"
                     />
                   </div>
                 </div>
@@ -1772,7 +1770,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                     defaultValue={settings?.clinic_address || ''}
                     placeholder="حلب، الجمهورية العربية السورية"
                     rows={3}
-                    className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200 interactive-card resize-none"
+                    className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-300 ease-in-out hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md shadow-sm resize-none"
                   />
                 </div>
 
@@ -1786,7 +1784,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                     id="currency"
                     name="currency"
                     defaultValue={settings?.currency || currentCurrency || 'USD'}
-                    className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200 interactive-card"
+                    className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-300 ease-in-out hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md shadow-sm"
                     onChange={(e) => {
                       // Update currency immediately when changed
                       setCurrency(e.target.value)
@@ -1843,7 +1841,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                           type="button"
                           onClick={() => document.getElementById('clinic_logo')?.click()}
                           disabled={logoUploading}
-                          className="px-3 py-2 text-sm border border-input bg-background text-foreground rounded-md hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 interactive-card w-full sm:w-auto"
+                          className="px-3 py-2 text-sm border border-input bg-background text-foreground rounded-md hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 ease-in-out interactive-card w-full sm:w-auto hover:scale-105 active:scale-95 hover:shadow-md"
                         >
                           {logoUploading ? 'جاري الرفع...' : 'اختيار شعار'}
                         </button>
@@ -1852,7 +1850,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                             type="button"
                             onClick={() => handleUpdateSettings({ clinic_logo: '' })}
                             disabled={logoUploading}
-                            className="px-3 py-2 text-sm border border-red-200 bg-red-50 text-red-700 rounded-md hover:bg-red-100 disabled:opacity-50 transition-all duration-200 interactive-card w-full sm:w-auto"
+                            className="px-3 py-2 text-sm border border-red-200 bg-red-50 text-red-700 rounded-md hover:bg-red-100 disabled:opacity-50 transition-all duration-300 ease-in-out interactive-card w-full sm:w-auto hover:scale-105 active:scale-95 hover:shadow-md"
                           >
                             حذف الشعار
                           </button>
@@ -1874,7 +1872,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="px-6 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 interactive-card focus:ring-2 focus:ring-primary/50 focus:ring-offset-2"
+                    className="px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white rounded-2xl hover:from-blue-600 hover:to-blue-700 dark:hover:from-blue-700 dark:hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 ease-in-out focus:ring-4 focus:ring-blue-500/30 focus:ring-offset-2 hover:scale-105 active:scale-95 hover:shadow-2xl shadow-xl transform font-semibold"
                   >
                     {isLoading ? 'جاري الحفظ...' : 'حفظ الإعدادات'}
                   </button>
@@ -1891,35 +1889,35 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
       {/* Development Team Tab */}
       {activeTab === 'development' && (
         <div className="space-y-6">
-          <div className="bg-card rounded-lg shadow border border-border">
-            <div className="p-6 border-b border-border">
-              <h3 className="text-lg font-medium text-foreground">معلومات فريق التطوير</h3>
-              <p className="text-sm text-muted-foreground mt-1">
+          <div className="bg-card dark:bg-gray-800 rounded-xl shadow-sm border border-border dark:border-gray-700">
+            <div className="p-4 sm:p-6 border-b border-border dark:border-gray-700">
+              <h3 className="text-lg sm:text-xl font-semibold text-foreground dark:text-white">معلومات فريق التطوير</h3>
+              <p className="text-sm text-muted-foreground dark:text-gray-300 mt-1">
                 تواصل مع فريق التطوير للدعم الفني والاستفسارات
               </p>
             </div>
             <div className="p-6 space-y-6">
               {/* Team Name */}
-              <div className="flex items-center space-x-4 space-x-reverse p-4 bg-muted/50 rounded-lg">
-                <div className="p-3 bg-primary/10 rounded-lg">
-                  <Users className="w-6 h-6 text-primary" />
+              <div className="flex items-center space-x-4 space-x-reverse p-4 bg-muted/50 dark:bg-gray-700/50 rounded-lg">
+                <div className="p-3 bg-primary/10 dark:bg-blue-500/20 rounded-lg">
+                  <Users className="w-6 h-6 text-primary dark:text-blue-400" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-medium text-foreground">اسم الفريق</h4>
-                  <p className="text-lg font-bold text-foreground">ORalSoft</p>
-                  <p className="text-sm text-muted-foreground">فريق تطوير تطبيقات إدارة العيادات</p>
+                  <h4 className="text-sm font-medium text-foreground dark:text-white">اسم الفريق</h4>
+                  <p className="text-lg font-bold text-foreground dark:text-white">ORalSoft</p>
+                  <p className="text-sm text-muted-foreground dark:text-gray-300">فريق تطوير تطبيقات إدارة العيادات</p>
                 </div>
               </div>
 
               {/* Contact Phone */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center space-x-4 space-x-reverse p-4 bg-muted/50 rounded-lg gap-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center space-x-4 space-x-reverse p-4 bg-muted/50 dark:bg-gray-700/50 rounded-lg gap-4">
                 <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-lg flex-shrink-0">
                   <Phone className="w-6 h-6 text-green-600 dark:text-green-400" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-sm font-medium text-foreground">رقم التواصل</h4>
-                  <p className="text-lg font-bold text-foreground">00963938352132</p>
-                  <p className="text-sm text-muted-foreground">متاح للدعم الفني من 9 صباحاً إلى 6 مساءً</p>
+                  <h4 className="text-sm font-medium text-foreground dark:text-white">رقم التواصل</h4>
+                  <p className="text-lg font-bold text-foreground dark:text-white">00963938352132</p>
+                  <p className="text-sm text-muted-foreground dark:text-gray-300">متاح للدعم الفني من 9 صباحاً إلى 6 مساءً</p>
                 </div>
                 <button
                   onClick={async () => {
@@ -1950,39 +1948,39 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                     // Method 3: Fallback to window.open
                     window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
                   }}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 interactive-card w-full sm:w-auto"
+                  className="px-4 py-2 bg-green-600 dark:bg-green-600 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-700 transition-all duration-300 ease-in-out interactive-card w-full sm:w-auto hover:scale-105 active:scale-95 hover:shadow-lg dark:hover:shadow-green-500/25"
                 >
                   تواصل عبر واتساب
                 </button>
               </div>
 
               {/* Contact Email */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center space-x-4 space-x-reverse p-4 bg-muted/50 rounded-lg gap-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center space-x-4 space-x-reverse p-4 bg-muted/50 dark:bg-gray-700/50 rounded-lg gap-4">
                 <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex-shrink-0">
                   <Mail className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-sm font-medium text-foreground">البريد الإلكتروني</h4>
-                  <p className="text-lg font-bold text-foreground">ORalSoft@gmail.com</p>
-                  <p className="text-sm text-muted-foreground">للاستفسارات والدعم الفني</p>
+                  <h4 className="text-sm font-medium text-foreground dark:text-white">البريد الإلكتروني</h4>
+                  <p className="text-lg font-bold text-foreground dark:text-white">ORalSoft@gmail.com</p>
+                  <p className="text-sm text-muted-foreground dark:text-gray-300">للاستفسارات والدعم الفني</p>
                 </div>
                 <button
                   onClick={() => window.open('mailto:ORalSoft@gmail.com', '_blank')}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 interactive-card w-full sm:w-auto"
+                  className="px-4 py-2 bg-blue-600 dark:bg-blue-600 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-700 transition-all duration-300 ease-in-out interactive-card w-full sm:w-auto hover:scale-105 active:scale-95 hover:shadow-lg dark:hover:shadow-blue-500/25"
                 >
                   إرسال إيميل
                 </button>
               </div>
 
               {/* Additional Info */}
-              <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+              <div className="p-4 bg-primary/5 dark:bg-blue-500/10 border border-primary/20 dark:border-blue-500/20 rounded-lg">
                 <div className="flex items-start space-x-3 space-x-reverse">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Info className="w-5 h-5 text-primary" />
+                  <div className="p-2 bg-primary/10 dark:bg-blue-500/20 rounded-lg">
+                    <Info className="w-5 h-5 text-primary dark:text-blue-400" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-medium text-foreground mb-2">معلومات إضافية</h4>
-                    <ul className="text-sm text-muted-foreground space-y-1">
+                    <h4 className="text-sm font-medium text-foreground dark:text-white mb-2">معلومات إضافية</h4>
+                    <ul className="text-sm text-muted-foreground dark:text-gray-300 space-y-1">
                       <li>• نقدم دعماً فنياً شاملاً لجميع مستخدمي التطبيق</li>
                       <li>• نستقبل اقتراحاتكم لتطوير وتحسين التطبيق</li>
                       <li>• نوفر تدريباً مجانياً على استخدام التطبيق</li>
@@ -2042,13 +2040,13 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
               <div className="flex justify-end space-x-3 space-x-reverse">
                 <button
                   onClick={() => setShowDeleteConfirm(null)}
-                  className="px-4 py-2 border border-input bg-background text-foreground rounded-lg hover:bg-accent transition-all duration-200 interactive-card"
+                  className="px-4 py-2 border border-input bg-background text-foreground rounded-lg hover:bg-accent transition-all duration-300 ease-in-out interactive-card hover:scale-105 active:scale-95 hover:shadow-md"
                 >
                   إلغاء
                 </button>
                 <button
                   onClick={() => handleDeleteBackup(showDeleteConfirm)}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 interactive-card focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-300 ease-in-out interactive-card focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 hover:scale-105 active:scale-95 hover:shadow-lg dark:hover:shadow-red-500/25"
                 >
                   تأكيد الحذف
                 </button>
@@ -2071,7 +2069,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                   <h3 className="text-xl font-semibold text-foreground">ربط واتساب عبر رمز QR</h3>
                   <p className="text-sm text-muted-foreground mt-1">افتح واتساب على هاتفك → الإعدادات → الأجهزة المرتبطة → ربط جهاز.</p>
                 </div>
-                <button onClick={() => setShowQRModal(false)} className="px-2 py-1 text-sm text-muted-foreground hover:text-foreground transition-all duration-200 interactive-card rounded-lg">✕</button>
+                <button onClick={() => setShowQRModal(false)} className="px-2 py-1 text-sm text-muted-foreground hover:text-foreground transition-all duration-300 ease-in-out interactive-card rounded-lg hover:scale-110 active:scale-95 hover:bg-gray-100 dark:hover:bg-gray-700">✕</button>
               </div>
               <div className="flex items-center justify-center p-4 bg-white border border-border rounded-xl min-h-[512px]">
                 {qrData && qrData.trim() !== '' ? (
@@ -2136,7 +2134,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                 <li>إن لم يظهر الرمز خلال ثوانٍ، اضغط إعادة توليد.</li>
               </ul>
               <div className="flex justify-end gap-2">
-                <button onClick={() => setShowQRModal(false)} className="px-4 py-2 border border-input rounded-lg transition-all duration-200 interactive-card">إغلاق</button>
+                <button onClick={() => setShowQRModal(false)} className="px-4 py-2 border border-input rounded-lg transition-all duration-300 ease-in-out interactive-card hover:scale-105 active:scale-95 hover:shadow-md">إغلاق</button>
                 <button
                   onClick={async () => {
                     try {
@@ -2216,7 +2214,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                       showNotification(`حدث خطأ أثناء إعادة توليد رمز QR: ${(error as any)?.message || 'خطأ غير معروف'}`, 'error')
                     }
                   }}
-                  className="px-4 py-2 bg-primary text-white rounded-lg shadow-sm hover:bg-primary/90 transition-all duration-200 interactive-card"
+                  className="px-4 py-2 bg-primary text-white rounded-lg shadow-sm hover:bg-primary/90 transition-all duration-300 ease-in-out interactive-card hover:scale-105 active:scale-95 hover:shadow-lg dark:hover:shadow-blue-500/25"
                 >
                   إعادة توليد QR
                 </button>

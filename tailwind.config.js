@@ -82,38 +82,38 @@ export default {
   				DEFAULT: 'hsl(var(--card))',
   				foreground: 'hsl(var(--card-foreground))'
   			},
-  			dental: {
-  				'50': '#f0f9ff',
-  				'100': '#e0f2fe',
-  				'200': '#bae6fd',
-  				'300': '#7dd3fc',
-  				'400': '#38bdf8',
-  				'500': '#0ea5e9',
-  				'600': '#0284c7',
-  				'700': '#0369a1',
-  				'800': '#075985',
-  				'900': '#0c4a6e',
-  				'950': '#082f49'
-  			},
-  			medical: {
-  				'50': '#f0fdf4',
-  				'100': '#dcfce7',
-  				'200': '#bbf7d0',
-  				'300': '#86efac',
-  				'400': '#4ade80',
-  				'500': '#22c55e',
-  				'600': '#16a34a',
-  				'700': '#15803d',
-  				'800': '#166534',
-  				'900': '#14532d',
-  				'950': '#052e16'
-  			},
-  			status: {
-  				scheduled: '#3b82f6',
-  				completed: '#10b981',
-  				cancelled: '#ef4444',
-  				'no-show': '#6b7280'
-  			},
+			dental: {
+				'50': '#f0f9ff',
+				'100': '#e0f2fe',
+				'200': '#bae6fd',
+				'300': '#7dd3fc',
+				'400': '#38bdf8',
+				'500': '#3b82f6',  // Updated to match image blue
+				'600': '#2563eb',
+				'700': '#1d4ed8',
+				'800': '#1e40af',
+				'900': '#1e3a8a',
+				'950': '#172554'
+			},
+			medical: {
+				'50': '#f0fdf4',
+				'100': '#dcfce7',
+				'200': '#bbf7d0',
+				'300': '#86efac',
+				'400': '#4ade80',
+				'500': '#16a34a',  // Updated to match image green
+				'600': '#15803d',
+				'700': '#166534',
+				'800': '#14532d',
+				'900': '#052e16',
+				'950': '#022c22'
+			},
+			status: {
+				scheduled: '#3b82f6',  // Blue matching image
+				completed: '#16a34a',  // Green matching image
+				cancelled: '#dc2626',  // Red matching image
+				'no-show': '#6b7280'   // Gray for no-show
+			},
   			chart: {
   				'1': 'hsl(var(--chart-1))',
   				'2': 'hsl(var(--chart-2))',

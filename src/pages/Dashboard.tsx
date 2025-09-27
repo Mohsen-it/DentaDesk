@@ -249,9 +249,9 @@ const Dashboard = React.memo(function Dashboard({ onAddPatient, onAddAppointment
   const todayAppointments = getAppointmentsForDate(new Date())
 
   return (
-    <div className="space-y-4 md:space-y-6 lg:space-y-8 rtl-layout p-2 md:p-4">
+    <div className="space-y-6 md:space-y-8 lg:space-y-10 rtl-layout p-4 md:p-6 lg:p-8">
       {/* Enhanced Welcome Section */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-4 md:p-6 bg-gradient-to-r from-muted/50 to-accent/20 rounded-xl backdrop-blur-sm border border-border">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 p-6 md:p-8 bg-gradient-to-r from-muted/50 to-accent/20 rounded-xl backdrop-blur-sm border border-border">
         <div className="space-y-2">
           <div className="flex items-center gap-3 mb-2">
             <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground">
@@ -262,7 +262,7 @@ const Dashboard = React.memo(function Dashboard({ onAddPatient, onAddAppointment
             إليك ما يحدث في عيادتك - تحديث تلقائي في الوقت الفعلي
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2 md:gap-3 w-full md:w-auto">
+        <div className="flex flex-col sm:flex-row gap-3 md:gap-4 w-full md:w-auto">
           <Button onClick={onAddAppointment} className="btn-rtl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200 rounded-lg px-4 py-2 md:px-6 md:py-3">
             <Plus className="w-4 h-4 icon-right" />
             موعد جديد
@@ -275,7 +275,7 @@ const Dashboard = React.memo(function Dashboard({ onAddPatient, onAddAppointment
       </div>
 
       {/* Time Filter Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <TimeFilter
           value={appointmentStats.timeFilter}
           onChange={appointmentStats.handleFilterChange}
@@ -295,7 +295,7 @@ const Dashboard = React.memo(function Dashboard({ onAddPatient, onAddAppointment
       </div>
 
       {/* Enhanced Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
         <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 border-blue-200/50 dark:border-blue-700/50 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
             <CardTitle className="text-sm font-semibold text-blue-700 dark:text-blue-300">
@@ -390,7 +390,7 @@ const Dashboard = React.memo(function Dashboard({ onAddPatient, onAddAppointment
       </div>
 
       {/* Second Row Stats Cards */}
-      <div className="dashboard-grid-rtl grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+      <div className="dashboard-grid-rtl grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
         <Card className={`${getCardStyles("green")} stats-card-rtl`}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -460,7 +460,7 @@ const Dashboard = React.memo(function Dashboard({ onAddPatient, onAddAppointment
       </div>
 
       {/* Enhanced Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
         {/* Enhanced Revenue Chart */}
         <Card className="bg-card backdrop-blur-sm border-border shadow-xl hover:shadow-2xl transition-all duration-300">
           <CardHeader className="pb-4">

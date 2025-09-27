@@ -7,7 +7,7 @@ async function fixWhatsAppMigration() {
   console.log('🔧 Fixing WhatsApp reminders migration...\n');
 
   // Find the database path
-  const dbPath = path.join(require('os').homedir(), 'AppData', 'Roaming', 'DentalClinic - agorracode', 'dental_clinic.db');
+  const dbPath = path.join(require('os').homedir(), 'AppData', 'Roaming', 'ORalSoft', 'dental_clinic.db');
 
   console.log('📁 Database path:', dbPath);
 

@@ -221,31 +221,31 @@ export default function Appointments() {
 
   const eventStyleGetter = (event: any) => {
     const appointment = event.resource
-    let backgroundColor = '#3174ad'
+    let statusClass = 'status-scheduled'
 
     switch (appointment?.status) {
       case 'completed':
-        backgroundColor = '#10b981'
+        statusClass = 'status-completed'
         break
       case 'cancelled':
-        backgroundColor = '#ef4444'
+        statusClass = 'status-cancelled'
         break
       case 'no_show':
-        backgroundColor = '#6b7280'
+        statusClass = 'status-no-show'
         break
       default:
-        backgroundColor = '#3b82f6'
+        statusClass = 'status-scheduled'
     }
 
     return {
+      className: `rbc-event ${statusClass}`,
       style: {
-        backgroundColor,
-        borderRadius: '6px',
-        opacity: 0.9,
+        borderRadius: '8px',
+        opacity: 0.95,
         color: 'white',
-        border: '0px',
+        border: 'none',
         display: 'block',
-        fontSize: '12px',
+        fontSize: '0.875rem',
         fontWeight: '500',
         padding: '2px 6px',
         textAlign: 'center' as const,
@@ -559,24 +559,121 @@ export default function Appointments() {
                 <CardContent className="p-6">
                   <div style={{ height: '600px' }}>
                     <style>{`
+                      /* Enhanced Calendar Event Styling */
                       .rbc-event {
-                        border-radius: 6px !important;
+                        border-radius: 8px !important;
                         border: none !important;
-                        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+                        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3) !important;
+                        font-weight: 500;
+                        transition: all 0.2s ease;
+                        cursor: pointer;
                       }
+                      
                       .rbc-event:hover {
-                        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+                        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4) !important;
                         transform: translateY(-1px);
                         transition: all 0.2s ease;
                       }
+                      
                       .rbc-event-content {
-                        padding: 2px 4px !important;
+                        padding: 4px 8px !important;
+                        font-size: 0.875rem;
+                        line-height: 1.25;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
                       }
+                      
                       .rbc-month-view .rbc-event {
-                        margin: 1px !important;
+                        margin: 2px 1px !important;
+                        min-height: 20px;
                       }
+                      
                       .rbc-agenda-view .rbc-event {
-                        border-radius: 4px !important;
+                        border-radius: 6px !important;
+                        margin: 1px 0 !important;
+                      }
+                      
+                      /* Status-based event colors */
+                      .rbc-event.status-scheduled {
+                        background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
+                      }
+                      
+                      .rbc-event.status-completed {
+                        background: linear-gradient(135deg, #16a34a, #15803d) !important;
+                      }
+                      
+                      .rbc-event.status-cancelled {
+                        background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+                      }
+                      
+                      .rbc-event.status-no-show {
+                        background: linear-gradient(135deg, #6b7280, #4b5563) !important;
+                      }
+                      
+                      /* Calendar grid improvements */
+                      .rbc-calendar {
+                        border-radius: 12px;
+                        overflow: hidden;
+                        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+                      }
+                      
+                      .rbc-day-bg {
+                        transition: background-color 0.2s ease;
+                      }
+                      
+                      .rbc-day-bg:hover {
+                        background-color: rgba(30, 41, 59, 0.5) !important;
+                      }
+                      
+                      .rbc-today {
+                        background-color: rgba(59, 130, 246, 0.2) !important;
+                        border-color: rgba(59, 130, 246, 0.3) !important;
+                        position: relative;
+                      }
+                      
+                      .rbc-today::before {
+                        content: '';
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        height: 3px;
+                        background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+                        border-radius: 0 0 4px 4px;
+                      }
+                      
+                      .rbc-date-cell {
+                        font-weight: 500;
+                        padding: 8px 4px;
+                        color: #cbd5e1;
+                      }
+                      
+                      .rbc-today .rbc-date-cell {
+                        color: #bfdbfe;
+                        font-weight: 600;
+                      }
+                      
+                      /* Navigation buttons */
+                      .rbc-toolbar button {
+                        border-radius: 6px;
+                        padding: 8px 12px;
+                        font-weight: 500;
+                        transition: all 0.2s ease;
+                        background-color: #334155;
+                        color: #e2e8f0;
+                        border: 1px solid #475569;
+                      }
+                      
+                      .rbc-toolbar button:hover {
+                        background-color: #475569;
+                        color: white;
+                        transform: translateY(-1px);
+                      }
+                      
+                      .rbc-toolbar button.rbc-active {
+                        background-color: #3b82f6;
+                        color: white;
                       }
                     `}</style>
                     <BigCalendar

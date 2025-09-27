@@ -53,22 +53,22 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
       id: 'today',
       title: 'اليوم',
       icon: Calendar,
-      color: 'text-primary dark:text-primary-foreground',
-      bgColor: 'bg-primary/10 dark:bg-primary/20'
+      color: 'text-primary dark:text-blue-400',
+      bgColor: 'bg-primary/10 dark:bg-blue-500/20'
     },
     {
       id: 'statistics',
       title: 'إحصائيات',
       icon: BarChart3,
-      color: 'text-accent dark:text-accent-foreground',
-      bgColor: 'bg-accent/10 dark:bg-accent/20'
+      color: 'text-accent dark:text-green-400',
+      bgColor: 'bg-accent/10 dark:bg-green-500/20'
     },
     {
       id: 'alerts',
       title: 'تنبيهات',
       icon: Bell,
-      color: 'text-destructive dark:text-destructive-foreground',
-      bgColor: 'bg-destructive/10 dark:bg-destructive/20'
+      color: 'text-destructive dark:text-red-400',
+      bgColor: 'bg-destructive/10 dark:bg-red-500/20'
     }
   ], [])
 
@@ -159,7 +159,7 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
       case 'today':
         return (
           <div className={`h-full transition-all duration-300 ease-out ${isTransitioning ? 'opacity-0 transform translate-x-4' : 'opacity-100 transform translate-x-0'}`}>
-            <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary dark:border-blue-400"></div></div>}>
               <QuickAccessDashboard
                 onNavigateToPatients={onNavigateToPatients}
                 onNavigateToAppointments={onNavigateToAppointments}
@@ -175,7 +175,7 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
       case 'statistics':
         return (
           <div className={`h-full transition-all duration-300 ease-out ${isTransitioning ? 'opacity-0 transform scale-95' : 'opacity-100 transform scale-100'}`}>
-            <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent dark:border-green-400"></div></div>}>
               <DashboardAnalytics />
             </Suspense>
           </div>
@@ -183,7 +183,7 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
       case 'alerts':
         return (
           <div className={`h-full transition-all duration-300 ease-out ${isTransitioning ? 'opacity-0 transform translate-y-4' : 'opacity-100 transform translate-y-0'}`}>
-            <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-destructive"></div></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-destructive dark:border-red-400"></div></div>}>
               <SmartAlerts
                 maxVisible={25}
                 showHeader={true}
@@ -203,7 +203,7 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
   return (
     <div
       ref={containerRef}
-      className="h-full flex flex-col bg-card rounded-xl shadow-xl dark:shadow-2xl overflow-hidden backdrop-blur-sm flex-1 min-h-0 performance-optimized tab-content-performance active gpu-accelerated"
+      className="h-full flex flex-col bg-card dark:bg-gray-700 rounded-xl shadow-xl dark:shadow-2xl overflow-hidden backdrop-blur-sm flex-1 min-h-0 performance-optimized tab-content-performance active gpu-accelerated"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
@@ -217,19 +217,19 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
       }}
     >
       {/* Enhanced Tab Navigation Header */}
-      <div ref={headerRef} className="bg-card-enhanced p-4 md:p-5 lg:p-6 border-b border-border backdrop-blur-sm hover:bg-muted/30 transition-colors duration-200" style={{ userSelect: 'none' }}>
-        <div className="flex items-center justify-between mb-3 md:mb-4">
-          <div className="flex items-center gap-3 md:gap-4">
+      <div ref={headerRef} className="bg-card-enhanced dark:bg-gray-700 p-6 md:p-8 lg:p-10 border-b border-border dark:border-gray-600 backdrop-blur-sm hover:bg-muted/30 dark:hover:bg-gray-600/30 transition-colors duration-200" style={{ userSelect: 'none' }}>
+        <div className="flex items-center justify-between mb-4 md:mb-6">
+          <div className="flex items-center gap-4 md:gap-6">
             {activeTabData && (
               <div className={`p-2 md:p-3 rounded-lg md:rounded-xl ${activeTabData.bgColor} shadow-sm`}>
                 <activeTabData.icon className={`w-5 h-5 md:w-6 md:h-6 ${activeTabData.color}`} />
               </div>
             )}
             <div className="space-y-1">
-              <h2 className="text-fluid-2xl font-bold text-foreground font-tajawal">
+              <h2 className="text-fluid-2xl font-bold text-foreground dark:text-white font-tajawal">
                 {activeTabData?.title}
               </h2>
-              <p className="text-fluid-sm text-muted-foreground">
+              <p className="text-fluid-sm text-muted-foreground dark:text-gray-300">
                 {activeTab === 'today' && 'الأنشطة والمواعيد اليومية'}
                 {activeTab === 'statistics' && 'تحليلات وإحصائيات شاملة'}
                 {activeTab === 'alerts' && 'التنبيهات والإشعارات المهمة'}
@@ -238,13 +238,13 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
           </div>
 
           {/* Enhanced Navigation Buttons */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <Button
               variant="outline"
               size="sm"
               onClick={() => navigateTab('prev')}
               disabled={isTransitioning}
-              className="nav-btn-interactive bg-background hover:bg-accent hover:border-primary/50 border-border shadow-sm backdrop-blur-sm"
+              className="nav-btn-interactive bg-background dark:bg-gray-800 hover:bg-accent dark:hover:bg-gray-700 hover:border-primary/50 dark:hover:border-blue-500/50 border-border dark:border-gray-600 shadow-sm backdrop-blur-sm"
               aria-label="التبويب السابق"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -254,7 +254,7 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
               size="sm"
               onClick={() => navigateTab('next')}
               disabled={isTransitioning}
-              className="nav-btn-interactive bg-background hover:bg-accent hover:border-primary/50 border-border shadow-sm backdrop-blur-sm"
+              className="nav-btn-interactive bg-background dark:bg-gray-800 hover:bg-accent dark:hover:bg-gray-700 hover:border-primary/50 dark:hover:border-blue-500/50 border-border dark:border-gray-600 shadow-sm backdrop-blur-sm"
               aria-label="التبويب التالي"
             >
               <ChevronRight className="w-4 h-4" />
@@ -263,7 +263,7 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
         </div>
 
         {/* Enhanced Tab Indicators */}
-        <div className="flex items-center justify-center gap-2 md:gap-3" role="tablist" aria-label="أشرطة التبويب">
+        <div className="flex items-center justify-center gap-3 md:gap-4" role="tablist" aria-label="أشرطة التبويب">
           {tabs.map((tab, index) => {
             const Icon = tab.icon
             const isActive = tab.id === activeTab
@@ -297,14 +297,14 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
                     handleTabChange(tab.id)
                   }
                 }}
-                className={`flex items-center gap-2 px-3 md:px-4 py-2 md:py-3 rounded-lg md:rounded-xl shadow-sm tab-interactive ${
+                className={`flex items-center gap-3 px-4 md:px-6 py-3 md:py-4 rounded-lg md:rounded-xl shadow-sm tab-interactive ${
                   isActive
-                    ? `bg-background shadow-md dark:shadow-lg ${tab.color} font-semibold ring-2 ring-offset-2 ring-current ring-opacity-20 active`
-                    : 'bg-muted hover:bg-accent hover:border-primary/30 text-foreground hover:shadow-md backdrop-blur-sm focus:bg-accent focus:border-primary/30'
+                    ? `bg-background dark:bg-gray-700 shadow-md dark:shadow-lg ${tab.color} font-semibold ring-2 ring-offset-2 ring-current ring-opacity-20 active`
+                    : 'bg-muted dark:bg-gray-600 hover:bg-accent dark:hover:bg-gray-500 hover:border-primary/30 dark:hover:border-blue-500/30 text-foreground dark:text-gray-300 hover:shadow-md backdrop-blur-sm focus:bg-accent dark:focus:bg-gray-500 focus:border-primary/30 dark:focus:border-blue-500/30'
                 }`}
               >
-                <Icon className={`w-4 h-4 md:w-5 md:h-5 ${isActive ? '' : 'text-muted-foreground'}`} aria-hidden="true" />
-                <span className={`text-fluid-sm ${isActive ? 'text-foreground' : 'text-foreground'}`}>{tab.title}</span>
+                <Icon className={`w-4 h-4 md:w-5 md:h-5 ${isActive ? '' : 'text-muted-foreground dark:text-gray-400'}`} aria-hidden="true" />
+                <span className={`text-fluid-sm ${isActive ? 'text-foreground dark:text-white' : 'text-foreground dark:text-gray-300'}`}>{tab.title}</span>
                 {isActive && (
                   <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-current rounded-full animate-pulse" aria-hidden="true" />
                 )}
@@ -324,10 +324,10 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
 
         {/* Loading overlay */}
         {isTransitioning && (
-          <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-10">
-            <div className="flex items-center gap-2 text-foreground">
+          <div className="absolute inset-0 bg-background/50 dark:bg-gray-900/50 flex items-center justify-center z-10">
+            <div className="flex items-center gap-2 text-foreground dark:text-white">
               <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              <span className="text-foreground">جاري التحميل...</span>
+              <span className="text-foreground dark:text-white">جاري التحميل...</span>
             </div>
           </div>
         )}

@@ -40,8 +40,8 @@ const LeftSidebarStatistics = memo(function LeftSidebarStatistics() {
       title: 'إجمالي المرضى',
       value: patients.length,
       icon: Users,
-      color: 'text-primary dark:text-primary-foreground',
-      bgColor: 'bg-primary/10 dark:bg-primary/20',
+      color: 'text-blue-600 dark:text-blue-400',
+      bgColor: 'bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-500/20 dark:to-blue-600/30',
       trend: '+2 هذا الأسبوع'
     },
 
@@ -49,8 +49,8 @@ const LeftSidebarStatistics = memo(function LeftSidebarStatistics() {
       title: 'التنبيهات العاجلة',
       value: urgentAlerts,
       icon: AlertTriangle,
-      color: 'text-destructive dark:text-destructive-foreground',
-      bgColor: 'bg-destructive/10 dark:bg-destructive/20',
+      color: 'text-rose-600 dark:text-rose-400',
+      bgColor: 'bg-gradient-to-br from-rose-100 to-red-200 dark:from-rose-500/20 dark:to-red-600/30',
       trend: urgentAlerts > 0 ? 'يتطلب اهتمام' : 'كل شيء على ما يرام'
     }
   ], [patients.length, pendingAmount, urgentAlerts, formatAmount])
@@ -75,7 +75,7 @@ const LeftSidebarStatistics = memo(function LeftSidebarStatistics() {
           {stats.map((stat, index) => {
             const Icon = stat.icon
             return (
-              <Card key={index} className="interactive-card relative overflow-hidden bg-card-enhanced border-border shadow-md dark:shadow-lg rtl backdrop-blur-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-200 ease-out cursor-pointer" role="article" aria-label={`إحصائية ${stat.title}`} data-testid="stat-card" tabIndex={0}>
+              <Card key={index} className="interactive-card relative overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 border-slate-200 dark:border-slate-700 shadow-md dark:shadow-lg rtl backdrop-blur-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-200 ease-out cursor-pointer" role="article" aria-label={`إحصائية ${stat.title}`} data-testid="stat-card" tabIndex={0}>
                 <CardContent className="p-4 md:p-5 lg:p-6">
                   <div className="flex items-center justify-between mb-3 md:mb-4 rtl:flex-row-reverse">
                     <div className={`p-2 md:p-3 rounded-lg md:rounded-xl ${stat.bgColor} shadow-sm touch-target-sm`} aria-hidden="true">
@@ -88,7 +88,7 @@ const LeftSidebarStatistics = memo(function LeftSidebarStatistics() {
                   </div>
 
                   <div className="space-y-1 md:space-y-2">
-                    <p className="text-fluid-sm font-medium text-foreground">
+                    <p className="text-fluid-sm font-medium text-slate-700 dark:text-slate-300">
                       {stat.title}
                     </p>
                     <p className={`text-fluid-2xl font-bold ${stat.color}`} aria-live="polite">
@@ -96,9 +96,9 @@ const LeftSidebarStatistics = memo(function LeftSidebarStatistics() {
                     </p>
                   </div>
 
-                  {/* Enhanced animated background effect for urgent alerts */}
+                  {/* Enhanced background effect for urgent alerts */}
                   {stat.title === 'التنبيهات العاجلة' && urgentAlerts > 0 && (
-                    <div className="absolute inset-0 bg-red-500/5 dark:bg-red-500/10 animate-pulse rounded-lg pointer-events-none transition-opacity duration-300 ease-in-out" aria-hidden="true" data-testid="urgent-alerts" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-rose-100/50 to-red-100/50 dark:from-rose-500/10 dark:to-red-500/10 rounded-lg pointer-events-none transition-opacity duration-300 ease-in-out" aria-hidden="true" data-testid="urgent-alerts" />
                   )}
                 </CardContent>
               </Card>

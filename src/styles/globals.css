@@ -156,36 +156,36 @@
     /* Primary colors - Balanced professional theme with better contrast */
     --primary-50: #0c1929;      /* Darkest blue - dark backgrounds */
     --primary-100: #1e293b;     /* Dark blue - secondary backgrounds */
-    --primary-500: #38bdf8;     /* Light blue - primary actions */
-    --primary-600: #0ea5e9;     /* Medium blue - hover states */
-    --primary-700: #0284c7;     /* Darker blue - active states */
+    --primary-500: #3b82f6;     /* Medium blue - primary actions (matching image) */
+    --primary-600: #2563eb;     /* Darker blue - hover states */
+    --primary-700: #1d4ed8;     /* Darkest blue - active states */
 
     /* Enhanced secondary colors for dark mode variety */
     --secondary-50: #052e16;    /* Dark green - success states */
     --secondary-100: #064e3b;   /* Dark green - success backgrounds */
-    --secondary-500: #22c55e;   /* Success green - success actions */
-    --secondary-600: #16a34a;   /* Darker green - success hover */
-    --secondary-700: #15803d;   /* Darkest green - success active */
+    --secondary-500: #16a34a;   /* Success green - success actions (matching image) */
+    --secondary-600: #15803d;   /* Darker green - success hover */
+    --secondary-700: #166534;   /* Darkest green - success active */
 
     /* Enhanced accent colors for dark mode variety */
     --accent-50: #451a03;       /* Dark amber - warning states */
     --accent-100: #78350f;      /* Dark amber - warning backgrounds */
-    --accent-500: #fbbf24;      /* Warning amber - warning actions */
-    --accent-600: #f59e0b;      /* Darker amber - warning hover */
-    --accent-700: #d97706;      /* Darkest amber - warning active */
+    --accent-500: #f59e0b;      /* Warning amber - warning actions */
+    --accent-600: #d97706;      /* Darker amber - warning hover */
+    --accent-700: #b45309;      /* Darkest amber - warning active */
 
-    /* Background colors - Dark theme for reduced eye strain */
-    --bg-primary: #0f172a;      /* Main background - dark blue-gray */
-    --bg-secondary: #1e293b;    /* Secondary background - darker */
-    --bg-tertiary: #334155;     /* Tertiary background - medium dark */
-    --bg-card: #1e293b;         /* Card backgrounds - dark */
-    --bg-hover: #334155;        /* Hover states - lighter dark */
+    /* Background colors - Dark theme matching the image */
+    --bg-primary: #0f0f0f;      /* Main background - very dark gray (matching image) */
+    --bg-secondary: #1a1a1a;    /* Secondary background - dark gray (matching image) */
+    --bg-tertiary: #1e1e1e;     /* Tertiary background - slightly lighter dark */
+    --bg-card: #1a1a1a;         /* Card backgrounds - dark gray (matching image) */
+    --bg-hover: #2a2a2a;        /* Hover states - lighter dark */
 
-    /* Text colors - Optimized for dark mode readability */
-    --text-primary: #ffffff;    /* Main text - pure white (20.58:1 contrast) */
-    --text-secondary: #e2e8f0;  /* Secondary text - light gray (16.47:1 contrast) */
-    --text-tertiary: #cbd5e1;   /* Tertiary text - medium gray (12.63:1 contrast) */
-    --text-muted: #94a3b8;      /* Muted text - darker gray (7.94:1 contrast) */
+    /* Text colors - Optimized for dark mode readability matching image */
+    --text-primary: #ffffff;    /* Main text - pure white (matching image) */
+    --text-secondary: #e5e5e5;  /* Secondary text - light gray (matching image) */
+    --text-tertiary: #d1d5db;   /* Tertiary text - medium light gray */
+    --text-muted: #9ca3af;      /* Muted text - darker gray */
 
     /* Border colors - Visible in dark mode */
     --border-light: #374151;    /* Light borders - more visible */
@@ -193,49 +193,49 @@
     --border-strong: #6b7280;   /* Strong borders - prominent */
 
     /* Enhanced Status colors - Better contrast and variety for dark mode */
-    --success: #22c55e;         /* Success - vibrant green with good contrast */
+    --success: #16a34a;         /* Success - dark green (matching image) */
     --success-bg: #064e3b;      /* Success background - darker green */
     --success-light: #14532d;   /* Light success background */
-    --warning: #fbbf24;         /* Warning - vibrant amber with good contrast */
+    --warning: #f59e0b;         /* Warning - amber with good contrast */
     --warning-bg: #78350f;      /* Warning background - darker amber */
     --warning-light: #451a03;   /* Light warning background */
-    --error: #ef4444;           /* Error - vibrant red with good contrast */
+    --error: #dc2626;           /* Error - dark red (matching image) */
     --error-bg: #7f1d1d;        /* Error background - darker red */
-    --error-light: #451a03;     /* Light error background */
-    --info: #3b82f6;            /* Info - vibrant blue with good contrast */
+    --error-light: #991b1b;     /* Light error background */
+    --info: #3b82f6;            /* Info - blue (matching image) */
     --info-bg: #1e3a8a;         /* Info background - darker blue */
     --info-light: #1e40af;      /* Light info background */
 
     /* Additional semantic colors for dark mode variety */
-    --neutral: #94a3b8;         /* Neutral gray for less important elements */
-    --neutral-bg: #1e293b;      /* Dark neutral background */
-    --neutral-light: #334155;   /* Darker neutral background */
+    --neutral: #9ca3af;         /* Neutral gray for less important elements */
+    --neutral-bg: #1a1a1a;      /* Dark neutral background (matching image) */
+    --neutral-light: #2a2a2a;   /* Lighter neutral background */
 
     /* Enhanced shadows for dark mode depth */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);  /* Light shadow - enhanced */
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4); /* Medium shadow */
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5); /* Large shadow */
 
-    /* Legacy variable mappings for compatibility */
-    --background: 201.3 96.3% 4%;
-    --foreground: 186.2 83.5% 92%;
-    --card: 201.3 96.3% 6%;
-    --card-foreground: 186.2 83.5% 92%;
-    --popover: 201.3 96.3% 6%;
-    --popover-foreground: 186.2 83.5% 92%;
-    --primary: 198.6 88.7% 55%;
-    --primary-foreground: 201.3 96.3% 4%;
-    --secondary: 200.4 98% 45%;
-    --secondary-foreground: 186.2 83.5% 92%;
-    --muted: 201.3 96.3% 12%;
-    --muted-foreground: 197.4 71.1% 70%;
-    --accent: 201.3 96.3% 15%;
-    --accent-foreground: 186.2 83.5% 92%;
-    --destructive: 0 62.8% 55%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 201.3 96.3% 18%;
-    --input: 201.3 96.3% 20%;
-    --ring: 198.6 88.7% 55%;
+    /* Legacy variable mappings for compatibility - Updated for image colors */
+    --background: 0 0% 6%;        /* Very dark gray matching image */
+    --foreground: 0 0% 100%;      /* Pure white text matching image */
+    --card: 0 0% 10%;             /* Dark card background matching image */
+    --card-foreground: 0 0% 100%; /* White text on cards */
+    --popover: 0 0% 10%;          /* Dark popover background */
+    --popover-foreground: 0 0% 100%; /* White text on popovers */
+    --primary: 217 91% 60%;       /* Blue matching image (#3b82f6) */
+    --primary-foreground: 0 0% 100%; /* White text on primary */
+    --secondary: 142 76% 36%;     /* Green matching image (#16a34a) */
+    --secondary-foreground: 0 0% 100%; /* White text on secondary */
+    --muted: 0 0% 15%;            /* Muted dark background */
+    --muted-foreground: 0 0% 90%; /* Light gray text */
+    --accent: 0 0% 20%;           /* Accent dark background */
+    --accent-foreground: 0 0% 100%; /* White text on accent */
+    --destructive: 0 84% 60%;     /* Red matching image (#dc2626) */
+    --destructive-foreground: 0 0% 100%; /* White text on destructive */
+    --border: 0 0% 25%;           /* Border color */
+    --input: 0 0% 20%;            /* Input background */
+    --ring: 217 91% 60%;          /* Ring color matching primary */
 
     /* Enhanced contrast colors for dark mode */
     --text-high-contrast: 0 0% 100%;      /* Pure white for maximum contrast */
@@ -308,11 +308,50 @@
   /* Ensure proper dark mode support for all elements */
   .dark body {
     @apply bg-background text-foreground;
+    background-color: #0f172a; /* Enhanced dark blue-gray for better eye comfort */
   }
 
   /* Ensure root element supports dark mode */
   html.dark {
     color-scheme: dark;
+  }
+
+  /* Enhanced Dashboard Card Styles */
+  .dashboard-card {
+    @apply bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 border-slate-200 dark:border-slate-700 shadow-md hover:shadow-lg transition-all duration-200;
+  }
+
+  .dashboard-card-blue {
+    @apply bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 border-blue-200 dark:border-blue-700 hover:from-blue-100 hover:to-blue-200 dark:hover:from-blue-800/40 dark:hover:to-blue-700/40;
+  }
+
+  .dashboard-card-green {
+    @apply bg-gradient-to-br from-emerald-50 to-green-100 dark:from-emerald-900/30 dark:to-green-800/30 border-emerald-200 dark:border-emerald-700 hover:from-emerald-100 hover:to-green-200 dark:hover:from-emerald-800/40 dark:hover:to-green-700/40;
+  }
+
+  .dashboard-card-amber {
+    @apply bg-gradient-to-br from-amber-50 to-yellow-100 dark:from-amber-900/30 dark:to-yellow-800/30 border-amber-200 dark:border-amber-700 hover:from-amber-100 hover:to-yellow-200 dark:hover:from-amber-800/40 dark:hover:to-yellow-700/40;
+  }
+
+  .dashboard-card-rose {
+    @apply bg-gradient-to-br from-rose-50 to-red-100 dark:from-rose-900/30 dark:to-red-800/30 border-rose-200 dark:border-rose-700 hover:from-rose-100 hover:to-red-200 dark:hover:from-rose-800/40 dark:hover:to-red-700/40;
+  }
+
+  /* Enhanced Button Styles */
+  .btn-primary-gradient {
+    @apply bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all duration-200;
+  }
+
+  .btn-outline-emerald {
+    @apply border-emerald-300 dark:border-emerald-600 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:border-emerald-400 dark:hover:border-emerald-500;
+  }
+
+  .btn-outline-amber {
+    @apply border-amber-300 dark:border-amber-600 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:border-amber-400 dark:hover:border-amber-500;
+  }
+
+  .btn-outline-purple {
+    @apply border-purple-300 dark:border-purple-600 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-400 dark:hover:border-purple-500;
   }
 
   html:not(.dark) {
@@ -1349,31 +1388,302 @@
     border-color: var(--info);
   }
 
-  /* Calendar specific dark mode styles */
+  /* Enhanced Calendar Styling - Dark Mode */
   .dark .rbc-calendar {
-    @apply bg-background text-foreground;
+    @apply bg-slate-900 text-slate-100;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
   }
 
   .dark .rbc-header {
-    @apply bg-muted text-muted-foreground border-border;
+    @apply bg-slate-800 text-slate-200 border-slate-700;
+    font-weight: 600;
+    padding: 12px 8px;
+    border-bottom: 2px solid hsl(var(--border));
   }
 
   .dark .rbc-month-view {
-    @apply bg-background border-border;
+    @apply bg-slate-900 border-slate-700;
   }
 
   .dark .rbc-day-bg {
-    @apply bg-background border-border;
+    @apply bg-slate-900 border-slate-700;
+    transition: background-color 0.2s ease;
+  }
+
+  .dark .rbc-day-bg:hover {
+    @apply bg-slate-800;
   }
 
   .dark .rbc-today {
-    @apply bg-accent;
+    @apply bg-blue-500/20 border-blue-400/30;
+    position: relative;
   }
 
-  /* Force theme changes for testing - removed to prevent circular dependencies */
+  .dark .rbc-today::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+    border-radius: 0 0 4px 4px;
+  }
 
+  .dark .rbc-off-range-bg {
+    @apply bg-slate-800/50;
+  }
+
+  .dark .rbc-date-cell {
+    @apply text-slate-300;
+    font-weight: 500;
+    padding: 8px 4px;
+  }
+
+  .dark .rbc-today .rbc-date-cell {
+    @apply text-blue-200 font-semibold;
+  }
+
+  /* Enhanced Event Styling */
   .dark .rbc-event {
-    @apply bg-primary text-primary-foreground;
+    @apply bg-gradient-to-r from-blue-500 to-blue-600 text-white;
+    border: none !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3) !important;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .dark .rbc-event:hover {
+    @apply from-blue-400 to-blue-500;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4) !important;
+    transform: translateY(-1px);
+  }
+
+  .dark .rbc-event-content {
+    padding: 4px 8px !important;
+    font-size: 0.875rem;
+    line-height: 1.25;
+  }
+
+  /* Event Status Colors */
+  .dark .rbc-event.status-scheduled {
+    @apply bg-gradient-to-r from-blue-500 to-blue-600;
+  }
+
+  .dark .rbc-event.status-completed {
+    @apply bg-gradient-to-r from-green-500 to-green-600;
+  }
+
+  .dark .rbc-event.status-cancelled {
+    @apply bg-gradient-to-r from-red-500 to-red-600;
+  }
+
+  .dark .rbc-event.status-no-show {
+    @apply bg-gradient-to-r from-gray-500 to-gray-600;
+  }
+
+  /* Calendar Grid Enhancements */
+  .dark .rbc-month-view .rbc-event {
+    margin: 2px 1px !important;
+    min-height: 20px;
+  }
+
+  .dark .rbc-agenda-view .rbc-event {
+    border-radius: 6px !important;
+    margin: 1px 0 !important;
+  }
+
+  /* Time Slots Styling */
+  .dark .rbc-time-view .rbc-header {
+    @apply bg-slate-800 text-slate-200 border-slate-700;
+    font-weight: 600;
+  }
+
+  .dark .rbc-time-view .rbc-time-gutter {
+    @apply bg-slate-800 border-slate-700;
+  }
+
+  .dark .rbc-time-view .rbc-timeslot-group {
+    @apply border-slate-700;
+  }
+
+  .dark .rbc-time-view .rbc-time-content {
+    @apply border-slate-700;
+  }
+
+  /* Selected Date Highlighting */
+  .dark .rbc-selected {
+    @apply bg-blue-500/30;
+  }
+
+  /* Calendar Navigation Buttons */
+  .dark .rbc-toolbar button {
+    @apply bg-slate-700 text-slate-200 border-slate-600;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .dark .rbc-toolbar button:hover {
+    @apply bg-slate-600 text-white;
+    transform: translateY(-1px);
+  }
+
+  .dark .rbc-toolbar button.rbc-active {
+    @apply bg-blue-500 text-white;
+  }
+
+  /* Light Mode Calendar Styling */
+  .rbc-calendar {
+    @apply bg-white text-slate-800;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+
+  .rbc-header {
+    @apply bg-slate-50 text-slate-700 border-slate-200;
+    font-weight: 600;
+    padding: 12px 8px;
+    border-bottom: 2px solid #e2e8f0;
+  }
+
+  .rbc-month-view {
+    @apply bg-white border-slate-200;
+  }
+
+  .rbc-day-bg {
+    @apply bg-white border-slate-200;
+    transition: background-color 0.2s ease;
+  }
+
+  .rbc-day-bg:hover {
+    @apply bg-slate-50;
+  }
+
+  .rbc-today {
+    @apply bg-blue-50 border-blue-200;
+    position: relative;
+  }
+
+  .rbc-today::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+    border-radius: 0 0 4px 4px;
+  }
+
+  .rbc-off-range-bg {
+    @apply bg-slate-50;
+  }
+
+  .rbc-date-cell {
+    @apply text-slate-600;
+    font-weight: 500;
+    padding: 8px 4px;
+  }
+
+  .rbc-today .rbc-date-cell {
+    @apply text-blue-700 font-semibold;
+  }
+
+  /* Light Mode Event Styling */
+  .rbc-event {
+    @apply bg-gradient-to-r from-blue-500 to-blue-600 text-white;
+    border: none !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2) !important;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .rbc-event:hover {
+    @apply from-blue-400 to-blue-500;
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3) !important;
+    transform: translateY(-1px);
+  }
+
+  .rbc-event-content {
+    padding: 4px 8px !important;
+    font-size: 0.875rem;
+    line-height: 1.25;
+  }
+
+  /* Light Mode Event Status Colors */
+  .rbc-event.status-scheduled {
+    @apply bg-gradient-to-r from-blue-500 to-blue-600;
+  }
+
+  .rbc-event.status-completed {
+    @apply bg-gradient-to-r from-green-500 to-green-600;
+  }
+
+  .rbc-event.status-cancelled {
+    @apply bg-gradient-to-r from-red-500 to-red-600;
+  }
+
+  .rbc-event.status-no-show {
+    @apply bg-gradient-to-r from-gray-500 to-gray-600;
+  }
+
+  /* Light Mode Calendar Grid Enhancements */
+  .rbc-month-view .rbc-event {
+    margin: 2px 1px !important;
+    min-height: 20px;
+  }
+
+  .rbc-agenda-view .rbc-event {
+    border-radius: 6px !important;
+    margin: 1px 0 !important;
+  }
+
+  /* Light Mode Time Slots Styling */
+  .rbc-time-view .rbc-header {
+    @apply bg-slate-50 text-slate-700 border-slate-200;
+    font-weight: 600;
+  }
+
+  .rbc-time-view .rbc-time-gutter {
+    @apply bg-slate-50 border-slate-200;
+  }
+
+  .rbc-time-view .rbc-timeslot-group {
+    @apply border-slate-200;
+  }
+
+  .rbc-time-view .rbc-time-content {
+    @apply border-slate-200;
+  }
+
+  /* Light Mode Selected Date Highlighting */
+  .rbc-selected {
+    @apply bg-blue-100;
+  }
+
+  /* Light Mode Calendar Navigation Buttons */
+  .rbc-toolbar button {
+    @apply bg-slate-100 text-slate-700 border-slate-300;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .rbc-toolbar button:hover {
+    @apply bg-slate-200 text-slate-800;
+    transform: translateY(-1px);
+  }
+
+  .rbc-toolbar button.rbc-active {
+    @apply bg-blue-500 text-white;
   }
 
   /* Enhanced Medical Notification System */
@@ -2600,8 +2910,8 @@
 
   .dark .card-green {
     background: linear-gradient(135deg, #052e16 0%, #14532d 50%, #166534 100%);
-    border-color: #22c55e;
-    box-shadow: 0 1px 3px rgba(34, 197, 94, 0.2);
+    border-color: #16a34a; /* Updated to match image green */
+    box-shadow: 0 1px 3px rgba(22, 163, 74, 0.2);
   }
 
   .card-blue {
@@ -2612,7 +2922,7 @@
 
   .dark .card-blue {
     background: linear-gradient(135deg, #172554 0%, #1e3a8a 50%, #1d4ed8 100%);
-    border-color: #3b82f6;
+    border-color: #3b82f6; /* Updated to match image blue */
     box-shadow: 0 1px 3px rgba(59, 130, 246, 0.2);
   }
 
@@ -2714,8 +3024,8 @@
 
   .dark .card-red {
     background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 50%, #dc2626 100%);
-    border-color: #ef4444;
-    box-shadow: 0 1px 3px rgba(239, 68, 68, 0.2);
+    border-color: #dc2626; /* Updated to match image red */
+    box-shadow: 0 1px 3px rgba(220, 38, 38, 0.2);
   }
 
   .card-indigo {

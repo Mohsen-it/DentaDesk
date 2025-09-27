@@ -95,8 +95,8 @@
     "vite": "^4.5.0"
   },
   "build": {
-    "appId": "com.agorracode.dentalclinic",
-    "productName": "DentalClinic - agorracode",
+    "appId": "com.ORalSoft",
+    "productName": "ORalSoft",
     "directories": {
       "output": "dist-electron"
     },
@@ -130,6 +130,7 @@
       "icon": "assets/icon.ico",
       "requestedExecutionLevel": "asInvoker",
       "forceCodeSigning": false
+      
     },
     "nsis": {
       "oneClick": false,
@@ -141,18 +142,18 @@
       "installerHeaderIcon": "assets/icon.ico",
       "createDesktopShortcut": "always",
       "createStartMenuShortcut": true,
-      "shortcutName": "DentalClinic - agorracode",
+      "shortcutName": "ORalSoft",
       "language": "1033",
       "displayLanguageSelector": false,
       "multiLanguageInstaller": false,
       "license": "installer/license-en.txt",
-      "artifactName": "DentalClinic-agorracode-v${version}-Setup.${ext}",
+      "artifactName": "ORalSoft-v${version}-Setup.${ext}",
       "deleteAppDataOnUninstall": false,
       "runAfterFinish": true,
       "menuCategory": "Healthcare",
       "warningsAsErrors": false,
       "unicode": true,
-      "guid": "dentalclinic-agorracode-v2.1"
+      "guid": "ORalSoft-v1.0"
     },
     "mac": {
       "target": "dmg",

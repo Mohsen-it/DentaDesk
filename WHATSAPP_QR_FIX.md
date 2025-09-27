@@ -3,7 +3,7 @@
 ## المشكلة
 بعد تصدير التطبيق كـ exe، لا يعمل توليد QR code للواتساب ويظهر الخطأ:
 ```
-Failed to launch the browser process! spawn D:\Healthcare\DentalClinic - agorracode\resources\app.asar\node_modules\puppeteer-core\.local-chromium\win64-1045629\chrome-win\chrome.exe ENOENT
+Failed to launch the browser process! spawn D:\Healthcare\ORalSoft\resources\app.asar\node_modules\puppeteer-core\.local-chromium\win64-1045629\chrome-win\chrome.exe ENOENT
 ```
 
 ## السبب

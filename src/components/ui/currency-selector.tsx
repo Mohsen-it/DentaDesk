@@ -51,11 +51,11 @@ export function CurrencySelector({
             <DropdownMenuItem
               key={code}
               onClick={() => handleCurrencyChange(code)}
-              className={`cursor-pointer ${currentCurrency === code ? 'bg-accent' : ''}`}
+              className={`cursor-pointer ${currentCurrency === code ? 'bg-accent dark:bg-gray-700' : ''}`}
             >
               <div className="flex items-center justify-between w-full">
                 <span className="text-sm">{config.nameAr}</span>
-                <span className="text-xs text-muted-foreground">{config.symbol}</span>
+                <span className="text-xs text-muted-foreground dark:text-gray-400">{config.symbol}</span>
               </div>
             </DropdownMenuItem>
           ))}
@@ -82,19 +82,19 @@ export function CurrencySelector({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
-        <div className="p-2 text-xs text-muted-foreground border-b">
+        <div className="p-2 text-xs text-muted-foreground border-b dark:text-gray-300 dark:border-gray-700">
           اختر العملة المستخدمة
         </div>
         {Object.entries(supportedCurrencies).map(([code, config]) => (
           <DropdownMenuItem
             key={code}
             onClick={() => handleCurrencyChange(code)}
-            className={`cursor-pointer p-3 ${currentCurrency === code ? 'bg-accent' : ''}`}
+            className={`cursor-pointer p-3 ${currentCurrency === code ? 'bg-accent dark:bg-gray-700' : ''}`}
           >
             <div className="flex items-center justify-between w-full">
               <div className="flex flex-col">
                 <span className="font-medium">{config.nameAr}</span>
-                <span className="text-xs text-muted-foreground">{config.name}</span>
+                <span className="text-xs text-muted-foreground dark:text-gray-400">{config.name}</span>
               </div>
               <span className="font-mono text-sm">{config.symbol}</span>
             </div>

@@ -95,9 +95,9 @@ export default function QuickAccessDashboard({
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 lg:gap-6">
         {[...Array(4)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
+          <Card key={i} className="animate-pulse dark:bg-gray-800">
             <CardContent className="p-4 md:p-5 lg:p-6">
-              <div className="h-16 md:h-20 lg:h-24 bg-muted rounded"></div>
+              <div className="h-16 md:h-20 lg:h-24 bg-muted dark:bg-gray-700 rounded"></div>
             </CardContent>
           </Card>
         ))}
@@ -107,12 +107,12 @@ export default function QuickAccessDashboard({
 
   if (!quickAccessData) {
     return (
-      <Card className="bg-card border-border">
+      <Card className="bg-card border-border dark:bg-gray-800 dark:border-gray-700">
         <CardContent className="p-4 md:p-5 lg:p-6">
-          <div className="text-center py-8 md:py-12 text-muted-foreground">
+          <div className="text-center py-8 md:py-12 text-muted-foreground dark:text-gray-300">
             <AlertTriangle className="w-8 h-8 md:w-12 md:h-12 mx-auto mb-2 md:mb-4 opacity-50" />
             <p className="text-sm md:text-base font-tajawal mb-4">فشل في تحميل بيانات الوصول السريع</p>
-            <Button variant="outline" size="sm" className="mt-2 hover:bg-destructive/10 hover:text-destructive transition-all duration-200" onClick={handleRefresh} aria-label="إعادة تحميل البيانات">
+            <Button variant="outline" size="sm" className="mt-2 hover:bg-destructive/10 hover:text-destructive dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 transition-all duration-200" onClick={handleRefresh} aria-label="إعادة تحميل البيانات">
               <RefreshCw className="w-4 h-4 mr-2" />
               إعادة المحاولة
             </Button>
@@ -123,67 +123,67 @@ export default function QuickAccessDashboard({
   }
 
   return (
-    <div className="space-y-4 md:space-y-5 lg:space-y-6 animate-fade-in" dir="rtl">
+    <div className="space-y-6 md:space-y-8 lg:space-y-10 animate-fade-in mt-4 mr-4 ml-4" dir="rtl">
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 lg:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
         {/* Total Patients */}
-        <Card className="hover:shadow-lg dark:hover:shadow-xl transition-all duration-200 cursor-pointer bg-card border-border" onClick={onNavigateToPatients} role="button" tabIndex={0} aria-label={`عرض مرضى جدد اليوم: ${quickAccessData.quickStats.totalPatients} مريض`}>
+        <Card className="hover:shadow-lg dark:hover:shadow-xl transition-all duration-200 cursor-pointer bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 border-slate-200 dark:border-slate-700 hover:from-blue-50 hover:to-blue-100 dark:hover:from-blue-900/30 dark:hover:to-blue-800/30" onClick={onNavigateToPatients} role="button" tabIndex={0} aria-label={`عرض مرضى جدد اليوم: ${quickAccessData.quickStats.totalPatients} مريض`}>
           <CardContent className="p-4 md:p-5 lg:p-6">
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <p className="text-xs md:text-sm font-medium text-muted-foreground font-tajawal">مرضى جدد اليوم</p>
-                <p className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground mt-1">{quickAccessData.quickStats.totalPatients}</p>
+                <p className="text-xs md:text-sm font-medium text-slate-600 dark:text-slate-300 font-tajawal">مرضى جدد اليوم</p>
+                <p className="text-xl md:text-2xl lg:text-3xl font-bold text-slate-800 dark:text-white mt-1">{quickAccessData.quickStats.totalPatients}</p>
               </div>
-              <div className="p-2 md:p-3 bg-primary/10 dark:bg-primary/20 rounded-lg ml-3 md:ml-4">
-                <Users className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+              <div className="p-2 md:p-3 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-500/20 dark:to-blue-600/30 rounded-lg ml-3 md:ml-4 shadow-sm">
+                <Users className="w-5 h-5 md:w-6 md:h-6 text-blue-600 dark:text-blue-400" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Today Appointments */}
-        <Card className="hover:shadow-lg dark:hover:shadow-xl transition-all duration-200 cursor-pointer bg-card border-border" onClick={onNavigateToAppointments} role="button" tabIndex={0} aria-label={`عرض مواعيد اليوم: ${quickAccessData.quickStats.todayAppointments} موعد`}>
+        <Card className="hover:shadow-lg dark:hover:shadow-xl transition-all duration-200 cursor-pointer bg-gradient-to-br from-emerald-50 to-green-100 dark:from-emerald-900/30 dark:to-green-800/30 border-emerald-200 dark:border-emerald-700 hover:from-emerald-100 hover:to-green-200 dark:hover:from-emerald-800/40 dark:hover:to-green-700/40" onClick={onNavigateToAppointments} role="button" tabIndex={0} aria-label={`عرض مواعيد اليوم: ${quickAccessData.quickStats.todayAppointments} موعد`}>
           <CardContent className="p-4 md:p-5 lg:p-6">
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <p className="text-xs md:text-sm font-medium text-muted-foreground font-tajawal">مواعيد اليوم</p>
-                <p className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground mt-1">{quickAccessData.quickStats.todayAppointments}</p>
+                <p className="text-xs md:text-sm font-medium text-emerald-700 dark:text-emerald-300 font-tajawal">مواعيد اليوم</p>
+                <p className="text-xl md:text-2xl lg:text-3xl font-bold text-emerald-800 dark:text-white mt-1">{quickAccessData.quickStats.todayAppointments}</p>
               </div>
-              <div className="p-2 md:p-3 bg-medical/10 dark:bg-medical/20 rounded-lg ml-3 md:ml-4">
-                <Calendar className="w-5 h-5 md:w-6 md:h-6 text-medical" />
+              <div className="p-2 md:p-3 bg-gradient-to-br from-emerald-100 to-green-200 dark:from-emerald-500/20 dark:to-green-600/30 rounded-lg ml-3 md:ml-4 shadow-sm">
+                <Calendar className="w-5 h-5 md:w-6 md:h-6 text-emerald-600 dark:text-emerald-400" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Pending Payments */}
-        <Card className="hover:shadow-lg dark:hover:shadow-xl transition-all duration-200 cursor-pointer bg-card border-border" onClick={onNavigateToPayments} role="button" tabIndex={0} aria-label={`عرض دفعات اليوم: ${quickAccessData.quickStats.pendingPayments} دفعة`}>
+        <Card className="hover:shadow-lg dark:hover:shadow-xl transition-all duration-200 cursor-pointer bg-gradient-to-br from-amber-50 to-yellow-100 dark:from-amber-900/30 dark:to-yellow-800/30 border-amber-200 dark:border-amber-700 hover:from-amber-100 hover:to-yellow-200 dark:hover:from-amber-800/40 dark:hover:to-yellow-700/40" onClick={onNavigateToPayments} role="button" tabIndex={0} aria-label={`عرض دفعات اليوم: ${quickAccessData.quickStats.pendingPayments} دفعة`}>
           <CardContent className="p-4 md:p-5 lg:p-6">
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <p className="text-xs md:text-sm font-medium text-muted-foreground font-tajawal">دفعات اليوم</p>
-                <p className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground mt-1">{quickAccessData.quickStats.pendingPayments}</p>
+                <p className="text-xs md:text-sm font-medium text-amber-700 dark:text-amber-300 font-tajawal">دفعات اليوم</p>
+                <p className="text-xl md:text-2xl lg:text-3xl font-bold text-amber-800 dark:text-white mt-1">{quickAccessData.quickStats.pendingPayments}</p>
               </div>
-              <div className="p-2 md:p-3 bg-accent/10 dark:bg-accent/20 rounded-lg ml-3 md:ml-4">
-                <DollarSign className="w-5 h-5 md:w-6 md:h-6 text-accent" />
+              <div className="p-2 md:p-3 bg-gradient-to-br from-amber-100 to-yellow-200 dark:from-amber-500/20 dark:to-yellow-600/30 rounded-lg ml-3 md:ml-4 shadow-sm">
+                <DollarSign className="w-5 h-5 md:w-6 md:h-6 text-amber-600 dark:text-amber-400" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Urgent Alerts */}
-        <Card className="hover:shadow-lg dark:hover:shadow-xl transition-all duration-200 bg-card border-border" role="region" aria-label={`تنبيهات اليوم: ${quickAccessData.quickStats.urgentAlerts} تنبيه`}>
+        <Card className="hover:shadow-lg dark:hover:shadow-xl transition-all duration-200 bg-gradient-to-br from-rose-50 to-red-100 dark:from-rose-900/30 dark:to-red-800/30 border-rose-200 dark:border-rose-700 hover:from-rose-100 hover:to-red-200 dark:hover:from-rose-800/40 dark:hover:to-red-700/40" role="region" aria-label={`تنبيهات اليوم: ${quickAccessData.quickStats.urgentAlerts} تنبيه`}>
           <CardContent className="p-4 md:p-5 lg:p-6">
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <p className="text-xs md:text-sm font-medium text-muted-foreground font-tajawal">تنبيهات اليوم</p>
-                <p className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground mt-1">{quickAccessData.quickStats.urgentAlerts}</p>
+                <p className="text-xs md:text-sm font-medium text-rose-700 dark:text-rose-300 font-tajawal">تنبيهات اليوم</p>
+                <p className="text-xl md:text-2xl lg:text-3xl font-bold text-rose-800 dark:text-white mt-1">{quickAccessData.quickStats.urgentAlerts}</p>
                 {quickAccessData.quickStats.urgentAlerts > 0 && (
-                  <div className="absolute inset-0 bg-destructive/5 dark:bg-destructive/10 animate-pulse rounded-lg pointer-events-none" aria-hidden="true" />
+                  <div className="absolute inset-0 bg-black-900 rounded-lg pointer-events-none" aria-hidden="true" />
                 )}
               </div>
-              <div className="p-2 md:p-3 bg-destructive/10 dark:bg-destructive/20 rounded-lg ml-3 md:ml-4">
-                <AlertTriangle className="w-5 h-5 md:w-6 md:h-6 text-destructive" />
+              <div className="p-2 md:p-3 bg-gray-700 from-rose-100 to-red-200 dark:from-rose-500/20 dark:to-red-600/30 rounded-lg ml-3 md:ml-4 shadow-sm">
+                <AlertTriangle className="w-5 h-5 md:w-6 md:h-6 text-rose-600 dark:text-rose-400" />
               </div>
             </div>
           </CardContent>
@@ -191,28 +191,28 @@ export default function QuickAccessDashboard({
       </div>
 
       {/* Quick Actions - moved here from Analytics */}
-      <Card className="bg-card border-border hover:shadow-lg dark:hover:shadow-xl transition-all duration-200">
+      <Card className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 border-slate-200 dark:border-slate-700 hover:shadow-lg dark:hover:shadow-xl transition-all duration-200">
         <CardHeader className="p-4 md:p-5 lg:p-6">
-          <CardTitle className="flex items-center gap-2 font-tajawal text-lg md:text-xl lg:text-2xl">
-            <Plus className="w-5 h-5 md:w-6 md:h-6" />
+          <CardTitle className="flex items-center gap-2 font-tajawal text-lg md:text-xl lg:text-2xl text-slate-800 dark:text-white">
+            <Plus className="w-5 h-5 md:w-6 md:h-6 text-slate-600 dark:text-slate-300" />
             إجراءات سريعة
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Button onClick={onNavigateToPatients} className="h-12 justify-start transition-all duration-200" aria-label="الانتقال إلى إدارة المرضى">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Button onClick={onNavigateToPatients} className="h-12 justify-start transition-all duration-200 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md hover:shadow-lg" aria-label="الانتقال إلى إدارة المرضى">
               <Users className="w-4 h-4 mr-2" />
               إدارة المرضى
             </Button>
-            <Button onClick={onNavigateToAppointments} variant="outline" className="h-12 justify-start transition-all duration-200" aria-label="الانتقال إلى إدارة المواعيد">
+            <Button onClick={onNavigateToAppointments} variant="outline" className="h-12 justify-start transition-all duration-200 border-emerald-300 dark:border-emerald-600 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:border-emerald-400 dark:hover:border-emerald-500" aria-label="الانتقال إلى إدارة المواعيد">
               <Calendar className="w-4 h-4 mr-2" />
               إدارة المواعيد
             </Button>
-            <Button onClick={onNavigateToPayments} variant="outline" className="h-12 justify-start transition-all duration-200" aria-label="الانتقال إلى إدارة المدفوعات">
+            <Button onClick={onNavigateToPayments} variant="outline" className="h-12 justify-start transition-all duration-200 border-amber-300 dark:border-amber-600 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:border-amber-400 dark:hover:border-amber-500" aria-label="الانتقال إلى إدارة المدفوعات">
               <DollarSign className="w-4 h-4 mr-2" />
               إدارة المدفوعات
             </Button>
-            <Button onClick={onNavigateToTreatments} variant="outline" className="h-12 justify-start transition-all duration-200" aria-label="الانتقال إلى إدارة العلاجات">
+            <Button onClick={onNavigateToTreatments} variant="outline" className="h-12 justify-start transition-all duration-200 border-purple-300 dark:border-purple-600 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-400 dark:hover:border-purple-500" aria-label="الانتقال إلى إدارة العلاجات">
               <Activity className="w-4 h-4 mr-2" />
               إدارة العلاجات
             </Button>
@@ -283,20 +283,20 @@ export default function QuickAccessDashboard({
         </CardContent>
       </Card> */}
 
-      <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4 md:gap-5 lg:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
         {/* Recent Patients */}
-        <Card className="bg-card border-border hover:shadow-lg dark:hover:shadow-xl transition-all duration-200">
+        <Card className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 border-slate-200 dark:border-slate-700 hover:shadow-lg dark:hover:shadow-xl transition-all duration-200">
           <CardHeader className="p-4 md:p-5 lg:p-6">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 font-tajawal text-lg md:text-xl lg:text-2xl">
-                <Users className="w-5 h-5 md:w-6 md:h-6" />
+              <CardTitle className="flex items-center gap-2 font-tajawal text-lg md:text-xl lg:text-2xl text-slate-800 dark:text-white">
+                <Users className="w-5 h-5 md:w-6 md:h-6 text-slate-600 dark:text-slate-300" />
                 المرضى الأخيرون
               </CardTitle>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleNavigateToPatients}
-                className="hover:bg-primary/10 hover:text-primary transition-all duration-200 text-sm md:text-base"
+                className="hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 text-sm md:text-base text-slate-600 dark:text-slate-300"
                 aria-label="عرض جميع المرضى"
               >
                 <Eye className="w-4 h-4 mr-1 md:mr-2" />
@@ -341,18 +341,18 @@ export default function QuickAccessDashboard({
         </Card>
 
         {/* Today's Appointments */}
-        <Card className="bg-card border-border hover:shadow-lg dark:hover:shadow-xl transition-all duration-200">
+        <Card className="bg-gradient-to-br from-emerald-50 to-green-100 dark:from-emerald-900/30 dark:to-green-800/30 border-emerald-200 dark:border-emerald-700 hover:shadow-lg dark:hover:shadow-xl transition-all duration-200">
           <CardHeader className="p-4 md:p-5 lg:p-6">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 font-tajawal text-lg md:text-xl lg:text-2xl">
-                <Calendar className="w-5 h-5 md:w-6 md:h-6" />
+              <CardTitle className="flex items-center gap-2 font-tajawal text-lg md:text-xl lg:text-2xl text-emerald-800 dark:text-white">
+                <Calendar className="w-5 h-5 md:w-6 md:h-6 text-emerald-600 dark:text-emerald-400" />
                 مواعيد اليوم
               </CardTitle>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleNavigateToAppointments}
-                className="hover:bg-medical/10 hover:text-medical transition-all duration-200 text-sm md:text-base"
+                className="hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all duration-200 text-sm md:text-base text-emerald-700 dark:text-emerald-300"
                 aria-label="عرض جميع مواعيد اليوم"
               >
                 <Eye className="w-4 h-4 mr-1 md:mr-2" />
@@ -397,7 +397,7 @@ export default function QuickAccessDashboard({
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4 md:gap-5 lg:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
         {/* Pending Payments */}
         <Card className="bg-card border-border hover:shadow-lg dark:hover:shadow-xl transition-all duration-200">
           <CardHeader className="p-4 md:p-5 lg:p-6">

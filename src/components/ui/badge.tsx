@@ -9,11 +9,11 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default:
-          "border-transparent bg-primary text-primary-foreground shadow hover:bg-primary/80 dark:shadow-lg dark:shadow-primary/20",
+          "border-transparent bg-primary text-primary-foreground shadow hover:bg-primary/80 dark:bg-blue-600 dark:hover:bg-blue-700 dark:shadow-lg dark:shadow-blue-600/20",
         secondary:
-          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 dark:shadow-lg dark:shadow-secondary/20",
+          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 dark:bg-green-600 dark:hover:bg-green-700 dark:shadow-lg dark:shadow-green-600/20",
         destructive:
-          "border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80 dark:shadow-lg dark:shadow-destructive/20",
+          "border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80 dark:bg-red-600 dark:hover:bg-red-700 dark:shadow-lg dark:shadow-red-600/20",
         success:
           "border-transparent bg-green-600 text-white shadow hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 dark:shadow-lg dark:shadow-green-700/20",
         warning:
@@ -21,9 +21,9 @@ const badgeVariants = cva(
         info:
           "border-transparent bg-blue-600 text-white shadow hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 dark:shadow-lg dark:shadow-blue-700/20",
         outline:
-          "text-foreground border-border hover:bg-accent hover:text-accent-foreground dark:border-border dark:hover:bg-accent/80",
+          "text-foreground border-border hover:bg-accent hover:text-accent-foreground dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:text-white",
         ghost:
-          "border-transparent hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/80",
+          "border-transparent hover:bg-accent hover:text-accent-foreground dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white",
       },
     },
     defaultVariants: {

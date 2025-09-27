@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -26,11 +26,11 @@ export function DatabaseDiagnostics() {
     setLoading(true)
     try {
       // Check if electronAPI is available
-      if (!window.electronAPI?.database?.getStatus) {
+      if (!(window as any).electronAPI?.database?.getStatus) {
         throw new Error('Database API not available')
       }
 
-      const result = await window.electronAPI.database.getStatus()
+      const result = await (window as any).electronAPI.database.getStatus()
       setStatus(result)
 
       // Log result for debugging
@@ -50,10 +50,6 @@ export function DatabaseDiagnostics() {
     checkDatabaseStatus()
   }, [])
 
-  const getStatusColor = () => {
-    if (!status) return 'gray'
-    return status.connected ? 'green' : 'red'
-  }
 
   const getStatusIcon = () => {
     if (!status) return <Database className="h-4 w-4" />
@@ -63,16 +59,17 @@ export function DatabaseDiagnostics() {
   }
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Database className="h-5 w-5" />
-          تشخيص قاعدة البيانات
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center justify-between">
-          <span>حالة الاتصال:</span>
+    <div className="w-full h-full flex flex-col">
+      <Card className="w-full h-full flex flex-col">
+        <CardHeader className="flex-shrink-0">
+          <CardTitle className="flex items-center gap-2">
+            <Database className="h-5 w-5" />
+            تشخيص قاعدة البيانات
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4 flex-1 flex flex-col overflow-auto">
+        <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+          <span className="font-medium">حالة الاتصال:</span>
           <div className="flex items-center gap-2">
             {getStatusIcon()}
             <Badge variant={status?.connected ? 'default' : 'destructive'}>
@@ -82,8 +79,8 @@ export function DatabaseDiagnostics() {
         </div>
 
         {status?.dbPath && (
-          <div className="flex items-center justify-between">
-            <span>مسار قاعدة البيانات:</span>
+          <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+            <span className="font-medium">مسار قاعدة البيانات:</span>
             <code className="text-sm bg-gray-500 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 rounded border dark:border-gray-600">
               {status.dbPath}
             </code>
@@ -91,15 +88,15 @@ export function DatabaseDiagnostics() {
         )}
 
         {status?.tablesCount !== undefined && (
-          <div className="flex items-center justify-between">
-            <span>عدد الجداول:</span>
+          <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+            <span className="font-medium">عدد الجداول:</span>
             <Badge variant="outline">{status.tablesCount}</Badge>
           </div>
         )}
 
         {status?.isOpen !== undefined && (
-          <div className="flex items-center justify-between">
-            <span>حالة قاعدة البيانات:</span>
+          <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+            <span className="font-medium">حالة قاعدة البيانات:</span>
             <Badge variant={status.isOpen ? 'default' : 'secondary'}>
               {status.isOpen ? 'مفتوحة' : 'مغلقة'}
             </Badge>
@@ -107,15 +104,15 @@ export function DatabaseDiagnostics() {
         )}
 
         {status?.fileSize && (
-          <div className="flex items-center justify-between">
-            <span>حجم الملف:</span>
+          <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+            <span className="font-medium">حجم الملف:</span>
             <Badge variant="outline">{status.fileSize}</Badge>
           </div>
         )}
 
         {status?.lastModified && (
-          <div className="flex items-center justify-between">
-            <span>آخر تعديل:</span>
+          <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+            <span className="font-medium">آخر تعديل:</span>
             <code className="text-xs bg-gray-500 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 rounded border dark:border-gray-600">
               {new Date(status.lastModified).toLocaleString('ar-EG')}
             </code>
@@ -123,9 +120,9 @@ export function DatabaseDiagnostics() {
         )}
 
         {status?.tableNames && status.tableNames.length > 0 && (
-          <div className="space-y-2">
+          <div className="space-y-2 flex-1 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
             <span className="font-medium">الجداول الموجودة:</span>
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
               {status.tableNames.map((tableName, index) => (
                 <Badge key={index} variant="secondary" className="text-xs">
                   {tableName}
@@ -150,24 +147,27 @@ export function DatabaseDiagnostics() {
           </div>
         )}
 
-        <Button 
-          onClick={checkDatabaseStatus} 
-          disabled={loading}
-          className="w-full"
-        >
-          {loading ? (
-            <>
-              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              جاري الفحص...
-            </>
-          ) : (
-            <>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              إعادة فحص
-            </>
-          )}
-        </Button>
+        <div className="flex-shrink-0 mt-auto">
+          <Button 
+            onClick={checkDatabaseStatus} 
+            disabled={loading}
+            className="w-full"
+          >
+            {loading ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                جاري الفحص...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                إعادة فحص
+              </>
+            )}
+          </Button>
+        </div>
       </CardContent>
     </Card>
+    </div>
   )
 }

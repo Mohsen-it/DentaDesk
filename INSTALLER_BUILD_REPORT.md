@@ -1,25 +1,25 @@
-# DentalClinic - agorracode v2.1 Professional Installer Build Report
+# ORalSoft v1.0 Professional Installer Build Report
 
 ## ✅ Build Status: SUCCESSFUL
 
-The professional installer for DentalClinic - agorracode v2.1 has been successfully created according to your specifications.
+The professional installer for ORalSoft v1.10 has been successfully created according to your specifications.
 
 ## 📦 Generated Files
 
 ### Main Installer
-- **File Name**: `DentalClinic-agorracode-v2.1.0-Setup.exe`
-- **Location**: `dist-electron/DentalClinic-agorracode-v2.1.0-Setup.exe`
+- **File Name**: `ORalSoft-v1.0-Setup.exe`
+- **Location**: `dist-electron/ORalSoft-v1.0-Setup.exe`
 - **Size**: Professional Windows installer with NSIS
 - **Architecture**: x64 (64-bit)
 
 ### Additional Files
 - **Blockmap**: `DentalClinic-agorracode-v2.1.0-Setup.exe.blockmap`
-- **Unpacked Application**: `dist-electron/win-unpacked/DentalClinic - agorracode.exe`
+- **Unpacked Application**: `dist-electron/win-unpacked/ORalSoft.exe`
 
 ## ✅ Implemented Requirements
 
 ### 1. Application Name & Version
-- ✅ **Application Name**: `DentalClinic - agorracode` (exactly as requested)
+- ✅ **Application Name**: `ORalSoft` (exactly as requested)
 - ✅ **Version**: `v2.1` (as specified)
 - ✅ **Publisher**: AgorraCode Team
 
@@ -35,16 +35,16 @@ The professional installer for DentalClinic - agorracode v2.1 has been successfu
 
 ### 4. Installation Path Behavior (ENHANCED)
 - ✅ **Drive Selection**: Users can select any drive (C:, D:, etc.)
-- ✅ **Automatic Folder Creation**: Installer automatically creates `DentalClinic - agorracode` folder
+- ✅ **Automatic Folder Creation**: Installer automatically creates `ORalSoft` folder
 - ✅ **Smart Path Handling**: If user selects only a drive, installer appends the application folder
 - ✅ **Install Button Always Enabled**: Install button is ALWAYS enabled regardless of selection
 - ✅ **Enhanced Directory Logic**: Improved handling of drive-only selections with better validation
 - ✅ **Automatic Directory Creation**: Creates installation directory automatically before installation
 
 ### 5. Shortcuts & Integration
-- ✅ **Desktop Shortcut**: Creates `DentalClinic - agorracode.lnk` on desktop
+- ✅ **Desktop Shortcut**: Creates `ORalSoft.lnk` on desktop
 - ✅ **Start Menu**: Creates Start Menu folder with application name
-- ✅ **Application Title**: Window title shows `DentalClinic - agorracode`
+- ✅ **Application Title**: Window title shows `ORalSoft`
 
 ### 6. Professional Installer Features
 - ✅ **NSIS Installer**: Professional Windows installer framework
@@ -56,13 +56,13 @@ The professional installer for DentalClinic - agorracode v2.1 has been successfu
 ## 🔧 Technical Configuration
 
 ### Package.json Updates
-- Updated `productName` to `DentalClinic - agorracode`
+- Updated `productName` to `ORalSoft`
 - Updated `artifactName` to include version format
 - Configured NSIS settings for English-only installation
 - Set proper GUID and application identifiers
 
 ### Electron Main Process
-- Updated window title to `DentalClinic - agorracode`
+- Updated window title to `ORalSoft`
 - Maintained all existing functionality
 
 ### Installer Scripts
@@ -77,7 +77,7 @@ When users run the installer:
 1. **Welcome Screen**: Shows in English with application name
 2. **License Agreement**: Displays English license terms
 3. **Installation Path**: 
-   - Default: `C:\Program Files\DentalClinic - agorracode`
+   - Default: `C:\Program Files\ORalSoft`
    - User can select any drive
    - Installer automatically appends folder name if needed
 4. **Installation**: Copies all application files
@@ -104,12 +104,12 @@ dist-electron/
 ├── DentalClinic-agorracode-v2.1.0-Setup.exe  (Main installer)
 ├── DentalClinic-agorracode-v2.1.0-Setup.exe.blockmap
 └── win-unpacked/
-    └── DentalClinic - agorracode.exe  (Application executable)
+    └── ORalSoft.exe  (Application executable)
 ```
 
 ## 🚀 Next Steps
 
-1. **Test the Installer**: Run `DentalClinic-agorracode-v2.1.0-Setup.exe` to verify all requirements
+1. **Test the Installer**: Run `ORalSoft-v1.0-Setup.exe` to verify all requirements
 2. **Distribution**: The installer is ready for distribution to end users
 3. **Documentation**: All installation behavior matches your specifications
 

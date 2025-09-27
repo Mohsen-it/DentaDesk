@@ -299,7 +299,7 @@ const SidebarTrigger = React.forwardRef<
       data-sidebar="trigger"
       variant="ghost"
       size="icon"
-      className={cn("h-7 w-7 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400 transition-colors", className)}
+      className={cn("h-7 w-7 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400 dark:text-gray-300 transition-colors", className)}
       onClick={handleClick}
       title={open ? "إغلاق السايدبار" : "فتح السايدبار"}
       {...props}

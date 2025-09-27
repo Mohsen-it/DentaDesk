@@ -11,6 +11,11 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* Dark mode body styling */
+.dark body {
+  background-color: #0f0f0f; /* Very dark gray matching image */
+}
+
 * {
   box-sizing: border-box;
 }
@@ -29,6 +34,19 @@ body {
 .bg-green-100 { background-color: #dcfce7; }
 .bg-red-100 { background-color: #fee2e2; }
 
+/* Dark mode utility classes matching image colors */
+.dark .bg-gray-50 { background-color: #0f0f0f; } /* Very dark gray */
+.dark .bg-white { background-color: #1a1a1a; } /* Dark gray for cards */
+.dark .bg-gray-100 { background-color: #1e1e1e; } /* Slightly lighter dark */
+.dark .bg-gray-600 { background-color: #4b5563; } /* Keep same */
+.dark .bg-gray-900 { background-color: #0f0f0f; } /* Very dark gray */
+.dark .bg-blue-100 { background-color: #1e3a8a; } /* Dark blue background */
+.dark .bg-blue-500 { background-color: #3b82f6; } /* Blue matching image */
+.dark .bg-blue-600 { background-color: #2563eb; } /* Darker blue */
+.dark .bg-blue-700 { background-color: #1d4ed8; } /* Darkest blue */
+.dark .bg-green-100 { background-color: #064e3b; } /* Dark green background */
+.dark .bg-red-100 { background-color: #7f1d1d; } /* Dark red background */
+
 .text-white { color: #ffffff; }
 .text-gray-600 { color: #4b5563; }
 .text-gray-900 { color: #111827; }
@@ -36,6 +54,15 @@ body {
 .text-blue-800 { color: #1e40af; }
 .text-green-800 { color: #166534; }
 .text-red-800 { color: #991b1b; }
+
+/* Dark mode text colors matching image */
+.dark .text-white { color: #ffffff; } /* Keep white */
+.dark .text-gray-600 { color: #9ca3af; } /* Light gray for secondary text */
+.dark .text-gray-900 { color: #ffffff; } /* White for primary text */
+.dark .text-blue-700 { color: #3b82f6; } /* Blue matching image */
+.dark .text-blue-800 { color: #2563eb; } /* Darker blue */
+.dark .text-green-800 { color: #16a34a; } /* Green matching image */
+.dark .text-red-800 { color: #dc2626; } /* Red matching image */
 
 .text-xs { font-size: 0.75rem; }
 .text-sm { font-size: 0.875rem; }
