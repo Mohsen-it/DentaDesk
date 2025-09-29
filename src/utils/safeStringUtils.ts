@@ -220,7 +220,7 @@ export const safeCurrencyString = (value: any, currency: string = 'SYP'): string
   const num = safeNumber(value)
   
   try {
-    return new Intl.NumberFormat('ar-SA', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency,
       minimumFractionDigits: 0,
@@ -235,6 +235,6 @@ export const safeCurrencyString = (value: any, currency: string = 'SYP'): string
       'SAR': 'ر.س'
     }
     const symbol = symbols[currency] || currency
-    return `${num.toLocaleString('ar-SA')} ${symbol}`
+    return `${num.toLocaleString('en-US')} ${symbol}`
   }
 }

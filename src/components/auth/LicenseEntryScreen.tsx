@@ -148,7 +148,7 @@ export default function LicenseEntryScreen({
                   تحتاج مساعدة في التفعيل؟
                 </h3>
                 <p className={`text-xs ${themeClasses.textSecondary} arabic-enhanced`}>
-                  فريق التطوير - AgorraCode
+                  فريق التطوير
                 </p>
               </div>
 
@@ -159,7 +159,7 @@ export default function LicenseEntryScreen({
                     <MessageCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
                   </div>
                   <div className="text-center sm:text-right">
-                    <p className={`text-xs font-medium ${themeClasses.textPrimary} arabic-enhanced`}>00963959669628</p>
+                    <p className={`text-xs font-medium ${themeClasses.textPrimary} arabic-enhanced`}>00963938352132</p>
                   </div>
                 </div>
 

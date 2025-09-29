@@ -53,22 +53,22 @@ function LayoutComponent({ children }: LayoutProps) {
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar with smooth gradients */}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 bg-card border-r transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
+          "fixed inset-y-0 left-0 z-50 w-64 bg-slate-800/90 dark:bg-slate-800/90 border-r border-slate-700 dark:border-slate-600 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 backdrop-blur-sm",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         <div className="flex flex-col h-full">
           {/* Logo and clinic name */}
-          <div className="flex items-center justify-between p-4 border-b">
+          <div className="flex items-center justify-between p-4 border-b border-slate-700 dark:border-slate-600">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <Stethoscope className="w-5 h-5 text-primary-foreground" />
+              <div className="w-8 h-8 bg-blue-600 dark:bg-blue-600 rounded-lg flex items-center justify-center">
+                <Stethoscope className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-lg font-semibold text-foreground">
+                <h1 className="text-lg font-semibold text-slate-100 dark:text-slate-100">
                   {clinicName}
                 </h1>
               </div>
@@ -76,7 +76,7 @@ function LayoutComponent({ children }: LayoutProps) {
             <Button
               variant="ghost"
               size="sm"
-              className="lg:hidden"
+              className="lg:hidden text-slate-300 dark:text-slate-300 hover:bg-slate-700 dark:hover:bg-slate-700"
               onClick={() => setSidebarOpen(false)}
             >
               <X className="w-5 h-5" />
@@ -94,8 +94,8 @@ function LayoutComponent({ children }: LayoutProps) {
                   className={cn(
                     "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
                     isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                      ? "bg-blue-600 dark:bg-blue-600 text-white shadow-lg"
+                      : "text-slate-300 dark:text-slate-300 hover:text-slate-100 dark:hover:text-slate-100 hover:bg-slate-700 dark:hover:bg-slate-700"
                   )}
                   onClick={() => setSidebarOpen(false)}
                 >
@@ -107,16 +107,16 @@ function LayoutComponent({ children }: LayoutProps) {
           </nav>
 
           {/* Footer */}
-          <div className="p-4 border-t">
+          <div className="p-4 border-t border-slate-700 dark:border-slate-600">
             <div className="flex items-center justify-between">
-              <div className="text-xs text-muted-foreground">
+              <div className="text-xs text-slate-400 dark:text-slate-400">
                 Version 1.0.0
               </div>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={toggleDarkMode}
-                className="w-8 h-8 p-0"
+                className="w-8 h-8 p-0 text-slate-300 dark:text-slate-300 hover:bg-slate-700 dark:hover:bg-slate-700"
               >
                 {isDarkMode ? (
                   <Sun className="w-4 h-4" />
@@ -131,32 +131,32 @@ function LayoutComponent({ children }: LayoutProps) {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top bar */}
-        <header className="bg-card border-b px-4 py-3 flex items-center justify-between lg:px-6">
+        {/* Top bar with smooth gradients */}
+        <header className="bg-slate-800/90 dark:bg-slate-800/90 border-b border-slate-700 dark:border-slate-600 px-4 py-3 flex items-center justify-between lg:px-6 backdrop-blur-sm">
           <div className="flex items-center">
             <Button
               variant="ghost"
               size="sm"
-              className="lg:hidden mr-2"
+              className="lg:hidden mr-2 text-slate-300 dark:text-slate-300 hover:bg-slate-700 dark:hover:bg-slate-700"
               onClick={() => setSidebarOpen(true)}
             >
               <Menu className="w-5 h-5" />
             </Button>
-            <h2 className="text-xl font-semibold text-foreground">
+            <h2 className="text-xl font-semibold text-slate-100 dark:text-slate-100">
               {navigation.find(item => item.href === location.pathname)?.name || 'Dashboard'}
             </h2>
           </div>
 
           <div className="flex items-center space-x-4">
             {/* Quick actions could go here */}
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm text-slate-300 dark:text-slate-300">
               {new Date().toLocaleDateString()}
             </div>
           </div>
         </header>
 
-        {/* Page content */}
-        <main className="flex-1 overflow-auto p-4 lg:p-6">
+        {/* Page content with smooth gradients */}
+        <main className="flex-1 overflow-auto p-4 lg:p-6 bg-slate-900 dark:bg-slate-900">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>

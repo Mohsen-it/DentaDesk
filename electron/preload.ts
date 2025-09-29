@@ -356,6 +356,7 @@ const electronAPI: ElectronAPI = {
     search: (query) => ipcRenderer.invoke('db:labOrders:search', query),
   },
 
+
   medications: {
     getAll: () => ipcRenderer.invoke('db:medications:getAll'),
     create: (medication) => ipcRenderer.invoke('db:medications:create', medication),

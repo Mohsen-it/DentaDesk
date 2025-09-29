@@ -288,8 +288,8 @@ export class ExternalEstimateService {
                       </div>
                     </td>
                     <td>${item.quantity}</td>
-                    <td>${item.unitPrice.toLocaleString('ar-EG')} ج.م</td>
-                    <td style="font-weight: 500;">${item.totalPrice.toLocaleString('ar-EG')} ج.م</td>
+                    <td>${item.unitPrice.toLocaleString('en-US')} ج.م</td>
+                    <td style="font-weight: 500;">${item.totalPrice.toLocaleString('en-US')} ج.م</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -301,23 +301,23 @@ export class ExternalEstimateService {
             <div style="max-width: 300px; margin-right: auto;">
               <div class="summary-row">
                 <span>المجموع الفرعي:</span>
-                <span>${estimateData.subtotal.toLocaleString('ar-EG')} ج.م</span>
+                <span>${estimateData.subtotal.toLocaleString('en-US')} ج.م</span>
               </div>
               ${estimateData.discount > 0 ? `
               <div class="summary-row" style="color: #059669;">
                 <span>الخصم:</span>
-                <span>-${discountAmount.toLocaleString('ar-EG')} ج.م</span>
+                <span>-${discountAmount.toLocaleString('en-US')} ج.م</span>
               </div>
               ` : ''}
               ${estimateData.tax > 0 ? `
               <div class="summary-row">
                 <span>الضريبة (${estimateData.taxRate}%):</span>
-                <span>${estimateData.tax.toLocaleString('ar-EG')} ج.م</span>
+                <span>${estimateData.tax.toLocaleString('en-US')} ج.م</span>
               </div>
               ` : ''}
               <div class="summary-total summary-row">
                 <span>المجموع الكلي:</span>
-                <span>${estimateData.total.toLocaleString('ar-EG')} ج.م</span>
+                <span>${estimateData.total.toLocaleString('en-US')} ج.م</span>
               </div>
             </div>
           </div>

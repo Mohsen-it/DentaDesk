@@ -1010,24 +1010,24 @@ function AddPaymentDialogComponent({ open, onOpenChange, preSelectedPatientId }:
                 <CardContent className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">المبلغ الأساسي:</span>
-                    <span className="font-medium text-foreground">${(parseFloat(formData.amount) || 0).toFixed(2)}</span>
+                    <span className="font-medium text-foreground">{formatAmount(parseFloat(formData.amount) || 0)}</span>
                   </div>
                   {formData.tax_amount && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">الضريبة:</span>
-                      <span className="text-orange-600 dark:text-orange-400 font-medium">+${(parseFloat(formData.tax_amount) || 0).toFixed(2)}</span>
+                      <span className="text-orange-600 dark:text-orange-400 font-medium">+{formatAmount(parseFloat(formData.tax_amount) || 0)}</span>
                     </div>
                   )}
                   {formData.discount_amount && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">الخصم:</span>
-                      <span className="text-emerald-600 dark:text-emerald-400 font-medium">-${(parseFloat(formData.discount_amount) || 0).toFixed(2)}</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-medium">-{formatAmount(parseFloat(formData.discount_amount) || 0)}</span>
                     </div>
                   )}
                   <div className="flex justify-between font-medium border-t border-border pt-2">
                     <span className="text-foreground">إجمالي هذه الدفعة:</span>
                     <Badge variant="outline" className="text-base">
-                      ${calculateTotalAmount().toFixed(2)}
+                      {formatAmount(calculateTotalAmount())}
                     </Badge>
                   </div>
                 </CardContent>

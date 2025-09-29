@@ -1953,9 +1953,9 @@ export class PdfService {
             'SAR': 'ر.س'
           }
           const symbol = currencySymbols[clinic_info.currency as keyof typeof currencySymbols] || clinic_info.currency
-          return `${amount.toLocaleString('ar-SA')} ${symbol}`
+          return `${amount.toLocaleString('en-US')} ${symbol}`
         }
-        return `${amount.toLocaleString('ar-SA')} ل.س`
+        return `${amount.toLocaleString('en-US')} ل.س`
       } catch (error) {
         return `${amount} ل.س`
       }
@@ -2369,28 +2369,28 @@ export class PdfService {
             <div class="card-icon">👥</div>
             <div class="card-content">
               <h3>إجمالي المرضى</h3>
-              <div class="number">${data.totalPatients.toLocaleString()}</div>
+              <div class="number">${data.totalPatients.toLocaleString('en-US')}</div>
             </div>
           </div>
           <div class="summary-card success">
             <div class="card-icon">✨</div>
             <div class="card-content">
               <h3>المرضى الجدد</h3>
-              <div class="number">${(data.newPatients || 0).toLocaleString()}</div>
+              <div class="number">${(data.newPatients || 0).toLocaleString('en-US')}</div>
             </div>
           </div>
           <div class="summary-card info">
             <div class="card-icon">💚</div>
             <div class="card-content">
               <h3>المرضى النشطون</h3>
-              <div class="number">${data.activePatients.toLocaleString()}</div>
+              <div class="number">${data.activePatients.toLocaleString('en-US')}</div>
             </div>
           </div>
           <div class="summary-card warning">
             <div class="card-icon">⏸️</div>
             <div class="card-content">
               <h3>المرضى غير النشطين</h3>
-              <div class="number">${(data.totalPatients - data.activePatients).toLocaleString()}</div>
+              <div class="number">${(data.totalPatients - data.activePatients).toLocaleString('en-US')}</div>
             </div>
           </div>
         </div>
@@ -2438,7 +2438,7 @@ export class PdfService {
             </div>
             ${data.patientsList.length > 50 ? `
             <div class="pagination-info">
-              <p>عرض أول 50 مريض من إجمالي ${data.patientsList.length.toLocaleString()} مريض</p>
+              <p>عرض أول 50 مريض من إجمالي ${data.patientsList.length.toLocaleString('en-US')} مريض</p>
             </div>
             ` : ''}
           </div>
@@ -2469,7 +2469,7 @@ export class PdfService {
                     return `
                       <tr>
                         <td class="category-cell">${item.ageGroup}</td>
-                        <td class="number-cell">${item.count.toLocaleString()}</td>
+                        <td class="number-cell">${item.count.toLocaleString('en-US')}</td>
                         <td class="percentage-cell">${percentage}%</td>
                         <td class="chart-cell">
                           <div class="progress-bar">
@@ -2519,7 +2519,7 @@ export class PdfService {
                     return `
                       <tr>
                         <td class="category-cell">${genderIcon} ${item.gender}</td>
-                        <td class="number-cell">${item.count.toLocaleString()}</td>
+                        <td class="number-cell">${item.count.toLocaleString('en-US')}</td>
                         <td class="percentage-cell">${percentage}%</td>
                         <td class="chart-cell">
                           <div class="progress-bar">
@@ -2558,7 +2558,7 @@ export class PdfService {
                       <div class="analysis-stats">
                         <div class="stat">
                           <span class="stat-label">العدد:</span>
-                          <span class="stat-value" style="color: ${genderColor};">${item.count.toLocaleString()}</span>
+                          <span class="stat-value" style="color: ${genderColor};">${item.count.toLocaleString('en-US')}</span>
                         </div>
                         <div class="stat">
                           <span class="stat-label">النسبة:</span>
@@ -2566,7 +2566,7 @@ export class PdfService {
                         </div>
                         <div class="stat">
                           <span class="stat-label">من إجمالي:</span>
-                          <span class="stat-value">${data.totalPatients.toLocaleString()}</span>
+                          <span class="stat-value">${data.totalPatients.toLocaleString('en-US')}</span>
                         </div>
                       </div>
                     </div>
@@ -2601,7 +2601,7 @@ export class PdfService {
                     return `
                       <tr>
                         <td class="category-cell">${item.period}</td>
-                        <td class="number-cell">${item.count.toLocaleString()}</td>
+                        <td class="number-cell">${item.count.toLocaleString('en-US')}</td>
                         <td class="chart-cell">
                           <div class="progress-bar">
                             <div class="progress-fill trend" style="width: ${barWidth}%"></div>
@@ -2635,8 +2635,8 @@ export class PdfService {
             </div>
             <div class="footer-right">
               <div class="footer-stats">
-                <span class="stat-item">📊 ${data.totalPatients.toLocaleString()} مريض</span>
-                <span class="stat-item">✨ ${(data.newPatients || 0).toLocaleString()} جديد</span>
+                <span class="stat-item">📊 ${data.totalPatients.toLocaleString('en-US')} مريض</span>
+                <span class="stat-item">✨ ${(data.newPatients || 0).toLocaleString('en-US')} جديد</span>
               </div>
             </div>
           </div>
@@ -2881,19 +2881,19 @@ export class PdfService {
         <div class="summary-cards">
           <div class="summary-card">
             <h3>إجمالي الإيرادات</h3>
-            <div class="number">$${data.totalRevenue?.toLocaleString() || 0}</div>
+            <div class="number">$${data.totalRevenue?.toLocaleString('en-US') || 0}</div>
           </div>
           <div class="summary-card">
             <h3>المدفوعات المكتملة</h3>
-            <div class="number">$${data.totalRevenue?.toLocaleString() || 0}</div>
+            <div class="number">$${data.totalRevenue?.toLocaleString('en-US') || 0}</div>
           </div>
           <div class="summary-card">
             <h3>المدفوعات الآجلة</h3>
-            <div class="number">$${data.pendingPayments?.toLocaleString() || 0}</div>
+            <div class="number">$${data.pendingPayments?.toLocaleString('en-US') || 0}</div>
           </div>
           <div class="summary-card">
             <h3>المدفوعات المتأخرة</h3>
-            <div class="number">$${data.overduePayments?.toLocaleString() || 0}</div>
+            <div class="number">$${data.overduePayments?.toLocaleString('en-US') || 0}</div>
           </div>
         </div>
 
@@ -2911,7 +2911,7 @@ export class PdfService {
               ${data.paymentMethodStats?.map((item: any) => `
                 <tr>
                   <td>${this.translatePaymentMethod(item.method)}</td>
-                  <td>${item.amount?.toLocaleString() || 0} $</td>
+                  <td>${item.amount?.toLocaleString('en-US') || 0} $</td>
                   <td>${item.count || 0}</td>
                 </tr>
               `).join('') || '<tr><td colspan="3">لا توجد بيانات</td></tr>'}
@@ -2972,7 +2972,7 @@ export class PdfService {
           </div>
           <div class="summary-card">
             <h3>القيمة الإجمالية</h3>
-            <div class="number">${data.totalValue?.toLocaleString() || 0} $</div>
+            <div class="number">${data.totalValue?.toLocaleString('en-US') || 0} $</div>
           </div>
           <div class="summary-card">
             <h3>أصناف منخفضة المخزون</h3>
@@ -2999,7 +2999,7 @@ export class PdfService {
                 <tr>
                   <td>${item.category}</td>
                   <td>${item.count}</td>
-                  <td>${item.value?.toLocaleString() || 0} $</td>
+                  <td>${item.value?.toLocaleString('en-US') || 0} $</td>
                 </tr>
               `).join('') || '<tr><td colspan="3">لا توجد بيانات</td></tr>'}
             </tbody>
@@ -3096,13 +3096,13 @@ export class PdfService {
           </div>
           <div class="summary-group">
             <h3>الإيرادات</h3>
-            <div class="summary-item">إجمالي: ${financialData.totalRevenue?.toLocaleString() || 0} $</div>
-            <div class="summary-item">مكتملة: ${financialData.totalRevenue?.toLocaleString() || 0} $</div>
+            <div class="summary-item">إجمالي: ${financialData.totalRevenue?.toLocaleString('en-US') || 0} $</div>
+            <div class="summary-item">مكتملة: ${financialData.totalRevenue?.toLocaleString('en-US') || 0} $</div>
           </div>
           <div class="summary-group">
             <h3>المخزون</h3>
             <div class="summary-item">إجمالي الأصناف: ${inventoryData.totalItems}</div>
-            <div class="summary-item">القيمة: ${inventoryData.totalValue?.toLocaleString() || 0} $</div>
+            <div class="summary-item">القيمة: ${inventoryData.totalValue?.toLocaleString('en-US') || 0} $</div>
             <div class="summary-item">تنبيهات: ${(inventoryData.lowStockItems || 0) + (inventoryData.expiredItems || 0)}</div>
           </div>
         </div>
@@ -3137,7 +3137,7 @@ export class PdfService {
                     const config = getCurrencyConfig(getDefaultCurrency())
                     return formatCurrencyWithConfig((financialData.totalRevenue || 0) / patientData.totalPatients, config)
                   } catch (error) {
-                    return `$${((financialData.totalRevenue || 0) / patientData.totalPatients).toLocaleString()}`
+                    return `$${((financialData.totalRevenue || 0) / patientData.totalPatients).toLocaleString('en-US')}`
                   }
                 })()}</td>
               </tr>
@@ -3396,7 +3396,7 @@ export class PdfService {
       const htmlContent = this.createIndividualPatientRecordHTML(patientData, settings)
       // تنسيق اسم الملف: اسم المريض + التاريخ فقط
       const now = new Date()
-      const dateStr = now.toLocaleDateString('en-GB').replace(/\//g, '-') // DD-MM-YYYY
+      const dateStr = now.toLocaleDateString('en-US').replace(/\//g, '-') // DD-MM-YYYY
       const fileName = `${patientData.patient.full_name.replace(/\s+/g, '_')}_${dateStr}.pdf`
       await this.convertHTMLToPDF(htmlContent, fileName)
     } catch (error) {
@@ -3413,7 +3413,7 @@ export class PdfService {
       const htmlContent = this.createPatientPaymentsHTML(patientData, settings)
       // تنسيق اسم الملف: مدفوعات_اسم المريض + التاريخ
       const now = new Date()
-      const dateStr = now.toLocaleDateString('en-GB').replace(/\//g, '-') // DD-MM-YYYY
+      const dateStr = now.toLocaleDateString('en-US').replace(/\//g, '-') // DD-MM-YYYY
       const fileName = `مدفوعات_${patientData.patient.full_name.replace(/\s+/g, '_')}_${dateStr}.pdf`
       await this.convertHTMLToPDF(htmlContent, fileName)
     } catch (error) {
@@ -3430,7 +3430,7 @@ export class PdfService {
       const htmlContent = this.createPatientTreatmentsHTML(patientData, settings)
       // تنسيق اسم الملف: علاجات_اسم المريض + التاريخ
       const now = new Date()
-      const dateStr = now.toLocaleDateString('en-GB').replace(/\//g, '-') // DD-MM-YYYY
+      const dateStr = now.toLocaleDateString('en-US').replace(/\//g, '-') // DD-MM-YYYY
       const fileName = `علاجات_${patientData.patient.full_name.replace(/\s+/g, '_')}_${dateStr}.pdf`
       await this.convertHTMLToPDF(htmlContent, fileName)
     } catch (error) {
@@ -3447,7 +3447,7 @@ export class PdfService {
       const htmlContent = this.createPatientAppointmentsHTML(patientData, settings)
       // تنسيق اسم الملف: مواعيد_اسم المريض + التاريخ
       const now = new Date()
-      const dateStr = now.toLocaleDateString('en-GB').replace(/\//g, '-') // DD-MM-YYYY
+      const dateStr = now.toLocaleDateString('en-US').replace(/\//g, '-') // DD-MM-YYYY
       const fileName = `مواعيد_${patientData.patient.full_name.replace(/\s+/g, '_')}_${dateStr}.pdf`
       await this.convertHTMLToPDF(htmlContent, fileName)
     } catch (error) {
@@ -3464,7 +3464,7 @@ export class PdfService {
       const htmlContent = this.createPatientPrescriptionsHTML(patientData, settings)
       // تنسيق اسم الملف: وصفات_اسم المريض + التاريخ
       const now = new Date()
-      const dateStr = now.toLocaleDateString('en-GB').replace(/\//g, '-') // DD-MM-YYYY
+      const dateStr = now.toLocaleDateString('en-US').replace(/\//g, '-') // DD-MM-YYYY
       const fileName = `وصفات_${patientData.patient.full_name.replace(/\s+/g, '_')}_${dateStr}.pdf`
       await this.convertHTMLToPDF(htmlContent, fileName)
     } catch (error) {
@@ -3489,7 +3489,7 @@ export class PdfService {
     // تنسيق التواريخ بالميلادي
     const formatDate = (dateString: string) => {
       if (!dateString) return 'غير محدد'
-      return new Date(dateString).toLocaleDateString('en-GB', {
+      return new Date(dateString).toLocaleDateString('en-US', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit'
@@ -4577,7 +4577,7 @@ export class PdfService {
       const date = new Date(dateStr)
       if (isNaN(date.getTime())) return 'غير محدد'
       // Use Gregorian date format instead of Arabic
-      return date.toLocaleDateString('en-GB')
+      return date.toLocaleDateString('en-US')
     }
 
     return `
@@ -4929,7 +4929,7 @@ export class PdfService {
                     try {
                       const date = new Date(expense.payment_date)
                       // Use Gregorian date format instead of Arabic
-                      return date.toLocaleDateString('en-GB')
+                      return date.toLocaleDateString('en-US')
                     } catch {
                       return expense.payment_date
                     }
@@ -5002,9 +5002,9 @@ export class PdfService {
           'SAR': 'ر.س'
         }
         const symbol = currencySymbols[(clinic_info as any).currency] || (clinic_info as any).currency
-        return `${amount.toLocaleString('ar-SA')} ${symbol}`
+        return `${amount.toLocaleString('en-US')} ${symbol}`
       }
-      return `${amount.toLocaleString('ar-SA')} ل.س`
+      return `${amount.toLocaleString('en-US')} ل.س`
     }
 
     // دالة تنسيق التاريخ بالتقويم الميلادي
@@ -5264,9 +5264,9 @@ export class PdfService {
           'SAR': 'ر.س'
         }
         const symbol = currencySymbols[(clinic_info as any).currency] || (clinic_info as any).currency
-        return `${amount.toLocaleString('ar-SA')} ${symbol}`
+        return `${amount.toLocaleString('en-US')} ${symbol}`
       }
-      return `${amount.toLocaleString('ar-SA')} ل.س`
+      return `${amount.toLocaleString('en-US')} ل.س`
     }
 
     // دالة تنسيق التاريخ بالتقويم الميلادي

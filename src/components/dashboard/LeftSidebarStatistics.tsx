@@ -75,11 +75,11 @@ const LeftSidebarStatistics = memo(function LeftSidebarStatistics() {
           {stats.map((stat, index) => {
             const Icon = stat.icon
             return (
-              <Card key={index} className="interactive-card relative overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 border-slate-200 dark:border-slate-700 shadow-md dark:shadow-lg rtl backdrop-blur-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-200 ease-out cursor-pointer" role="article" aria-label={`إحصائية ${stat.title}`} data-testid="stat-card" tabIndex={0}>
+              <Card key={index} className="interactive-card relative overflow-hidden bg-card border-border shadow-md dark:shadow-lg rtl backdrop-blur-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-200 ease-out cursor-pointer" role="article" aria-label={`إحصائية ${stat.title}`} data-testid="stat-card" tabIndex={0}>
                 <CardContent className="p-4 md:p-5 lg:p-6">
                   <div className="flex items-center justify-between mb-3 md:mb-4 rtl:flex-row-reverse">
-                    <div className={`p-2 md:p-3 rounded-lg md:rounded-xl ${stat.bgColor} shadow-sm touch-target-sm`} aria-hidden="true">
-                      <Icon className={`w-6 h-6 md:w-7 md:h-7 lg:w-8 lg:h-8 ${stat.color}`} />
+                    <div className="p-2 md:p-3 rounded-lg md:rounded-xl bg-muted shadow-sm touch-target-sm" aria-hidden="true">
+                      <Icon className="w-6 h-6 md:w-7 md:h-7 lg:w-8 lg:h-8 text-muted-foreground" />
                     </div>
                     <Badge variant="secondary" className="text-fluid-xs px-2 py-1 rtl:flex-row-reverse shadow-sm touch-target-sm hover:scale-105 transition-transform duration-200 ease-out" aria-label={`اتجاه: ${stat.trend}`}>
                       <TrendingUp className="w-3 h-3 ml-1 rtl:mr-1 rtl:ml-0" aria-hidden="true" />
@@ -88,10 +88,10 @@ const LeftSidebarStatistics = memo(function LeftSidebarStatistics() {
                   </div>
 
                   <div className="space-y-1 md:space-y-2">
-                    <p className="text-fluid-sm font-medium text-slate-700 dark:text-slate-300">
+                    <p className="text-fluid-sm font-medium text-muted-foreground">
                       {stat.title}
                     </p>
-                    <p className={`text-fluid-2xl font-bold ${stat.color}`} aria-live="polite">
+                    <p className="text-fluid-2xl font-bold text-foreground" aria-live="polite">
                       {stat.value}
                     </p>
                   </div>

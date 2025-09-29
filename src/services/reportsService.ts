@@ -1006,7 +1006,7 @@ export class ReportsService {
     // Peak treatment days (simplified - by day of week)
     const peakTreatmentDays = this.groupBy(
       filteredTreatments.filter(t => t.created_at),
-      (t) => new Date(t.created_at).toLocaleDateString('ar', { weekday: 'long' })
+      (t) => new Date(t.created_at).toLocaleDateString('en-US', { weekday: 'long' })
     ).map(group => ({
       day: group.key || 'غير محدد',
       count: group.items.length

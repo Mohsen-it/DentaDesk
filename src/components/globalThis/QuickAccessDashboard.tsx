@@ -81,11 +81,11 @@ export default function QuickAccessDashboard({
 
   // Memoized format functions for performance
   const formatDate = useCallback((dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ar-EG')
+    return new Date(dateString).toLocaleDateString('en-US')
   }, [])
 
   const formatTime = useCallback((dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('ar-EG', {
+    return new Date(dateString).toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit'
     })
@@ -127,63 +127,63 @@ export default function QuickAccessDashboard({
       {/* Quick Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
         {/* Total Patients */}
-        <Card className="hover:shadow-lg dark:hover:shadow-xl transition-all duration-200 cursor-pointer bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 border-slate-200 dark:border-slate-700 hover:from-blue-50 hover:to-blue-100 dark:hover:from-blue-900/30 dark:hover:to-blue-800/30" onClick={onNavigateToPatients} role="button" tabIndex={0} aria-label={`عرض مرضى جدد اليوم: ${quickAccessData.quickStats.totalPatients} مريض`}>
+        <Card className="hover:shadow-lg dark:hover:shadow-xl transition-all duration-200 cursor-pointer bg-card border-border" onClick={onNavigateToPatients} role="button" tabIndex={0} aria-label={`عرض مرضى جدد اليوم: ${quickAccessData.quickStats.totalPatients} مريض`}>
           <CardContent className="p-4 md:p-5 lg:p-6">
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <p className="text-xs md:text-sm font-medium text-slate-600 dark:text-slate-300 font-tajawal">مرضى جدد اليوم</p>
-                <p className="text-xl md:text-2xl lg:text-3xl font-bold text-slate-800 dark:text-white mt-1">{quickAccessData.quickStats.totalPatients}</p>
+                <p className="text-xs md:text-sm font-medium text-muted-foreground font-tajawal">مرضى جدد اليوم</p>
+                <p className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground mt-1">{quickAccessData.quickStats.totalPatients}</p>
               </div>
-              <div className="p-2 md:p-3 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-500/20 dark:to-blue-600/30 rounded-lg ml-3 md:ml-4 shadow-sm">
-                <Users className="w-5 h-5 md:w-6 md:h-6 text-blue-600 dark:text-blue-400" />
+              <div className="p-2 md:p-3 bg-muted rounded-lg ml-3 md:ml-4 shadow-sm">
+                <Users className="w-5 h-5 md:w-6 md:h-6 text-muted-foreground" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Today Appointments */}
-        <Card className="hover:shadow-lg dark:hover:shadow-xl transition-all duration-200 cursor-pointer bg-gradient-to-br from-emerald-50 to-green-100 dark:from-emerald-900/30 dark:to-green-800/30 border-emerald-200 dark:border-emerald-700 hover:from-emerald-100 hover:to-green-200 dark:hover:from-emerald-800/40 dark:hover:to-green-700/40" onClick={onNavigateToAppointments} role="button" tabIndex={0} aria-label={`عرض مواعيد اليوم: ${quickAccessData.quickStats.todayAppointments} موعد`}>
+        <Card className="hover:shadow-lg dark:hover:shadow-xl transition-all duration-200 cursor-pointer bg-card border-border" onClick={onNavigateToAppointments} role="button" tabIndex={0} aria-label={`عرض مواعيد اليوم: ${quickAccessData.quickStats.todayAppointments} موعد`}>
           <CardContent className="p-4 md:p-5 lg:p-6">
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <p className="text-xs md:text-sm font-medium text-emerald-700 dark:text-emerald-300 font-tajawal">مواعيد اليوم</p>
-                <p className="text-xl md:text-2xl lg:text-3xl font-bold text-emerald-800 dark:text-white mt-1">{quickAccessData.quickStats.todayAppointments}</p>
+                <p className="text-xs md:text-sm font-medium text-muted-foreground font-tajawal">مواعيد اليوم</p>
+                <p className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground mt-1">{quickAccessData.quickStats.todayAppointments}</p>
               </div>
-              <div className="p-2 md:p-3 bg-gradient-to-br from-emerald-100 to-green-200 dark:from-emerald-500/20 dark:to-green-600/30 rounded-lg ml-3 md:ml-4 shadow-sm">
-                <Calendar className="w-5 h-5 md:w-6 md:h-6 text-emerald-600 dark:text-emerald-400" />
+              <div className="p-2 md:p-3 bg-muted rounded-lg ml-3 md:ml-4 shadow-sm">
+                <Calendar className="w-5 h-5 md:w-6 md:h-6 text-muted-foreground" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Pending Payments */}
-        <Card className="hover:shadow-lg dark:hover:shadow-xl transition-all duration-200 cursor-pointer bg-gradient-to-br from-amber-50 to-yellow-100 dark:from-amber-900/30 dark:to-yellow-800/30 border-amber-200 dark:border-amber-700 hover:from-amber-100 hover:to-yellow-200 dark:hover:from-amber-800/40 dark:hover:to-yellow-700/40" onClick={onNavigateToPayments} role="button" tabIndex={0} aria-label={`عرض دفعات اليوم: ${quickAccessData.quickStats.pendingPayments} دفعة`}>
+        <Card className="hover:shadow-lg dark:hover:shadow-xl transition-all duration-200 cursor-pointer bg-card border-border" onClick={onNavigateToPayments} role="button" tabIndex={0} aria-label={`عرض دفعات اليوم: ${quickAccessData.quickStats.pendingPayments} دفعة`}>
           <CardContent className="p-4 md:p-5 lg:p-6">
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <p className="text-xs md:text-sm font-medium text-amber-700 dark:text-amber-300 font-tajawal">دفعات اليوم</p>
-                <p className="text-xl md:text-2xl lg:text-3xl font-bold text-amber-800 dark:text-white mt-1">{quickAccessData.quickStats.pendingPayments}</p>
+                <p className="text-xs md:text-sm font-medium text-muted-foreground font-tajawal">دفعات اليوم</p>
+                <p className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground mt-1">{quickAccessData.quickStats.pendingPayments}</p>
               </div>
-              <div className="p-2 md:p-3 bg-gradient-to-br from-amber-100 to-yellow-200 dark:from-amber-500/20 dark:to-yellow-600/30 rounded-lg ml-3 md:ml-4 shadow-sm">
-                <DollarSign className="w-5 h-5 md:w-6 md:h-6 text-amber-600 dark:text-amber-400" />
+              <div className="p-2 md:p-3 bg-muted rounded-lg ml-3 md:ml-4 shadow-sm">
+                <DollarSign className="w-5 h-5 md:w-6 md:h-6 text-muted-foreground" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Urgent Alerts */}
-        <Card className="hover:shadow-lg dark:hover:shadow-xl transition-all duration-200 bg-gradient-to-br from-rose-50 to-red-100 dark:from-rose-900/30 dark:to-red-800/30 border-rose-200 dark:border-rose-700 hover:from-rose-100 hover:to-red-200 dark:hover:from-rose-800/40 dark:hover:to-red-700/40" role="region" aria-label={`تنبيهات اليوم: ${quickAccessData.quickStats.urgentAlerts} تنبيه`}>
+        <Card className="hover:shadow-lg dark:hover:shadow-xl transition-all duration-200 bg-card border-border" role="region" aria-label={`تنبيهات اليوم: ${quickAccessData.quickStats.urgentAlerts} تنبيه`}>
           <CardContent className="p-4 md:p-5 lg:p-6">
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <p className="text-xs md:text-sm font-medium text-rose-700 dark:text-rose-300 font-tajawal">تنبيهات اليوم</p>
-                <p className="text-xl md:text-2xl lg:text-3xl font-bold text-rose-800 dark:text-white mt-1">{quickAccessData.quickStats.urgentAlerts}</p>
+                <p className="text-xs md:text-sm font-medium text-muted-foreground font-tajawal">تنبيهات اليوم</p>
+                <p className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground mt-1">{quickAccessData.quickStats.urgentAlerts}</p>
                 {quickAccessData.quickStats.urgentAlerts > 0 && (
                   <div className="absolute inset-0 bg-black-900 rounded-lg pointer-events-none" aria-hidden="true" />
                 )}
               </div>
-              <div className="p-2 md:p-3 bg-gray-700 from-rose-100 to-red-200 dark:from-rose-500/20 dark:to-red-600/30 rounded-lg ml-3 md:ml-4 shadow-sm">
-                <AlertTriangle className="w-5 h-5 md:w-6 md:h-6 text-rose-600 dark:text-rose-400" />
+              <div className="p-2 md:p-3 bg-muted rounded-lg ml-3 md:ml-4 shadow-sm">
+                <AlertTriangle className="w-5 h-5 md:w-6 md:h-6 text-muted-foreground" />
               </div>
             </div>
           </CardContent>

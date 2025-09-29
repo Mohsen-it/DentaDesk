@@ -540,37 +540,37 @@ function DashboardAnalyticsComponent({
         <TabsContent value="overview" className="space-y-8">
           {/* Overview Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <Card className="cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-all duration-200 bg-white dark:bg-card border-slate-200 dark:border-slate-700 interactive-card" onClick={onNavigateToPatients} role="button" tabIndex={0} aria-label="عرض إدارة المرضى">
+            <Card className="cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-all duration-200 bg-card border-border interactive-card" onClick={onNavigateToPatients} role="button" tabIndex={0} aria-label="عرض إدارة المرضى">
               <CardContent className="p-8">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground dark:text-slate-400">إجمالي المرضى</p>
-                    <p className="text-2xl font-bold">{analyticsData.overview.totalPatients}</p>
+                    <p className="text-sm font-medium text-muted-foreground">إجمالي المرضى</p>
+                    <p className="text-2xl font-bold text-foreground">{analyticsData.overview.totalPatients}</p>
                   </div>
-                  <Users className="w-8 h-8 text-primary dark:text-slate-200 transition-colors" />
+                  <Users className="w-8 h-8 text-muted-foreground transition-colors" />
                 </div>
                 <div className="flex items-center mt-2">
                   {analyticsData.overview.growthRate >= 0 ? (
-                    <ArrowUpRight className="w-4 h-4 text-medical dark:text-slate-200 mr-1" />
+                    <ArrowUpRight className="w-4 h-4 text-green-600 mr-1" />
                   ) : (
-                    <ArrowDownRight className="w-4 h-4 text-destructive dark:text-slate-200 mr-1" />
+                    <ArrowDownRight className="w-4 h-4 text-red-600 mr-1" />
                   )}
-                  <span className={`text-sm ${analyticsData.overview.growthRate >= 0 ? 'text-medical dark:text-slate-200' : 'text-destructive dark:text-slate-200'}`}>
+                  <span className={`text-sm ${analyticsData.overview.growthRate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {Math.abs(analyticsData.overview.growthRate).toFixed(1)}%
                   </span>
-                  <span className="text-sm text-muted-foreground dark:text-slate-400 mr-1">من الشهر الماضي</span>
+                  <span className="text-sm text-muted-foreground mr-1">من الشهر الماضي</span>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-all duration-200 bg-white dark:bg-card border-slate-200 dark:border-slate-700 interactive-card" onClick={onNavigateToAppointments} role="button" tabIndex={0} aria-label="عرض إدارة المواعيد">
+            <Card className="cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-all duration-200 bg-card border-border interactive-card" onClick={onNavigateToAppointments} role="button" tabIndex={0} aria-label="عرض إدارة المواعيد">
               <CardContent className="p-8">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground dark:text-slate-400">المواعيد</p>
-                    <p className="text-2xl font-bold">{analyticsData.overview.totalAppointments}</p>
+                    <p className="text-sm font-medium text-muted-foreground">المواعيد</p>
+                    <p className="text-2xl font-bold text-foreground">{analyticsData.overview.totalAppointments}</p>
                   </div>
-                  <Calendar className="w-8 h-8 text-medical dark:text-slate-200 transition-colors" />
+                  <Calendar className="w-8 h-8 text-muted-foreground transition-colors" />
                 </div>
                 <div className="flex items-center mt-2">
                   <Badge variant="secondary" className="text-xs">
@@ -580,34 +580,34 @@ function DashboardAnalyticsComponent({
               </CardContent>
             </Card>
 
-            <Card className="cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-all duration-200 bg-white dark:bg-card border-slate-200 dark:border-slate-700 interactive-card" onClick={onNavigateToPayments} role="button" tabIndex={0} aria-label="عرض إدارة المدفوعات">
+            <Card className="cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-all duration-200 bg-card border-border interactive-card" onClick={onNavigateToPayments} role="button" tabIndex={0} aria-label="عرض إدارة المدفوعات">
               <CardContent className="p-8">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground dark:text-slate-400">الإيرادات</p>
-                    <p className="text-2xl font-bold">{formatAmount(analyticsData.overview.totalRevenue)}</p>
+                    <p className="text-sm font-medium text-muted-foreground">الإيرادات</p>
+                    <p className="text-2xl font-bold text-foreground">{formatAmount(analyticsData.overview.totalRevenue)}</p>
                   </div>
-                  <DollarSign className="w-8 h-8 text-accent dark:text-slate-200 transition-colors" />
+                  <DollarSign className="w-8 h-8 text-muted-foreground transition-colors" />
                 </div>
                 <div className="flex items-center mt-2">
-                  <span className="text-sm text-muted-foreground dark:text-slate-400">
+                  <span className="text-sm text-muted-foreground">
                     متوسط: {formatAmount(analyticsData.kpis.averageRevenue)}
                   </span>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-white dark:bg-card border-slate-200 dark:border-slate-700 transition-all duration-200 hover:shadow-md dark:hover:shadow-lg interactive-card">
+            <Card className="bg-card border-border transition-all duration-200 hover:shadow-md dark:hover:shadow-lg interactive-card">
               <CardContent className="p-8">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground dark:text-slate-400">معدل الاستفادة</p>
-                    <p className="text-2xl font-bold">{analyticsData.kpis.appointmentUtilization.toFixed(1)}%</p>
+                    <p className="text-sm font-medium text-muted-foreground">معدل الاستفادة</p>
+                    <p className="text-2xl font-bold text-foreground">{analyticsData.kpis.appointmentUtilization.toFixed(1)}%</p>
                   </div>
-                  <Activity className="w-8 h-8 text-muted-foreground dark:text-slate-200 transition-colors" />
+                  <Activity className="w-8 h-8 text-muted-foreground transition-colors" />
                 </div>
                 <div className="flex items-center mt-2">
-                  <span className="text-sm text-muted-foreground dark:text-slate-400">
+                  <span className="text-sm text-muted-foreground">
                     من المواعيد المجدولة
                   </span>
                 </div>

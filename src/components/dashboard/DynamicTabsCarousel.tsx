@@ -203,7 +203,7 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
   return (
     <div
       ref={containerRef}
-      className="h-full flex flex-col bg-card dark:bg-gray-700 rounded-xl shadow-xl dark:shadow-2xl overflow-hidden backdrop-blur-sm flex-1 min-h-0 performance-optimized tab-content-performance active gpu-accelerated"
+      className="h-full flex flex-col rounded-xl shadow-xl dark:shadow-2xl overflow-hidden backdrop-blur-sm flex-1 min-h-0 performance-optimized tab-content-performance active gpu-accelerated"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
@@ -217,7 +217,7 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
       }}
     >
       {/* Enhanced Tab Navigation Header */}
-      <div ref={headerRef} className="bg-card-enhanced dark:bg-gray-700 p-6 md:p-8 lg:p-10 border-b border-border dark:border-gray-600 backdrop-blur-sm hover:bg-muted/30 dark:hover:bg-gray-600/30 transition-colors duration-200" style={{ userSelect: 'none' }}>
+      <div ref={headerRef} className="bg-muted/30 p-6 md:p-8 lg:p-10 shadow-2xl dark:border-gray-600 backdrop-blur-sm transition-colors duration-200" style={{ userSelect: 'none' }}>
         <div className="flex items-center justify-between mb-4 md:mb-6">
           <div className="flex items-center gap-4 md:gap-6">
             {activeTabData && (

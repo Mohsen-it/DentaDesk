@@ -206,7 +206,7 @@ export function formatChartNumber(value: number, type: 'currency' | 'percentage'
 
     case 'count':
     default:
-      return new Intl.NumberFormat('ar-SA').format(value)
+      return new Intl.NumberFormat('en-US').format(value)
   }
 }
 

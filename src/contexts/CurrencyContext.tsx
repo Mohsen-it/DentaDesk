@@ -76,21 +76,21 @@ export function CurrencyProvider({ children }: CurrencyProviderProps) {
     return SUPPORTED_CURRENCIES
   }, [])
 
-  // Get current Arabic numerals setting
-  const currentUseArabicNumerals = useArabicNumerals || settings?.use_arabic_numerals || false
+  // Always use Western numerals regardless of settings
+  const currentUseArabicNumerals = false
 
-  // Formatting functions that use current currency by default
+  // Formatting functions that use current currency by default - always use Western numerals
   const formatAmount = useCallback((amount: number, currency?: string, useArabicNumeralsOverride?: boolean) => {
-    return formatCurrency(amount, currency || currentCurrency, useArabicNumeralsOverride ?? currentUseArabicNumerals)
-  }, [currentCurrency, currentUseArabicNumerals])
+    return formatCurrency(amount, currency || currentCurrency)
+  }, [currentCurrency])
 
   const formatAmountSymbol = useCallback((amount: number, currency?: string, useArabicNumeralsOverride?: boolean) => {
-    return formatCurrencySymbol(amount, currency || currentCurrency, useArabicNumeralsOverride ?? currentUseArabicNumerals)
-  }, [currentCurrency, currentUseArabicNumerals])
+    return formatCurrencySymbol(amount, currency || currentCurrency)
+  }, [currentCurrency])
 
   const formatAmountWithConfig = useCallback((amount: number, config?: CurrencyConfig, useArabicNumeralsOverride?: boolean) => {
-    return formatCurrencyWithConfig(amount, config || currencyConfig, useArabicNumeralsOverride ?? currentUseArabicNumerals)
-  }, [currencyConfig, currentUseArabicNumerals])
+    return formatCurrencyWithConfig(amount, config || currencyConfig)
+  }, [currencyConfig])
 
   // Currency information functions
   const getCurrencySymbol = useCallback((currency?: string) => {

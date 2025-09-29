@@ -55,7 +55,7 @@ const NewDashboardLayout = memo(function NewDashboardLayout({
   }, [])
 
   return (
-    <div dir="rtl" className="min-h-screen bg-background dark:bg-gray-900 overflow-hidden">
+    <div dir="rtl" className="min-h-screen">
       <main className="max-w-[1400px] mx-auto p-6 md:p-8 lg:p-10">
         <DynamicTabsCarousel
           onNavigateToPatients={onNavigateToPatients}

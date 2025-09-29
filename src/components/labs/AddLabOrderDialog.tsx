@@ -58,7 +58,7 @@ export default function AddLabOrderDialog({ open, onOpenChange, editingOrder }: 
     order_date: '',
     expected_delivery_date: '',
     actual_delivery_date: '',
-    status: 'آجل' as const,
+    status: 'معلق' as const,
     notes: '',
     paid_amount: '',
     priority: '1',
@@ -84,7 +84,7 @@ export default function AddLabOrderDialog({ open, onOpenChange, editingOrder }: 
           order_date: editingOrder.order_date || '',
           expected_delivery_date: editingOrder.expected_delivery_date || '',
           actual_delivery_date: editingOrder.actual_delivery_date || '',
-          status: editingOrder.status || 'آجل',
+          status: editingOrder.status || 'معلق',
           notes: editingOrder.notes || '',
           paid_amount: editingOrder.paid_amount?.toString() || '0',
           priority: editingOrder.priority?.toString() || '1',
@@ -106,7 +106,7 @@ export default function AddLabOrderDialog({ open, onOpenChange, editingOrder }: 
           order_date: today,
           expected_delivery_date: '',
           actual_delivery_date: '',
-          status: 'آجل',
+          status: 'معلق',
           notes: '',
           paid_amount: '0',
           priority: '1',
@@ -192,6 +192,22 @@ export default function AddLabOrderDialog({ open, onOpenChange, editingOrder }: 
         color_shade: formData.color_shade.trim() || undefined
       }
 
+      console.log('🔍 [DEBUG] Submitting lab order data:', orderData)
+      
+      // Additional validation before submission
+      if (!orderData.lab_id) {
+        throw new Error('Lab ID is required')
+      }
+      if (!orderData.service_name || orderData.service_name.trim().length === 0) {
+        throw new Error('Service name is required')
+      }
+      if (!orderData.cost || orderData.cost <= 0) {
+        throw new Error('Valid cost is required')
+      }
+      if (!orderData.order_date) {
+        throw new Error('Order date is required')
+      }
+
       if (editingOrder) {
         await updateLabOrder(editingOrder.id, orderData)
         notify.success('تم تحديث طلب المختبر بنجاح')
@@ -203,7 +219,43 @@ export default function AddLabOrderDialog({ open, onOpenChange, editingOrder }: 
       onOpenChange(false)
     } catch (error) {
       console.error('Error saving lab order:', error)
-      notify.error(editingOrder ? 'فشل في تحديث طلب المختبر' : 'فشل في إضافة طلب المختبر')
+      
+      // More robust error handling
+      let errorMessage = 'Unknown error occurred'
+      let errorDetails = {}
+      
+      if (error instanceof Error) {
+        errorMessage = error.message || 'Unknown error occurred'
+        errorDetails = {
+          message: error.message,
+          stack: error.stack,
+          name: error.name,
+          cause: (error as any).cause
+        }
+      } else if (typeof error === 'string') {
+        errorMessage = error
+        errorDetails = { message: error, type: 'string' }
+      } else if (typeof error === 'object' && error !== null) {
+        errorMessage = (error as any).message || JSON.stringify(error) || 'Object error occurred'
+        errorDetails = {
+          message: (error as any).message,
+          stack: (error as any).stack,
+          name: (error as any).name,
+          type: typeof error,
+          keys: Object.keys(error),
+          stringified: JSON.stringify(error)
+        }
+      } else {
+        errorMessage = `Unknown error type: ${typeof error}`
+        errorDetails = { type: typeof error, value: error }
+      }
+      
+      console.error('Error details:', errorDetails)
+      console.error('Full error object:', error)
+      console.error('Error constructor:', error?.constructor?.name)
+      console.error('Error prototype:', Object.getPrototypeOf(error))
+        
+      notify.error(`${editingOrder ? 'فشل في تحديث طلب المختبر' : 'فشل في إضافة طلب المختبر'}: ${errorMessage}`)
     }
   }
 
@@ -420,7 +472,7 @@ export default function AddLabOrderDialog({ open, onOpenChange, editingOrder }: 
                   <SelectValue className="text-muted-foreground" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="آجل">آجل</SelectItem>
+                  <SelectItem value="معلق">معلق</SelectItem>
                   <SelectItem value="مكتمل">مكتمل</SelectItem>
                   <SelectItem value="ملغي">ملغي</SelectItem>
                 </SelectContent>

@@ -101,6 +101,19 @@ export const useLabOrderStore = create<LabOrderStore>()(
         try {
           console.log('➕ [DEBUG] Creating lab order:', labOrderData)
 
+          // Check if electronAPI is available
+          if (!window.electronAPI) {
+            throw new Error('Electron API is not available')
+          }
+
+          if (!window.electronAPI.labOrders) {
+            throw new Error('Lab orders API is not available')
+          }
+
+          if (!window.electronAPI.labOrders.create) {
+            throw new Error('Lab orders create method is not available')
+          }
+
           // Calculate remaining balance
           const remainingBalance = labOrderData.cost - (labOrderData.paid_amount || 0)
           const orderWithBalance = {
@@ -108,8 +121,30 @@ export const useLabOrderStore = create<LabOrderStore>()(
             remaining_balance: remainingBalance
           }
 
-          const newLabOrder = await window.electronAPI?.labOrders?.create(orderWithBalance)
-          if (newLabOrder) {
+          console.log('🔍 [DEBUG] Calling electronAPI.labOrders.create with:', orderWithBalance)
+          console.log('🔍 [DEBUG] electronAPI.labOrders.create function:', typeof window.electronAPI.labOrders.create)
+          console.log('🔍 [DEBUG] electronAPI available:', !!window.electronAPI)
+          console.log('🔍 [DEBUG] electronAPI.labOrders available:', !!window.electronAPI?.labOrders)
+          
+
+          // Add timeout to prevent hanging
+          const createPromise = window.electronAPI.labOrders.create(orderWithBalance)
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Request timeout after 10 seconds')), 10000)
+          )
+          
+          console.log('🔍 [DEBUG] About to call Promise.race...')
+          console.log('🔍 [DEBUG] createPromise:', createPromise)
+          console.log('🔍 [DEBUG] timeoutPromise:', timeoutPromise)
+          
+          try {
+            const newLabOrder = await Promise.race([createPromise, timeoutPromise])
+            console.log('🔍 [DEBUG] Promise.race completed, result:', newLabOrder)
+            
+            if (!newLabOrder) {
+              throw new Error('Failed to create lab order - no response from API')
+            }
+
             console.log('✅ [DEBUG] Lab order created successfully:', newLabOrder)
 
             // Add the new lab order to the local state instead of reloading all data
@@ -123,14 +158,73 @@ export const useLabOrderStore = create<LabOrderStore>()(
 
             get().calculateStatistics()
             get().filterLabOrders()
+            return
+          } catch (apiError) {
+            console.error('❌ [DEBUG] API Error caught:', apiError)
+            console.error('❌ [DEBUG] API Error type:', typeof apiError)
+            console.error('❌ [DEBUG] API Error constructor:', apiError?.constructor?.name)
+            console.error('❌ [DEBUG] API Error message:', apiError?.message)
+            console.error('❌ [DEBUG] API Error stack:', apiError?.stack)
+            
+            // Try to extract meaningful error information
+            let errorMessage = 'Failed to create lab order'
+            if (apiError && typeof apiError === 'object') {
+              if (apiError.message) {
+                errorMessage = apiError.message
+              } else if (apiError.error && apiError.error.message) {
+                errorMessage = apiError.error.message
+              } else if (apiError.toString && apiError.toString() !== '[object Object]') {
+                errorMessage = apiError.toString()
+              }
+            } else if (typeof apiError === 'string') {
+              errorMessage = apiError
+            }
+            
+            throw new Error(errorMessage)
           }
         } catch (error) {
           console.error('❌ [DEBUG] Error creating lab order:', error)
+          
+          // More robust error handling
+          let errorMessage = 'Failed to create lab order'
+          let errorDetails = {}
+          
+          if (error instanceof Error) {
+            errorMessage = error.message || 'Unknown error occurred'
+            errorDetails = {
+              message: error.message,
+              stack: error.stack,
+              name: error.name,
+              cause: (error as any).cause
+            }
+          } else if (typeof error === 'string') {
+            errorMessage = error
+            errorDetails = { message: error, type: 'string' }
+          } else if (typeof error === 'object' && error !== null) {
+            errorMessage = (error as any).message || JSON.stringify(error) || 'Object error occurred'
+            errorDetails = {
+              message: (error as any).message,
+              stack: (error as any).stack,
+              name: (error as any).name,
+              type: typeof error,
+              keys: Object.keys(error),
+              stringified: JSON.stringify(error)
+            }
+          } else {
+            errorMessage = `Unknown error type: ${typeof error}`
+            errorDetails = { type: typeof error, value: error }
+          }
+          
+          console.error('❌ [DEBUG] Error details:', errorDetails)
+          console.error('❌ [DEBUG] Full error object:', error)
+          console.error('❌ [DEBUG] Error constructor:', error?.constructor?.name)
+          console.error('❌ [DEBUG] Error prototype:', Object.getPrototypeOf(error))
+            
           set({
-            error: error instanceof Error ? error.message : 'Failed to create lab order',
+            error: errorMessage,
             isLoading: false
           })
-          throw error
+          throw new Error(errorMessage)
         }
       },
 
@@ -281,7 +375,7 @@ export const useLabOrderStore = create<LabOrderStore>()(
         const totalPaid = labOrders.reduce((sum, order) => sum + (order.paid_amount || 0), 0)
         const totalRemaining = labOrders.reduce((sum, order) => sum + (order.remaining_balance || 0), 0)
 
-        const pendingOrders = labOrders.filter(order => order.status === 'آجل').length
+        const pendingOrders = labOrders.filter(order => order.status === 'معلق').length
         const completedOrders = labOrders.filter(order => order.status === 'مكتمل').length
         const cancelledOrders = labOrders.filter(order => order.status === 'ملغي').length
 

@@ -46,7 +46,7 @@ const navigationItems = [
     icon: CalendarDays,
   },
   {
-    title: "المدفوعات",
+    title: "الواردات",
     url: "payments",
     icon: DollarSign,
   },

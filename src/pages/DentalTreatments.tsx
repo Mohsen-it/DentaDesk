@@ -459,7 +459,7 @@ export default function DentalTreatments() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-            <Stethoscope className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+            <Stethoscope className="w-8 h-8 text-blue-600 dark:text-slate-300" />
             العلاجات السنية
           </h1>
           <p className="text-muted-foreground mt-2">

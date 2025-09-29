@@ -101,18 +101,20 @@ export default {
 				'200': '#bbf7d0',
 				'300': '#86efac',
 				'400': '#4ade80',
-				'500': '#16a34a',  // Updated to match image green
-				'600': '#15803d',
-				'700': '#166534',
-				'800': '#14532d',
-				'900': '#052e16',
+				'500': '#10b981',  // Updated to soft teal
+				'600': '#059669',
+				'700': '#047857',
+				'800': '#065f46',
+				'900': '#064e3b',
 				'950': '#022c22'
 			},
 			status: {
-				scheduled: '#3b82f6',  // Blue matching image
-				completed: '#16a34a',  // Green matching image
-				cancelled: '#dc2626',  // Red matching image
-				'no-show': '#6b7280'   // Gray for no-show
+				scheduled: '#3b82f6',  // Calming blue
+				completed: '#10b981',  // Soft teal
+				cancelled: '#ef4444',  // Soft red
+				'no-show': '#64748b',  // Slate gray
+				'in-progress': '#f59e0b', // Warm amber
+				confirmed: '#10b981'   // Soft teal
 			},
   			chart: {
   				'1': 'hsl(var(--chart-1))',
@@ -136,7 +138,43 @@ export default {
   				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
   				border: 'hsl(var(--sidebar-border))',
   				ring: 'hsl(var(--sidebar-ring))'
-  			}
+  			},
+			// Enhanced dark mode colors with smooth gradients and blue tint
+			dark: {
+				background: '#0f1419',           /* Deep charcoal with blue tint */
+				'background-secondary': '#1a1f2e', /* Slate gray with blue undertone */
+				'background-tertiary': '#1e2432',  /* Medium slate */
+				card: '#1a1f2e',                 /* Card backgrounds with blue tint */
+				'card-hover': '#252b3a',         /* Hover states with subtle lift */
+				'card-elevated': '#1e2432',      /* Elevated surfaces */
+				border: '#334155',               /* Light borders with blue tint */
+				'border-medium': '#475569',      /* Medium borders */
+				'border-strong': '#64748b',      /* Strong borders */
+				'border-accent': '#3b82f6',      /* Accent borders */
+				text: '#f8fafc',                 /* Soft white for comfort */
+				'text-secondary': '#e2e8f0',     /* Light gray with blue tint */
+				'text-tertiary': '#cbd5e1',      /* Medium gray */
+				'text-muted': '#94a3b8',         /* Muted gray */
+				'text-subtle': '#64748b',        /* Subtle gray */
+				primary: '#3b82f6',              /* Calming blue */
+				'primary-hover': '#2563eb',      /* Deeper blue */
+				'primary-pressed': '#1d4ed8',    /* Deep blue */
+				secondary: '#10b981',            /* Soft teal */
+				'secondary-hover': '#059669',    /* Deeper teal */
+				'secondary-pressed': '#047857',  /* Deep teal */
+				destructive: '#ef4444',          /* Soft red */
+				'destructive-hover': '#dc2626',  /* Deeper red */
+				'destructive-pressed': '#b91c1c', /* Deep red */
+				warning: '#f59e0b',              /* Warm amber */
+				'warning-hover': '#d97706',      /* Deeper amber */
+				'warning-pressed': '#b45309',    /* Deep amber */
+				success: '#10b981',              /* Soft teal */
+				'success-hover': '#059669',      /* Deeper teal */
+				'success-pressed': '#047857',    /* Deep teal */
+				info: '#3b82f6',                 /* Calming blue */
+				'info-hover': '#2563eb',         /* Deeper blue */
+				'info-pressed': '#1d4ed8'        /* Deep blue */
+			}
   		},
   		fontFamily: {
   			sans: [

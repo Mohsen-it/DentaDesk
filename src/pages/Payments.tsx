@@ -193,7 +193,7 @@ export default function Payments() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-heading-1 text-foreground arabic-enhanced">إدارة المدفوعات</h1>
+          <h1 className="text-heading-1 text-foreground arabic-enhanced">إدارة الواردات</h1>
           <p className="text-body text-muted-foreground mt-2 arabic-enhanced">
             تتبع المدفوعات والفواتير والسجلات المالية
           </p>

@@ -406,6 +406,229 @@ if (!gotTheLock) {
       }
     })
 
+    // Lab Orders IPC Handlers
+    ipcMain.handle('db:labOrders:getAll', async () => {
+      try {
+        console.log('🔧 Main: Handling db:labOrders:getAll request')
+        
+        // Wait for database service to be available
+        let attempts = 0
+        const maxAttempts = 10
+        while (!databaseService && attempts < maxAttempts) {
+          console.log(`⏳ Waiting for database service... (attempt ${attempts + 1}/${maxAttempts})`)
+          await new Promise(resolve => setTimeout(resolve, 100))
+          attempts++
+        }
+        
+        if (!databaseService) {
+          console.error('❌ Database service not available after waiting')
+          return []
+        }
+        
+        const labOrders = await databaseService.getAllLabOrders()
+        console.log(`✅ Retrieved ${labOrders.length} lab orders`)
+        return labOrders
+      } catch (error) {
+        console.error('❌ Error getting lab orders:', error)
+        return []
+      }
+    })
+
+    ipcMain.handle('db:labOrders:getByPatient', async (_event, patientId) => {
+      try {
+        console.log('🔧 Main: Handling db:labOrders:getByPatient request for patient:', patientId)
+        
+        // Wait for database service to be available
+        let attempts = 0
+        const maxAttempts = 10
+        while (!databaseService && attempts < maxAttempts) {
+          console.log(`⏳ Waiting for database service... (attempt ${attempts + 1}/${maxAttempts})`)
+          await new Promise(resolve => setTimeout(resolve, 100))
+          attempts++
+        }
+        
+        if (!databaseService) {
+          console.error('❌ Database service not available after waiting')
+          return []
+        }
+        
+        const labOrders = await databaseService.getLabOrdersByPatient(patientId)
+        console.log(`✅ Retrieved ${labOrders.length} lab orders for patient ${patientId}`)
+        return labOrders
+      } catch (error) {
+        console.error('❌ Error getting lab orders by patient:', error)
+        return []
+      }
+    })
+
+    ipcMain.handle('db:labOrders:create', async (_event, labOrderData) => {
+      try {
+        console.log('🔧 Main: Handling db:labOrders:create request with data:', labOrderData)
+        console.log('🔧 Main: Event details:', {
+          eventType: _event.type,
+          senderId: _event.sender.id,
+          frameId: _event.frameId
+        })
+        console.log('🔧 Main: Data validation:', {
+          hasLabId: !!labOrderData.lab_id,
+          hasServiceName: !!labOrderData.service_name,
+          hasCost: typeof labOrderData.cost === 'number' && labOrderData.cost > 0,
+          hasOrderDate: !!labOrderData.order_date,
+          dataType: typeof labOrderData,
+          keys: Object.keys(labOrderData),
+          labOrderData: labOrderData
+        })
+        
+        // Validate required fields
+        if (!labOrderData.lab_id) {
+          throw new Error('Lab ID is required')
+        }
+        if (!labOrderData.service_name) {
+          throw new Error('Service name is required')
+        }
+        if (!labOrderData.cost || labOrderData.cost <= 0) {
+          throw new Error('Valid cost is required')
+        }
+        if (!labOrderData.order_date) {
+          throw new Error('Order date is required')
+        }
+        
+        // Wait for database service to be available
+        let attempts = 0
+        const maxAttempts = 10
+        while (!databaseService && attempts < maxAttempts) {
+          console.log(`⏳ Waiting for database service... (attempt ${attempts + 1}/${maxAttempts})`)
+          await new Promise(resolve => setTimeout(resolve, 100))
+          attempts++
+        }
+        
+        if (!databaseService) {
+          console.error('❌ Database service not available after waiting')
+          throw new Error('Database service not available')
+        }
+        
+        console.log('✅ Database service is available, creating lab order...')
+        console.log('🔍 Lab order data validation:', {
+          lab_id: labOrderData.lab_id,
+          service_name: labOrderData.service_name,
+          cost: labOrderData.cost,
+          status: labOrderData.status,
+          hasRequiredFields: !!(labOrderData.lab_id && labOrderData.service_name && labOrderData.cost)
+        })
+        
+        console.log('🔧 Main: About to call databaseService.createLabOrder...')
+        const newLabOrder = await databaseService.createLabOrder(labOrderData)
+        console.log('✅ Lab order created successfully:', newLabOrder.id)
+        console.log('✅ Lab order details:', newLabOrder)
+        return newLabOrder
+      } catch (error) {
+        console.error('❌ Error creating lab order:', error)
+        console.error('❌ Error details:', {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : 'No stack trace',
+          name: error instanceof Error ? error.name : 'Unknown',
+          type: typeof error,
+          labOrderData: labOrderData
+        })
+        
+        // Create a serializable error object
+        const errorMessage = error instanceof Error 
+          ? error.message 
+          : 'Failed to create lab order in main process'
+        
+        const serializableError = {
+          message: errorMessage,
+          name: error instanceof Error ? error.name : 'Error',
+          stack: error instanceof Error ? error.stack : undefined,
+          type: typeof error
+        }
+        
+        console.error('❌ Throwing serializable error:', serializableError)
+        throw serializableError
+      }
+    })
+
+    ipcMain.handle('db:labOrders:update', async (_event, id, labOrderData) => {
+      try {
+        console.log('🔧 Main: Handling db:labOrders:update request for ID:', id)
+        
+        // Wait for database service to be available
+        let attempts = 0
+        const maxAttempts = 10
+        while (!databaseService && attempts < maxAttempts) {
+          console.log(`⏳ Waiting for database service... (attempt ${attempts + 1}/${maxAttempts})`)
+          await new Promise(resolve => setTimeout(resolve, 100))
+          attempts++
+        }
+        
+        if (!databaseService) {
+          console.error('❌ Database service not available after waiting')
+          throw new Error('Database service not available')
+        }
+        
+        const updatedLabOrder = await databaseService.updateLabOrder(id, labOrderData)
+        console.log('✅ Lab order updated successfully:', id)
+        return updatedLabOrder
+      } catch (error) {
+        console.error('❌ Error updating lab order:', error)
+        throw error
+      }
+    })
+
+    ipcMain.handle('db:labOrders:delete', async (_event, id) => {
+      try {
+        console.log('🔧 Main: Handling db:labOrders:delete request for ID:', id)
+        
+        // Wait for database service to be available
+        let attempts = 0
+        const maxAttempts = 10
+        while (!databaseService && attempts < maxAttempts) {
+          console.log(`⏳ Waiting for database service... (attempt ${attempts + 1}/${maxAttempts})`)
+          await new Promise(resolve => setTimeout(resolve, 100))
+          attempts++
+        }
+        
+        if (!databaseService) {
+          console.error('❌ Database service not available after waiting')
+          return false
+        }
+        
+        await databaseService.deleteLabOrder(id)
+        console.log('✅ Lab order deleted successfully:', id)
+        return true
+      } catch (error) {
+        console.error('❌ Error deleting lab order:', error)
+        return false
+      }
+    })
+
+    ipcMain.handle('db:labOrders:search', async (_event, query) => {
+      try {
+        console.log('🔧 Main: Handling db:labOrders:search request with query:', query)
+        
+        // Wait for database service to be available
+        let attempts = 0
+        const maxAttempts = 10
+        while (!databaseService && attempts < maxAttempts) {
+          console.log(`⏳ Waiting for database service... (attempt ${attempts + 1}/${maxAttempts})`)
+          await new Promise(resolve => setTimeout(resolve, 100))
+          attempts++
+        }
+        
+        if (!databaseService) {
+          console.error('❌ Database service not available after waiting')
+          return []
+        }
+        
+        const labOrders = await databaseService.searchLabOrders(query)
+        console.log(`✅ Found ${labOrders.length} lab orders matching query`)
+        return labOrders
+      } catch (error) {
+        console.error('❌ Error searching lab orders:', error)
+        return []
+      }
+    })
+
     // WhatsApp service handlers
     ipcMain.handle('whatsapp-reminders:reset-session', async () => {
       try {

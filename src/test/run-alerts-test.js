@@ -98,7 +98,7 @@ function isSameDay(date1, date2) {
 }
 
 function formatTime(dateString) {
-  return new Date(dateString).toLocaleTimeString('ar-EG', {
+  return new Date(dateString).toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit'
   });

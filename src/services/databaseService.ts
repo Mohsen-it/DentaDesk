@@ -3669,7 +3669,13 @@ export class DatabaseService {
         patient_id: labOrder.patient_id,
         service_name: labOrder.service_name,
         cost: labOrder.cost,
-        status: labOrder.status
+        status: labOrder.status,
+        fullData: labOrder
+      })
+      
+      console.log('🧪 Database connection status:', {
+        isOpen: this.db ? 'connected' : 'disconnected',
+        dbType: typeof this.db
       })
 
       const stmt = this.db.prepare(`
@@ -3681,6 +3687,13 @@ export class DatabaseService {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `)
 
+      console.log('🧪 About to execute SQL with parameters:', {
+        id, lab_id: labOrder.lab_id, patient_id: labOrder.patient_id, 
+        appointment_id: labOrder.appointment_id, tooth_treatment_id: labOrder.tooth_treatment_id,
+        tooth_number: labOrder.tooth_number, service_name: labOrder.service_name,
+        cost: labOrder.cost, order_date: labOrder.order_date
+      })
+      
       const result = stmt.run(
         id, labOrder.lab_id, labOrder.patient_id, labOrder.appointment_id,
         labOrder.tooth_treatment_id, labOrder.tooth_number, labOrder.service_name,
@@ -3692,6 +3705,7 @@ export class DatabaseService {
       )
 
       console.log('✅ Lab order created successfully:', { id, changes: result.changes })
+      console.log('✅ SQL execution result:', result)
 
       // Force WAL checkpoint to ensure data is written
       this.db.pragma('wal_checkpoint(TRUNCATE)')
@@ -3699,7 +3713,30 @@ export class DatabaseService {
       return { ...labOrder, id, created_at: now, updated_at: now }
     } catch (error) {
       console.error('❌ Failed to create lab order:', error)
-      throw error
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : 'No stack trace',
+        name: error instanceof Error ? error.name : 'Unknown',
+        type: typeof error,
+        labOrderData: labOrder
+      })
+      
+      // Create a serializable error object
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Database error occurred while creating lab order'
+      
+      const serializableError = {
+        message: errorMessage,
+        name: error instanceof Error ? error.name : 'DatabaseError',
+        stack: error instanceof Error ? error.stack : undefined,
+        type: typeof error,
+        code: (error as any)?.code,
+        errno: (error as any)?.errno
+      }
+      
+      console.error('❌ Throwing serializable database error:', serializableError)
+      throw serializableError
     }
   }
 
@@ -3785,6 +3822,48 @@ export class DatabaseService {
       console.error(`❌ Failed to delete lab order ${id}:`, error)
       throw new Error(`Failed to delete lab order: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
+  }
+
+  async getLabOrdersByPatient(patientId: string): Promise<LabOrder[]> {
+    const stmt = this.db.prepare(`
+      SELECT
+        lo.*,
+        l.name as lab_name,
+        p.full_name as patient_name
+      FROM lab_orders lo
+      LEFT JOIN labs l ON lo.lab_id = l.id
+      LEFT JOIN patients p ON lo.patient_id = p.id
+      WHERE lo.patient_id = ?
+      ORDER BY lo.order_date DESC
+    `)
+    
+    const labOrders = stmt.all(patientId) as any[]
+    
+    return labOrders.map(order => ({
+      id: order.id,
+      lab_id: order.lab_id,
+      patient_id: order.patient_id,
+      appointment_id: order.appointment_id,
+      tooth_treatment_id: order.tooth_treatment_id,
+      tooth_number: order.tooth_number,
+      service_name: order.service_name,
+      cost: order.cost,
+      order_date: order.order_date,
+      expected_delivery_date: order.expected_delivery_date,
+      actual_delivery_date: order.actual_delivery_date,
+      status: order.status,
+      notes: order.notes,
+      paid_amount: order.paid_amount,
+      remaining_balance: order.remaining_balance,
+      priority: order.priority,
+      lab_instructions: order.lab_instructions,
+      material_type: order.material_type,
+      color_shade: order.color_shade,
+      created_at: order.created_at,
+      updated_at: order.updated_at,
+      lab: order.lab_name ? { id: order.lab_id, name: order.lab_name } : null,
+      patient: order.patient_name ? { id: order.patient_id, full_name: order.patient_name } : null
+    }))
   }
 
   async searchLabOrders(query: string): Promise<LabOrder[]> {

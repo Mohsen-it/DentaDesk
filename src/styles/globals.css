@@ -65,10 +65,12 @@
     --neutral-bg: #f8fafc;      /* Light neutral background */
     --neutral-light: #f1f5f9;    /* Lighter neutral background */
 
-    /* Shadow variables - Subtle depth */
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);  /* Light shadow */
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1); /* Medium shadow */
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1); /* Large shadow */
+    /* Shadow variables - Enhanced depth with blue tint */
+    --shadow-sm: 0 1px 2px 0 rgb(15 23 42 / 0.1);  /* Light shadow with blue tint */
+    --shadow-md: 0 4px 6px -1px rgb(15 23 42 / 0.15); /* Medium shadow with blue tint */
+    --shadow-lg: 0 10px 15px -3px rgb(15 23 42 / 0.2); /* Large shadow with blue tint */
+    --shadow-xl: 0 20px 25px -5px rgb(15 23 42 / 0.25); /* Extra large shadow */
+    --shadow-glow: 0 0 20px rgb(59 130 246 / 0.15); /* Glow effect for primary elements */
 
     /* Legacy variable mappings for compatibility */
     --background: 0 0% 100%;
@@ -152,59 +154,75 @@
   }
 
   [data-theme="dark"] {
-    /* Enhanced Medical-focused Color System - Dark Mode */
-    /* Primary colors - Balanced professional theme with better contrast */
-    --primary-50: #0c1929;      /* Darkest blue - dark backgrounds */
-    --primary-100: #1e293b;     /* Dark blue - secondary backgrounds */
-    --primary-500: #3b82f6;     /* Medium blue - primary actions (matching image) */
-    --primary-600: #2563eb;     /* Darker blue - hover states */
-    --primary-700: #1d4ed8;     /* Darkest blue - active states */
+    /* Enhanced Medical-focused Color System - Dark Mode with Smooth Gradients */
+    /* Primary colors - Calming blue with smooth transitions */
+    --primary-50: #0f172a;      /* Deep navy - darkest backgrounds */
+    --primary-100: #1e293b;     /* Slate blue - secondary backgrounds */
+    --primary-200: #334155;     /* Medium slate - subtle highlights */
+    --primary-500: #3b82f6;     /* Calming blue - primary actions */
+    --primary-600: #2563eb;     /* Deeper blue - hover states */
+    --primary-700: #1d4ed8;     /* Deep blue - active states */
+    --primary-800: #1e40af;     /* Darker blue - pressed states */
 
-    /* Enhanced secondary colors for dark mode variety */
-    --secondary-50: #052e16;    /* Dark green - success states */
-    --secondary-100: #064e3b;   /* Dark green - success backgrounds */
-    --secondary-500: #16a34a;   /* Success green - success actions (matching image) */
-    --secondary-600: #15803d;   /* Darker green - success hover */
-    --secondary-700: #166534;   /* Darkest green - success active */
+    /* Secondary colors - Soft teal with smooth transitions */
+    --secondary-50: #064e3b;    /* Dark teal - success backgrounds */
+    --secondary-100: #065f46;   /* Medium teal - success states */
+    --secondary-200: #047857;   /* Soft teal - success highlights */
+    --secondary-500: #10b981;   /* Soft teal - success actions */
+    --secondary-600: #059669;   /* Deeper teal - success hover */
+    --secondary-700: #047857;   /* Deep teal - success active */
+    --secondary-800: #065f46;   /* Darker teal - success pressed */
 
-    /* Enhanced accent colors for dark mode variety */
-    --accent-50: #451a03;       /* Dark amber - warning states */
-    --accent-100: #78350f;      /* Dark amber - warning backgrounds */
-    --accent-500: #f59e0b;      /* Warning amber - warning actions */
-    --accent-600: #d97706;      /* Darker amber - warning hover */
-    --accent-700: #b45309;      /* Darkest amber - warning active */
+    /* Accent colors - Warm amber with smooth transitions */
+    --accent-50: #451a03;       /* Dark amber - warning backgrounds */
+    --accent-100: #78350f;      /* Medium amber - warning states */
+    --accent-200: #a16207;      /* Soft amber - warning highlights */
+    --accent-500: #f59e0b;      /* Warm amber - warning actions */
+    --accent-600: #d97706;      /* Deeper amber - warning hover */
+    --accent-700: #b45309;      /* Deep amber - warning active */
+    --accent-800: #92400e;      /* Darker amber - warning pressed */
 
-    /* Background colors - Dark theme matching the image */
-    --bg-primary: #0f0f0f;      /* Main background - very dark gray (matching image) */
-    --bg-secondary: #1a1a1a;    /* Secondary background - dark gray (matching image) */
-    --bg-tertiary: #1e1e1e;     /* Tertiary background - slightly lighter dark */
-    --bg-card: #1a1a1a;         /* Card backgrounds - dark gray (matching image) */
-    --bg-hover: #2a2a2a;        /* Hover states - lighter dark */
+    /* Background colors - Smooth gradients with subtle depth */
+    --bg-primary: #0f1419;      /* Deep charcoal - main background with subtle blue tint */
+    --bg-secondary: #1a1f2e;    /* Slate gray - secondary background with blue undertone */
+    --bg-tertiary: #1e2432;     /* Medium slate - tertiary background */
+    --bg-card: #1a1f2e;         /* Card backgrounds - consistent with secondary */
+    --bg-hover: #252b3a;        /* Hover states - subtle lift with blue tint */
+    --bg-elevated: #1e2432;     /* Elevated surfaces - slightly lighter */
 
-    /* Text colors - Optimized for dark mode readability matching image */
-    --text-primary: #ffffff;    /* Main text - pure white (matching image) */
-    --text-secondary: #e5e5e5;  /* Secondary text - light gray (matching image) */
-    --text-tertiary: #d1d5db;   /* Tertiary text - medium light gray */
-    --text-muted: #9ca3af;      /* Muted text - darker gray */
+    /* Text colors - Optimized for readability with smooth hierarchy */
+    --text-primary: #f8fafc;    /* Main text - soft white for comfort */
+    --text-secondary: #e2e8f0;  /* Secondary text - light gray with blue tint */
+    --text-tertiary: #cbd5e1;   /* Tertiary text - medium gray */
+    --text-muted: #94a3b8;      /* Muted text - subtle gray */
+    --text-subtle: #64748b;     /* Subtle text - very light gray */
 
-    /* Border colors - Visible in dark mode */
-    --border-light: #374151;    /* Light borders - more visible */
-    --border-medium: #4b5563;   /* Medium borders - clearer */
-    --border-strong: #6b7280;   /* Strong borders - prominent */
+    /* Border colors - Subtle and harmonious */
+    --border-light: #334155;    /* Light borders - subtle blue tint */
+    --border-medium: #475569;   /* Medium borders - soft slate */
+    --border-strong: #64748b;   /* Strong borders - visible but not harsh */
+    --border-accent: #3b82f6;   /* Accent borders - primary blue */
 
-    /* Enhanced Status colors - Better contrast and variety for dark mode */
-    --success: #16a34a;         /* Success - dark green (matching image) */
-    --success-bg: #064e3b;      /* Success background - darker green */
-    --success-light: #14532d;   /* Light success background */
-    --warning: #f59e0b;         /* Warning - amber with good contrast */
-    --warning-bg: #78350f;      /* Warning background - darker amber */
-    --warning-light: #451a03;   /* Light warning background */
-    --error: #dc2626;           /* Error - dark red (matching image) */
-    --error-bg: #7f1d1d;        /* Error background - darker red */
-    --error-light: #991b1b;     /* Light error background */
-    --info: #3b82f6;            /* Info - blue (matching image) */
-    --info-bg: #1e3a8a;         /* Info background - darker blue */
-    --info-light: #1e40af;      /* Light info background */
+    /* Enhanced Status colors - Harmonious and smooth for dark mode */
+    --success: #10b981;         /* Soft teal - success actions */
+    --success-bg: #064e3b;      /* Dark teal - success backgrounds */
+    --success-light: #065f46;   /* Medium teal - success highlights */
+    --success-subtle: #047857;  /* Subtle teal - success borders */
+    
+    --warning: #f59e0b;         /* Warm amber - warning actions */
+    --warning-bg: #451a03;      /* Dark amber - warning backgrounds */
+    --warning-light: #78350f;   /* Medium amber - warning highlights */
+    --warning-subtle: #a16207;  /* Subtle amber - warning borders */
+    
+    --error: #ef4444;           /* Soft red - error actions */
+    --error-bg: #7f1d1d;        /* Dark red - error backgrounds */
+    --error-light: #991b1b;     /* Medium red - error highlights */
+    --error-subtle: #dc2626;    /* Subtle red - error borders */
+    
+    --info: #3b82f6;            /* Calming blue - info actions */
+    --info-bg: #1e3a8a;         /* Dark blue - info backgrounds */
+    --info-light: #1e40af;      /* Medium blue - info highlights */
+    --info-subtle: #2563eb;     /* Subtle blue - info borders */
 
     /* Additional semantic colors for dark mode variety */
     --neutral: #9ca3af;         /* Neutral gray for less important elements */
@@ -216,25 +234,25 @@
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4); /* Medium shadow */
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5); /* Large shadow */
 
-    /* Legacy variable mappings for compatibility - Updated for image colors */
-    --background: 0 0% 6%;        /* Very dark gray matching image */
-    --foreground: 0 0% 100%;      /* Pure white text matching image */
-    --card: 0 0% 10%;             /* Dark card background matching image */
-    --card-foreground: 0 0% 100%; /* White text on cards */
-    --popover: 0 0% 10%;          /* Dark popover background */
-    --popover-foreground: 0 0% 100%; /* White text on popovers */
-    --primary: 217 91% 60%;       /* Blue matching image (#3b82f6) */
-    --primary-foreground: 0 0% 100%; /* White text on primary */
-    --secondary: 142 76% 36%;     /* Green matching image (#16a34a) */
-    --secondary-foreground: 0 0% 100%; /* White text on secondary */
-    --muted: 0 0% 15%;            /* Muted dark background */
-    --muted-foreground: 0 0% 90%; /* Light gray text */
-    --accent: 0 0% 20%;           /* Accent dark background */
-    --accent-foreground: 0 0% 100%; /* White text on accent */
-    --destructive: 0 84% 60%;     /* Red matching image (#dc2626) */
-    --destructive-foreground: 0 0% 100%; /* White text on destructive */
-    --border: 0 0% 25%;           /* Border color */
-    --input: 0 0% 20%;            /* Input background */
+    /* Legacy variable mappings for compatibility - Updated for image colors - CONSISTENT */
+    --background: 220 25% 8%;     /* Deep charcoal with blue tint */
+    --foreground: 210 20% 98%;    /* Soft white for comfort */
+    --card: 220 25% 12%;          /* Slate card background with blue undertone */
+    --card-foreground: 210 20% 98%; /* Soft white text on cards */
+    --popover: 220 25% 12%;       /* Slate popover background */
+    --popover-foreground: 210 20% 98%; /* Soft white text on popovers */
+    --primary: 217 91% 60%;       /* Calming blue (#3b82f6) */
+    --primary-foreground: 210 20% 98%; /* Soft white text on primary */
+    --secondary: 158 64% 52%;     /* Soft teal (#10b981) */
+    --secondary-foreground: 210 20% 98%; /* Soft white text on secondary */
+    --muted: 220 25% 15%;         /* Muted slate background */
+    --muted-foreground: 210 20% 90%; /* Light gray text with blue tint */
+    --accent: 220 25% 20%;        /* Accent slate background */
+    --accent-foreground: 210 20% 98%; /* Soft white text on accent */
+    --destructive: 0 84% 60%;     /* Soft red (#ef4444) */
+    --destructive-foreground: 210 20% 98%; /* Soft white text on destructive */
+    --border: 220 25% 35%;        /* Border color with blue tint */
+    --input: 220 25% 20%;         /* Input background with blue tint */
     --ring: 217 91% 60%;          /* Ring color matching primary */
 
     /* Enhanced contrast colors for dark mode */
@@ -250,43 +268,43 @@
     --medical-warning: 38 92% 60%;
     --medical-error: 0 84% 70%;
 
-    /* Professional chart colors - Dark mode (brighter) */
-    --chart-1: 200.4 98% 55%;       /* Brighter sky blue */
-    --chart-2: 142 76% 50%;         /* Brighter emerald green */
-    --chart-3: 38 92% 65%;          /* Brighter amber */
-    --chart-4: 0 84% 70%;           /* Brighter red */
-    --chart-5: 262 83% 70%;         /* Brighter purple */
-    --chart-6: 188 94% 50%;         /* Brighter cyan */
-    --chart-7: 25 95% 65%;          /* Brighter orange */
-    --chart-8: 339 82% 65%;         /* Brighter pink */
+    /* Professional chart colors - Dark mode with harmonious palette */
+    --chart-1: 217 91% 60%;         /* Calming blue - primary */
+    --chart-2: 158 64% 52%;         /* Soft teal - success */
+    --chart-3: 43 96% 56%;          /* Warm amber - warning */
+    --chart-4: 0 84% 60%;           /* Soft red - error */
+    --chart-5: 262 83% 65%;         /* Soft purple - accent */
+    --chart-6: 188 94% 50%;         /* Soft cyan - info */
+    --chart-7: 25 95% 60%;          /* Soft orange - secondary */
+    --chart-8: 339 82% 60%;         /* Soft pink - tertiary */
 
-    /* Chart grid and axis colors - Dark mode */
-    --chart-grid: 215 28% 25%;      /* Dark gray */
-    --chart-axis: 214 32% 91%;      /* Light gray */
-    --chart-text: 214 32% 91%;      /* Light text color */
-    --sidebar-background: 201.3 96.3% 10%;
-    --sidebar-foreground: 186.2 83.5% 87.1%;
-    --sidebar-primary: 198.6 88.7% 48.4%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 201.3 96.3% 15.9%;
-    --sidebar-accent-foreground: 186.2 83.5% 87.1%;
-    --sidebar-border: 201.3 96.3% 15.9%;
-    --sidebar-ring: 198.6 88.7% 48.4%;
+    /* Chart grid and axis colors - Dark mode with blue tint */
+    --chart-grid: 220 25% 25%;      /* Dark slate with blue tint */
+    --chart-axis: 210 20% 85%;      /* Light gray with blue tint */
+    --chart-text: 210 20% 90%;      /* Light text with blue tint */
+    --sidebar-background: 220 25% 10%;    /* Slate background with blue tint */
+    --sidebar-foreground: 210 20% 95%;    /* Soft white text */
+    --sidebar-primary: 217 91% 60%;       /* Calming blue matching primary */
+    --sidebar-primary-foreground: 210 20% 98%; /* Soft white text on primary */
+    --sidebar-accent: 220 25% 18%;        /* Slate accent with blue tint */
+    --sidebar-accent-foreground: 210 20% 90%; /* Light gray text with blue tint */
+    --sidebar-border: 220 25% 35%;        /* Border color with blue tint */
+    --sidebar-ring: 217 91% 60%;          /* Ring color matching primary */
 
     /* Enhanced UI element colors for dark mode */
-    --surface-elevated: 201.3 96.3% 8%;
-    --surface-hover: 201.3 96.3% 12%;
-    --surface-pressed: 201.3 96.3% 16%;
-    --outline: 201.3 96.3% 25%;
-    --outline-variant: 201.3 96.3% 20%;
+    --surface-elevated: 220 25% 12%;     /* Elevated surfaces with blue tint */
+    --surface-hover: 220 25% 18%;        /* Hover surfaces with blue tint */
+    --surface-pressed: 220 25% 22%;      /* Pressed surfaces with blue tint */
+    --outline: 220 25% 35%;              /* Outline with blue tint */
+    --outline-variant: 220 25% 40%;      /* Variant outline with blue tint */
 
     /* Professional medical status colors - Dark mode */
-    --status-scheduled: 200.4 98% 60%;
-    --status-completed: 142 76% 55%;
-    --status-cancelled: 0 84% 75%;
-    --status-no-show: 220 13% 65%;
-    --status-in-progress: 38 92% 70%;
-    --status-confirmed: 142 76% 55%;
+    --status-scheduled: 217 91% 60%;     /* Calming blue - scheduled */
+    --status-completed: 158 64% 52%;     /* Soft teal - completed */
+    --status-cancelled: 0 84% 60%;       /* Soft red - cancelled */
+    --status-no-show: 220 25% 60%;       /* Slate gray - no show */
+    --status-in-progress: 43 96% 56%;    /* Warm amber - in progress */
+    --status-confirmed: 158 64% 52%;     /* Soft teal - confirmed */
   }
 }
 
@@ -316,30 +334,47 @@
     color-scheme: dark;
   }
 
-  /* Enhanced Dashboard Card Styles */
+  /* Enhanced Dashboard Card Styles - HARMONIZED DARK MODE */
   .dashboard-card {
-    @apply bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 border-slate-200 dark:border-slate-700 shadow-md hover:shadow-lg transition-all duration-200;
+    @apply bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 border-slate-200 dark:border-slate-600 shadow-md hover:shadow-lg transition-all duration-200;
   }
 
   .dashboard-card-blue {
-    @apply bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 border-blue-200 dark:border-blue-700 hover:from-blue-100 hover:to-blue-200 dark:hover:from-blue-800/40 dark:hover:to-blue-700/40;
+    @apply bg-gradient-to-br from-blue-50 to-blue-100 dark:from-slate-800 dark:to-slate-900 border-blue-200 dark:border-slate-600 hover:from-blue-100 hover:to-blue-200 dark:hover:from-slate-700 dark:hover:to-slate-800;
   }
 
   .dashboard-card-green {
-    @apply bg-gradient-to-br from-emerald-50 to-green-100 dark:from-emerald-900/30 dark:to-green-800/30 border-emerald-200 dark:border-emerald-700 hover:from-emerald-100 hover:to-green-200 dark:hover:from-emerald-800/40 dark:hover:to-green-700/40;
+    @apply bg-gradient-to-br from-emerald-50 to-green-100 dark:from-slate-800 dark:to-slate-900 border-emerald-200 dark:border-slate-600 hover:from-emerald-100 hover:to-green-200 dark:hover:from-slate-700 dark:hover:to-slate-800;
   }
 
   .dashboard-card-amber {
-    @apply bg-gradient-to-br from-amber-50 to-yellow-100 dark:from-amber-900/30 dark:to-yellow-800/30 border-amber-200 dark:border-amber-700 hover:from-amber-100 hover:to-yellow-200 dark:hover:from-amber-800/40 dark:hover:to-yellow-700/40;
+    @apply bg-gradient-to-br from-amber-50 to-yellow-100 dark:from-slate-800 dark:to-slate-900 border-amber-200 dark:border-slate-600 hover:from-amber-100 hover:to-yellow-200 dark:hover:from-slate-700 dark:hover:to-slate-800;
   }
 
   .dashboard-card-rose {
-    @apply bg-gradient-to-br from-rose-50 to-red-100 dark:from-rose-900/30 dark:to-red-800/30 border-rose-200 dark:border-rose-700 hover:from-rose-100 hover:to-red-200 dark:hover:from-rose-800/40 dark:hover:to-red-700/40;
+    @apply bg-gradient-to-br from-rose-50 to-red-100 dark:from-slate-800 dark:to-slate-900 border-rose-200 dark:border-slate-600 hover:from-rose-100 hover:to-red-200 dark:hover:from-slate-700 dark:hover:to-slate-800;
   }
 
-  /* Enhanced Button Styles */
+  /* Enhanced Button Styles - HARMONIZED DARK MODE */
   .btn-primary-gradient {
     @apply bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all duration-200;
+  }
+
+  /* Harmonized Quick Action Buttons for Dark Mode */
+  .btn-quick-action-blue {
+    @apply bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-600 hover:to-slate-700 text-slate-200 border border-slate-600 hover:border-slate-500 shadow-md hover:shadow-lg transition-all duration-200;
+  }
+
+  .btn-quick-action-green {
+    @apply bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-600 hover:to-slate-700 text-slate-200 border border-slate-600 hover:border-slate-500 shadow-md hover:shadow-lg transition-all duration-200;
+  }
+
+  .btn-quick-action-orange {
+    @apply bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-600 hover:to-slate-700 text-slate-200 border border-slate-600 hover:border-slate-500 shadow-md hover:shadow-lg transition-all duration-200;
+  }
+
+  .btn-quick-action-purple {
+    @apply bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-600 hover:to-slate-700 text-slate-200 border border-slate-600 hover:border-slate-500 shadow-md hover:shadow-lg transition-all duration-200;
   }
 
   .btn-outline-emerald {
@@ -1353,21 +1388,21 @@
 
   /* Dark mode status indicators */
   [data-theme="dark"] .status-scheduled {
-    background: var(--primary-50);
-    color: var(--primary-500);
-    border-color: var(--primary-600);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border-color: var(--border-light);
   }
 
   [data-theme="dark"] .status-completed {
-    background: var(--success-bg);
-    color: var(--success);
-    border-color: var(--success);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border-color: var(--border-light);
   }
 
   [data-theme="dark"] .status-cancelled {
-    background: var(--error-bg);
-    color: var(--error);
-    border-color: var(--error);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border-color: var(--border-light);
   }
 
   [data-theme="dark"] .status-no-show {
@@ -1377,38 +1412,38 @@
   }
 
   [data-theme="dark"] .status-in-progress {
-    background: var(--warning-bg);
-    color: var(--warning);
-    border-color: var(--warning);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border-color: var(--border-light);
   }
 
   [data-theme="dark"] .status-confirmed {
-    background: var(--info-bg);
-    color: var(--info);
-    border-color: var(--info);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border-color: var(--border-light);
   }
 
   /* Enhanced Calendar Styling - Dark Mode */
   .dark .rbc-calendar {
-    @apply bg-slate-900 text-slate-100;
+    @apply bg-slate-950 text-slate-100;
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
   }
 
   .dark .rbc-header {
-    @apply bg-slate-800 text-slate-200 border-slate-700;
+    @apply bg-slate-800 text-slate-200 border-slate-600;
     font-weight: 600;
     padding: 12px 8px;
     border-bottom: 2px solid hsl(var(--border));
   }
 
   .dark .rbc-month-view {
-    @apply bg-slate-900 border-slate-700;
+    @apply bg-slate-950 border-slate-600;
   }
 
   .dark .rbc-day-bg {
-    @apply bg-slate-900 border-slate-700;
+    @apply bg-slate-950 border-slate-600;
     transition: background-color 0.2s ease;
   }
 
@@ -1417,7 +1452,7 @@
   }
 
   .dark .rbc-today {
-    @apply bg-blue-500/20 border-blue-400/30;
+    @apply bg-slate-800 border-slate-600;
     position: relative;
   }
 
@@ -1428,7 +1463,7 @@
     left: 0;
     right: 0;
     height: 3px;
-    background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+    background: linear-gradient(90deg, #475569, #64748b);
     border-radius: 0 0 4px 4px;
   }
 
@@ -1498,30 +1533,30 @@
 
   /* Time Slots Styling */
   .dark .rbc-time-view .rbc-header {
-    @apply bg-slate-800 text-slate-200 border-slate-700;
+    @apply bg-slate-800 text-slate-200 border-slate-600;
     font-weight: 600;
   }
 
   .dark .rbc-time-view .rbc-time-gutter {
-    @apply bg-slate-800 border-slate-700;
+    @apply bg-slate-800 border-slate-600;
   }
 
   .dark .rbc-time-view .rbc-timeslot-group {
-    @apply border-slate-700;
+    @apply border-slate-600;
   }
 
   .dark .rbc-time-view .rbc-time-content {
-    @apply border-slate-700;
+    @apply border-slate-600;
   }
 
   /* Selected Date Highlighting */
   .dark .rbc-selected {
-    @apply bg-blue-500/30;
+    @apply bg-slate-700/30;
   }
 
   /* Calendar Navigation Buttons */
   .dark .rbc-toolbar button {
-    @apply bg-slate-700 text-slate-200 border-slate-600;
+    @apply bg-slate-800 text-slate-200 border-slate-600;
     border-radius: 6px;
     padding: 8px 12px;
     font-weight: 500;
@@ -1529,12 +1564,12 @@
   }
 
   .dark .rbc-toolbar button:hover {
-    @apply bg-slate-600 text-white;
+    @apply bg-slate-700 text-slate-100;
     transform: translateY(-1px);
   }
 
   .dark .rbc-toolbar button.rbc-active {
-    @apply bg-blue-500 text-white;
+    @apply bg-slate-700 text-slate-100;
   }
 
   /* Light Mode Calendar Styling */
@@ -4571,24 +4606,34 @@
  }
 
  /* Dark mode enhancements */
- [data-theme="dark"] .card-success {
-   box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.2);
+  [data-theme="dark"] .card-success {
+   background: var(--bg-secondary);
+   border-color: var(--border-light);
+   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
  }
 
  [data-theme="dark"] .card-warning {
-   box-shadow: 0 4px 6px -1px rgba(251, 191, 36, 0.2);
+   background: var(--bg-secondary);
+   border-color: var(--border-light);
+   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
  }
 
  [data-theme="dark"] .card-error {
-   box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2);
+   background: var(--bg-secondary);
+   border-color: var(--border-light);
+   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
  }
 
  [data-theme="dark"] .card-info {
-   box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+   background: var(--bg-secondary);
+   border-color: var(--border-light);
+   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
  }
 
  [data-theme="dark"] .card-neutral {
-   box-shadow: 0 4px 6px -1px rgba(148, 163, 184, 0.2);
+   background: var(--bg-secondary);
+   border-color: var(--border-light);
+   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
  }
 
  /* Enhanced Contrast Classes */

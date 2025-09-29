@@ -147,7 +147,10 @@ const Dashboard = React.memo(function Dashboard({ onAddPatient, onAddAppointment
       pendingPayments: Math.max(0, pendingAmount || 0),
       todayAppointments: Math.max(0, todayAppointments.length),
       thisMonthRevenue: Math.max(0, thisMonthRevenue),
-      lowStockItems: Math.max(0, (lowStockCount || 0) + (expiredCount || 0) + (expiringSoonCount || 0))
+      lowStockItems: Math.max(0, (lowStockCount || 0) + (expiredCount || 0) + (expiringSoonCount || 0)),
+      totalExpenses: 0,
+      netProfit: 0,
+      profitMargin: 0
     }
 
     // Round financial values to 2 decimal places
@@ -250,24 +253,24 @@ const Dashboard = React.memo(function Dashboard({ onAddPatient, onAddAppointment
 
   return (
     <div className="space-y-6 md:space-y-8 lg:space-y-10 rtl-layout p-4 md:p-6 lg:p-8">
-      {/* Enhanced Welcome Section */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 p-6 md:p-8 bg-gradient-to-r from-muted/50 to-accent/20 rounded-xl backdrop-blur-sm border border-border">
+      {/* Enhanced Welcome Section with smooth gradients */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 p-6 md:p-8 bg-gradient-to-r from-slate-800/50 to-blue-900/20 dark:from-slate-800/50 dark:to-blue-900/20 rounded-xl backdrop-blur-sm border border-slate-700 dark:border-slate-600 shadow-lg">
         <div className="space-y-2">
           <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-slate-100 dark:text-slate-100">
               مرحباً بك في {clinicName}
             </h1>
           </div>
-          <p className="text-sm md:text-base text-muted-foreground">
+          <p className="text-sm md:text-base text-slate-300 dark:text-slate-300">
             إليك ما يحدث في عيادتك - تحديث تلقائي في الوقت الفعلي
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 md:gap-4 w-full md:w-auto">
-          <Button onClick={onAddAppointment} className="btn-rtl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200 rounded-lg px-4 py-2 md:px-6 md:py-3">
+          <Button onClick={onAddAppointment} className="btn-rtl bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-lg px-4 py-2 md:px-6 md:py-3">
             <Plus className="w-4 h-4 icon-right" />
             موعد جديد
           </Button>
-          <Button variant="outline" onClick={onAddPatient} className="btn-rtl border-border hover:bg-accent shadow-lg hover:shadow-xl transition-all duration-200 rounded-lg px-4 py-2 md:px-6 md:py-3">
+          <Button variant="outline" onClick={onAddPatient} className="btn-rtl border-slate-600 dark:border-slate-500 hover:bg-slate-700 dark:hover:bg-slate-700 text-slate-200 dark:text-slate-200 shadow-lg hover:shadow-xl transition-all duration-200 rounded-lg px-4 py-2 md:px-6 md:py-3">
             <Plus className="w-4 h-4 icon-right" />
             مريض جديد
           </Button>
@@ -294,45 +297,45 @@ const Dashboard = React.memo(function Dashboard({ onAddPatient, onAddAppointment
         />
       </div>
 
-      {/* Enhanced Stats Cards */}
+      {/* Enhanced Stats Cards with smooth gradients */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-        <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 border-blue-200/50 dark:border-blue-700/50 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm">
+        <Card className="bg-slate-800/50 dark:bg-slate-800/50 border-slate-700 dark:border-slate-600 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm hover:bg-slate-800/70 dark:hover:bg-slate-800/70">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+            <CardTitle className="text-sm font-semibold text-slate-300 dark:text-slate-300">
               إجمالي المرضى
             </CardTitle>
-            <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <Users className="h-5 w-5 text-slate-400 dark:text-slate-400" />
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="text-2xl md:text-3xl font-bold text-blue-800 dark:text-blue-200 mb-1">
+            <div className="text-2xl md:text-3xl font-bold text-slate-100 dark:text-slate-100 mb-1">
               {patients.length}
             </div>
-            <p className="text-xs text-blue-600 dark:text-blue-400">
+            <p className="text-xs text-slate-400 dark:text-slate-400">
               إجمالي المرضى المسجلين
             </p>
           </CardContent>
         </Card>
 
-        <Card className={`${getCardStyles("purple")} stats-card-rtl`}>
+        <Card className="bg-slate-800/50 dark:bg-slate-800/50 border-slate-700 dark:border-slate-600 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm hover:bg-slate-800/70 dark:hover:bg-slate-800/70">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-sm font-medium text-slate-300 dark:text-slate-300">
               {appointmentStats.timeFilter.preset === 'all' || (!appointmentStats.timeFilter.startDate && !appointmentStats.timeFilter.endDate) ? 'إجمالي المواعيد' : 'المواعيد المفلترة'}
             </CardTitle>
-            <Calendar className={`h-4 w-4 stats-icon ${getIconStyles("purple")}`} />
+            <Calendar className="h-4 w-4 text-slate-400 dark:text-slate-400" />
           </CardHeader>
           <CardContent className="stats-content">
-            <div className="text-2xl font-bold text-foreground">
+            <div className="text-2xl font-bold text-slate-100 dark:text-slate-100">
               {appointmentStats.timeFilter.preset === 'all' || (!appointmentStats.timeFilter.startDate && !appointmentStats.timeFilter.endDate)
                 ? appointments.length
                 : appointmentStats.filteredData.length}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-slate-400 dark:text-slate-400">
               {appointmentStats.timeFilter.preset === 'all' || (!appointmentStats.timeFilter.startDate && !appointmentStats.timeFilter.endDate)
                 ? 'إجمالي المواعيد المسجلة'
                 : `من إجمالي ${appointments.length} موعد`}
             </p>
             {appointmentStats.trend && (
-              <div className={`text-xs mt-1 flex items-center ${appointmentStats.trend.isPositive ? 'text-green-600' : 'text-red-600'}`}>
+              <div className={`text-xs mt-1 flex items-center ${appointmentStats.trend.isPositive ? 'text-emerald-400 dark:text-emerald-400' : 'text-red-400 dark:text-red-400'}`}>
                 <span>{appointmentStats.trend.isPositive ? '↗' : '↘'}</span>
                 <span className="mr-1">{Math.abs(appointmentStats.trend.changePercent)}%</span>
               </div>
@@ -340,20 +343,20 @@ const Dashboard = React.memo(function Dashboard({ onAddPatient, onAddAppointment
           </CardContent>
         </Card>
 
-        <Card className={`${getCardStyles("emerald")} stats-card-rtl`}>
+        <Card className="bg-slate-800/50 dark:bg-slate-800/50 border-slate-700 dark:border-slate-600 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm hover:bg-slate-800/70 dark:hover:bg-slate-800/70">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-sm font-medium text-slate-300 dark:text-slate-300">
               {appointmentStats.timeFilter.preset === 'all' || (!appointmentStats.timeFilter.startDate && !appointmentStats.timeFilter.endDate) ? 'المواعيد المكتملة' : 'المواعيد المكتملة المفلترة'}
             </CardTitle>
-            <TrendingUp className={`h-4 w-4 stats-icon ${getIconStyles("emerald")}`} />
+            <TrendingUp className="h-4 w-4 text-slate-400 dark:text-slate-400" />
           </CardHeader>
           <CardContent className="stats-content">
-            <div className="text-2xl font-bold text-foreground">
+            <div className="text-2xl font-bold text-slate-100 dark:text-slate-100">
               {appointmentStats.timeFilter.preset === 'all' || (!appointmentStats.timeFilter.startDate && !appointmentStats.timeFilter.endDate)
                 ? appointments.filter(a => a.status === 'completed').length
                 : appointmentStats.filteredData.filter(a => a.status === 'completed').length}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-slate-400 dark:text-slate-400">
               {appointmentStats.timeFilter.preset === 'all' || (!appointmentStats.timeFilter.startDate && !appointmentStats.timeFilter.endDate)
                 ? 'إجمالي المواعيد المكتملة'
                 : 'المواعيد المكتملة في الفترة المحددة'}
@@ -361,26 +364,26 @@ const Dashboard = React.memo(function Dashboard({ onAddPatient, onAddAppointment
           </CardContent>
         </Card>
 
-        <Card className={`${getCardStyles("green")} stats-card-rtl`}>
+        <Card className="bg-slate-800/50 dark:bg-slate-800/50 border-slate-700 dark:border-slate-600 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm hover:bg-slate-800/70 dark:hover:bg-slate-800/70">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-sm font-medium text-slate-300 dark:text-slate-300">
               {paymentStats.timeFilter.preset === 'all' || (!paymentStats.timeFilter.startDate && !paymentStats.timeFilter.endDate) ? 'إيرادات الشهر' : 'الإيرادات المفلترة'}
             </CardTitle>
-            <DollarSign className={`h-4 w-4 stats-icon ${getIconStyles("green")}`} />
+            <DollarSign className="h-4 w-4 text-slate-400 dark:text-slate-400" />
           </CardHeader>
           <CardContent className="stats-content">
-            <div className="text-2xl font-bold text-foreground">
+            <div className="text-2xl font-bold text-slate-100 dark:text-slate-100">
               {paymentStats.timeFilter.preset === 'all' || (!paymentStats.timeFilter.startDate && !paymentStats.timeFilter.endDate)
                 ? formatAmount(stats.thisMonthRevenue)
                 : formatAmount(paymentStats.financialStats.totalRevenue)}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-slate-400 dark:text-slate-400">
               {paymentStats.timeFilter.preset === 'all' || (!paymentStats.timeFilter.startDate && !paymentStats.timeFilter.endDate)
                 ? 'أرباح هذا الشهر'
                 : 'الإيرادات في الفترة المحددة'}
             </p>
             {paymentStats.trend && (
-              <div className={`text-xs mt-1 flex items-center ${paymentStats.trend.isPositive ? 'text-green-600' : 'text-red-600'}`}>
+              <div className={`text-xs mt-1 flex items-center ${paymentStats.trend.isPositive ? 'text-emerald-400 dark:text-emerald-400' : 'text-red-400 dark:text-red-400'}`}>
                 <span>{paymentStats.trend.isPositive ? '↗' : '↘'}</span>
                 <span className="ml-1">{Math.abs(paymentStats.trend.changePercent)}%</span>
               </div>
@@ -389,22 +392,22 @@ const Dashboard = React.memo(function Dashboard({ onAddPatient, onAddAppointment
         </Card>
       </div>
 
-      {/* Second Row Stats Cards */}
+      {/* Second Row Stats Cards with smooth gradients */}
       <div className="dashboard-grid-rtl grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-        <Card className={`${getCardStyles("green")} stats-card-rtl`}>
+        <Card className="bg-slate-800/50 dark:bg-slate-800/50 border-slate-700 dark:border-slate-600 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm hover:bg-slate-800/70 dark:hover:bg-slate-800/70">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-sm font-medium text-slate-300 dark:text-slate-300">
               {paymentStats.timeFilter.preset === 'all' || (!paymentStats.timeFilter.startDate && !paymentStats.timeFilter.endDate) ? 'إجمالي الإيرادات' : 'إجمالي الإيرادات المفلترة'}
             </CardTitle>
-            <DollarSign className={`h-4 w-4 stats-icon ${getIconStyles("green")}`} />
+            <DollarSign className="h-4 w-4 text-slate-400 dark:text-slate-400" />
           </CardHeader>
           <CardContent className="stats-content">
-            <div className="text-2xl font-bold text-foreground">
+            <div className="text-2xl font-bold text-slate-100 dark:text-slate-100">
               {paymentStats.timeFilter.preset === 'all' || (!paymentStats.timeFilter.startDate && !paymentStats.timeFilter.endDate)
                 ? formatAmount(stats.totalRevenue)
                 : formatAmount(paymentStats.financialStats.totalRevenue)}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-slate-400 dark:text-slate-400">
               {paymentStats.timeFilter.preset === 'all' || (!paymentStats.timeFilter.startDate && !paymentStats.timeFilter.endDate)
                 ? 'إجمالي الإيرادات المحققة'
                 : 'إجمالي الإيرادات في الفترة المحددة'}
@@ -412,20 +415,20 @@ const Dashboard = React.memo(function Dashboard({ onAddPatient, onAddAppointment
           </CardContent>
         </Card>
 
-        <Card className={`${getCardStyles("yellow")} stats-card-rtl`}>
+        <Card className="bg-slate-800/50 dark:bg-slate-800/50 border-slate-700 dark:border-slate-600 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm hover:bg-slate-800/70 dark:hover:bg-slate-800/70">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-sm font-medium text-slate-300 dark:text-slate-300">
               {paymentStats.timeFilter.preset === 'all' || (!paymentStats.timeFilter.startDate && !paymentStats.timeFilter.endDate) ? 'المدفوعات الآجلة' : 'المدفوعات الآجلة المفلترة'}
             </CardTitle>
-            <Clock className={`h-4 w-4 stats-icon ${getIconStyles("yellow")}`} />
+            <Clock className="h-4 w-4 text-slate-400 dark:text-slate-400" />
           </CardHeader>
           <CardContent className="stats-content">
-            <div className="text-2xl font-bold text-foreground">
+            <div className="text-2xl font-bold text-slate-100 dark:text-slate-100">
               {paymentStats.timeFilter.preset === 'all' || (!paymentStats.timeFilter.startDate && !paymentStats.timeFilter.endDate)
                 ? formatAmount(stats.pendingPayments)
                 : formatAmount(paymentStats.financialStats.pendingAmount)}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-slate-400 dark:text-slate-400">
               {paymentStats.timeFilter.preset === 'all' || (!paymentStats.timeFilter.startDate && !paymentStats.timeFilter.endDate)
                 ? 'مدفوعات في انتظار التحصيل'
                 : 'مدفوعات آجلة في الفترة المحددة'}
@@ -433,25 +436,25 @@ const Dashboard = React.memo(function Dashboard({ onAddPatient, onAddAppointment
           </CardContent>
         </Card>
 
-        <Card className={`${getCardStyles("orange")} stats-card-rtl`}>
+        <Card className="bg-slate-800/50 dark:bg-slate-800/50 border-slate-700 dark:border-slate-600 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm hover:bg-slate-800/70 dark:hover:bg-slate-800/70">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">تنبيهات المخزون</CardTitle>
-            <Package className={`h-4 w-4 stats-icon ${getIconStyles("orange")}`} />
+            <CardTitle className="text-sm font-medium text-slate-300 dark:text-slate-300">تنبيهات المخزون</CardTitle>
+            <Package className="h-4 w-4 text-slate-400 dark:text-slate-400" />
           </CardHeader>
           <CardContent className="stats-content">
-            <div className="text-2xl font-bold text-foreground">{stats.lowStockItems}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-slate-100 dark:text-slate-100">{stats.lowStockItems}</div>
+            <p className="text-xs text-slate-400 dark:text-slate-400">
               عناصر تحتاج انتباه
             </p>
             {stats.lowStockItems > 0 && (
               <div className="mt-2 text-xs">
                 <div className="flex justify-between">
-                  <span>مخزون منخفض:</span>
-                  <span className={getIconStyles("yellow").replace('h-4 w-4', '')}>{lowStockCount}</span>
+                  <span className="text-slate-300 dark:text-slate-300">مخزون منخفض:</span>
+                  <span className="text-slate-400 dark:text-slate-400">{lowStockCount}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>منتهي الصلاحية:</span>
-                  <span className={getIconStyles("red").replace('h-4 w-4', '')}>{expiredCount + expiringSoonCount}</span>
+                  <span className="text-slate-300 dark:text-slate-300">منتهي الصلاحية:</span>
+                  <span className="text-slate-400 dark:text-slate-400">{expiredCount + expiringSoonCount}</span>
                 </div>
               </div>
             )}
@@ -459,22 +462,22 @@ const Dashboard = React.memo(function Dashboard({ onAddPatient, onAddAppointment
         </Card>
       </div>
 
-      {/* Enhanced Charts Section */}
+      {/* Enhanced Charts Section with smooth gradients */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
         {/* Enhanced Revenue Chart */}
-        <Card className="bg-card backdrop-blur-sm border-border shadow-xl hover:shadow-2xl transition-all duration-300">
+        <Card className="bg-slate-800/50 dark:bg-slate-800/50 backdrop-blur-sm border-slate-700 dark:border-slate-600 shadow-xl hover:shadow-2xl transition-all duration-300 hover:bg-slate-800/70 dark:hover:bg-slate-800/70">
           <CardHeader className="pb-4">
-            <CardTitle className="flex items-center space-x-2 space-x-reverse text-foreground">
-              <TrendingUp className="w-5 h-5 text-primary" />
+            <CardTitle className="flex items-center space-x-2 space-x-reverse text-slate-100 dark:text-slate-100">
+              <TrendingUp className="w-5 h-5 text-blue-400 dark:text-blue-400" />
               <span>اتجاه الإيرادات</span>
             </CardTitle>
-            <CardDescription className="text-muted-foreground">
+            <CardDescription className="text-slate-300 dark:text-slate-300">
               الإيرادات الشهرية خلال آخر 6 أشهر ({formatAmount(stats.totalRevenue)} إجمالي)
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-0">
             {revenueData.length === 0 ? (
-              <div className="flex items-center justify-center h-80 text-muted-foreground">
+              <div className="flex items-center justify-center h-80 text-slate-400 dark:text-slate-400">
                 <div className="text-center">
                   <TrendingUp className="w-12 h-12 mx-auto mb-4 opacity-50" />
                   <p>لا توجد بيانات إيرادات متاحة</p>
@@ -537,19 +540,19 @@ const Dashboard = React.memo(function Dashboard({ onAddPatient, onAddAppointment
         </Card>
 
         {/* Enhanced Appointment Status Chart */}
-        <Card className="bg-card border-border shadow-xl hover:shadow-2xl transition-all duration-300">
+        <Card className="bg-slate-800/50 dark:bg-slate-800/50 border-slate-700 dark:border-slate-600 shadow-xl hover:shadow-2xl transition-all duration-300 hover:bg-slate-800/70 dark:hover:bg-slate-800/70">
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2 space-x-reverse text-foreground">
-              <Calendar className="w-5 h-5 text-primary" />
+            <CardTitle className="flex items-center space-x-2 space-x-reverse text-slate-100 dark:text-slate-100">
+              <Calendar className="w-5 h-5 text-blue-400 dark:text-blue-400" />
               <span>حالة المواعيد</span>
             </CardTitle>
-            <CardDescription className="text-muted-foreground">
+            <CardDescription className="text-slate-300 dark:text-slate-300">
               توزيع حالات المواعيد ({appointments.length} موعد إجمالي)
             </CardDescription>
           </CardHeader>
           <CardContent>
             {appointmentStatusData.length === 0 ? (
-              <div className="flex items-center justify-center h-80 text-muted-foreground">
+              <div className="flex items-center justify-center h-80 text-slate-400 dark:text-slate-400">
                 <div className="text-center">
                   <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
                   <p>لا توجد مواعيد متاحة</p>
@@ -563,9 +566,6 @@ const Dashboard = React.memo(function Dashboard({ onAddPatient, onAddAppointment
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percent, value }) =>
-                      value > 0 ? `${name}: ${value} (${(percent * 100).toFixed(0)}%)` : ''
-                    }
                     outerRadius={120}
                     innerRadius={50}
                     fill="#8884d8"
@@ -613,46 +613,46 @@ const Dashboard = React.memo(function Dashboard({ onAddPatient, onAddAppointment
         </Card>
       </div>
 
-      {/* Today's Appointments */}
-      <Card className="bg-card border-border shadow-xl hover:shadow-2xl transition-all duration-300">
+      {/* Today's Appointments with smooth gradients */}
+      <Card className="bg-slate-800/50 dark:bg-slate-800/50 border-slate-700 dark:border-slate-600 shadow-xl hover:shadow-2xl transition-all duration-300 hover:bg-slate-800/70 dark:hover:bg-slate-800/70">
         <CardHeader>
-          <CardTitle className="text-foreground">مواعيد اليوم</CardTitle>
-          <CardDescription className="text-muted-foreground">
-            {todayAppointments.length} موعد مجدول لتاريخ {formatDate(new Date(), 'long')}
+          <CardTitle className="text-slate-100 dark:text-slate-100">مواعيد اليوم</CardTitle>
+          <CardDescription className="text-slate-300 dark:text-slate-300">
+            {todayAppointments.length} موعد مجدول لتاريخ {formatDate(new Date())}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {todayAppointments.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-slate-400 dark:text-slate-400">
               <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>لا توجد مواعيد مجدولة لليوم</p>
             </div>
           ) : (
             <div className="space-y-4">
               {todayAppointments.slice(0, 5).map((appointment) => (
-                <div key={appointment.id} className="flex items-center justify-between p-4 border dark:border-slate-700 rounded-lg">
+                <div key={appointment.id} className="flex items-center justify-between p-4 border border-slate-700 dark:border-slate-600 rounded-lg bg-slate-700/50 dark:bg-slate-700/50">
                   <div className="flex items-center space-x-4 space-x-reverse">
-                    <div className="w-2 h-2 rounded-full bg-primary dark:bg-slate-400"></div>
+                    <div className="w-2 h-2 rounded-full bg-blue-400 dark:bg-blue-400"></div>
                     <div>
-                      <p className="font-medium arabic-enhanced">{appointment.patient?.full_name || appointment.patient_name || 'مريض غير معروف'}</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="font-medium arabic-enhanced text-slate-100 dark:text-slate-100">{appointment.patient?.full_name || 'مريض غير معروف'}</p>
+                      <p className="text-sm text-slate-400 dark:text-slate-400">
                         {formatTime(appointment.start_time)} - {formatTime(appointment.end_time)}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2 space-x-reverse">
                     <span className={`px-2 py-1 text-xs rounded-full ${
-                      appointment.status === 'scheduled' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
-                      appointment.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
-                      appointment.status === 'cancelled' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
-                      'bg-gray-100 text-gray-800 dark:bg-card dark:text-gray-200'
+                      appointment.status === 'scheduled' ? 'bg-blue-600 text-white dark:bg-blue-600 dark:text-white' :
+                      appointment.status === 'completed' ? 'bg-emerald-600 text-white dark:bg-emerald-600 dark:text-white' :
+                      appointment.status === 'cancelled' ? 'bg-red-600 text-white dark:bg-red-600 dark:text-white' :
+                      'bg-slate-600 text-white dark:bg-slate-600 dark:text-white'
                     }`}>
                       {appointment.status === 'scheduled' ? 'مجدول' :
                        appointment.status === 'completed' ? 'مكتمل' :
                        appointment.status === 'cancelled' ? 'ملغي' :
                        appointment.status === 'no_show' ? 'لم يحضر' : appointment.status}
                     </span>
-                    <Button variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" className="text-slate-300 dark:text-slate-300 hover:bg-slate-700 dark:hover:bg-slate-700">
                       <Eye className="w-4 h-4" />
                     </Button>
                   </div>
@@ -660,7 +660,7 @@ const Dashboard = React.memo(function Dashboard({ onAddPatient, onAddAppointment
               ))}
               {todayAppointments.length > 5 && (
                 <div className="text-center">
-                  <Button variant="outline">
+                  <Button variant="outline" className="border-slate-600 dark:border-slate-500 text-slate-300 dark:text-slate-300 hover:bg-slate-700 dark:hover:bg-slate-700">
                     عرض جميع المواعيد ({todayAppointments.length})
                   </Button>
                 </div>

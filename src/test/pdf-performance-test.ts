@@ -230,10 +230,10 @@ export class DatabasePerformanceTest {
       console.log('\n📊 تحليل البيانات المجمعة:')
       console.log(`👥 إجمالي المرضى: ${storeStats.totalPatients}`)
       console.log(`📅 إجمالي المواعيد: ${storeStats.totalAppointments}`)
-      console.log(`💰 إجمالي الإيرادات: ${storeStats.totalRevenue.toLocaleString()} ل.س`)
+      console.log(`💰 إجمالي الإيرادات: ${storeStats.totalRevenue.toLocaleString('en-US')} ل.س`)
       console.log(`⏳ المدفوعات الآجلة: ${storeStats.pendingPayments}`)
       console.log(`📆 مواعيد اليوم: ${storeStats.todayAppointments}`)
-      console.log(`📈 إيرادات الشهر: ${storeStats.thisMonthRevenue.toLocaleString()} ل.س`)
+      console.log(`📈 إيرادات الشهر: ${storeStats.thisMonthRevenue.toLocaleString('en-US')} ل.س`)
 
     } catch (error) {
       console.error('❌ فشل في اختبار أداء المتجر:', error)
@@ -500,7 +500,7 @@ export class PDFPerformanceTest {
         <body>
           <h1>اختبار نافذة الطباعة المحسنة</h1>
           <p>هذا اختبار للتحقق من تحسينات نافذة الطباعة</p>
-          <div>تاريخ الاختبار: ${new Date().toLocaleDateString('ar-SA')}</div>
+          <div>تاريخ الاختبار: ${new Date().toLocaleDateString('en-US')}</div>
         </body>
         </html>
       `

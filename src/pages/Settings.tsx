@@ -36,7 +36,8 @@ import {
   Info,
   Image,
   Keyboard,
-  DollarSign
+  DollarSign,
+  Facebook
 } from 'lucide-react'
 
 
@@ -135,7 +136,7 @@ window.electronAPI?.whatsappReminders?.getStatus) {
         setSessionStatus({
           isConnected,
           isConnecting: Boolean(isConnecting && !isConnected),
-          lastActivity: status.lastReadyAt ? new Date(status.lastReadyAt).toLocaleString('ar-SY') : null,
+          lastActivity: status.lastReadyAt ? new Date(status.lastReadyAt).toLocaleString('en-US') : null,
           qrAvailable: status.hasQr || !!status.qr
         })
       }
@@ -1152,10 +1153,10 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
       {/* Appearance Settings Tab */}
       {activeTab === 'appearance' && (
         <div className="space-y-6">
-          <div className="bg-card dark:bg-gray-800 rounded-xl shadow-sm border border-border dark:border-gray-700">
-            <div className="p-4 sm:p-6 border-b border-border dark:border-gray-700">
-              <h3 className="text-lg sm:text-xl font-semibold text-foreground dark:text-white">إعدادات المظهر</h3>
-              <p className="text-sm text-muted-foreground dark:text-gray-300 mt-1">
+          <div className="bg-card dark:bg-slate-800 rounded-xl shadow-sm border border-border dark:border-slate-600">
+            <div className="p-4 sm:p-6 border-b border-border dark:border-slate-600">
+              <h3 className="text-lg sm:text-xl font-semibold text-foreground dark:text-slate-100">إعدادات المظهر</h3>
+              <p className="text-sm text-muted-foreground dark:text-slate-300 mt-1">
                 تخصيص مظهر التطبيق وفقاً لتفضيلاتك
               </p>
             </div>
@@ -1173,8 +1174,8 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                     )}
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-foreground dark:text-white">الوضع المظلم</label>
-                    <p className="text-sm text-muted-foreground dark:text-gray-300">
+                    <label className="text-sm font-medium text-foreground dark:text-slate-100">الوضع المظلم</label>
+                    <p className="text-sm text-muted-foreground dark:text-slate-300">
                       تبديل بين الوضع الفاتح والمظلم للتطبيق
                     </p>
                   </div>
@@ -1969,6 +1970,51 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                   className="px-4 py-2 bg-blue-600 dark:bg-blue-600 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-700 transition-all duration-300 ease-in-out interactive-card w-full sm:w-auto hover:scale-105 active:scale-95 hover:shadow-lg dark:hover:shadow-blue-500/25"
                 >
                   إرسال إيميل
+                </button>
+              </div>
+
+              {/* Facebook Contact */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center space-x-4 space-x-reverse p-4 bg-muted/50 dark:bg-gray-700/50 rounded-lg gap-4">
+                <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex-shrink-0">
+                  <Facebook className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-sm font-medium text-foreground dark:text-white">صفحة الفيسبوك</h4>
+                  <p className="text-lg font-bold text-foreground dark:text-white">ORalSoft</p>
+                  <p className="text-sm text-muted-foreground dark:text-gray-300">تابعنا للحصول على آخر التحديثات والأخبار</p>
+                </div>
+                <button
+                  onClick={() => {
+                    const facebookUrl = 'https://www.facebook.com/people/ORalSoft/100082266005063/?rdid=kZwmucsShbQVaBdv&share_url=https%253A%252F%252Fwww.facebook.com%252Fshare%252F1EhsuXSbaZ%252F';
+                    
+                    // Try multiple methods to open external URL
+                    try {
+                      // Method 1: Try electronAPI system.openExternal
+                      if (window.electronAPI && window.electronAPI.system && window.electronAPI.system.openExternal) {
+                        window.electronAPI.system.openExternal(facebookUrl);
+                        return;
+                      }
+                    } catch (error) {
+                      console.log('Method 1 failed:', error);
+                    }
+
+                    try {
+                      // Method 2: Try direct shell.openExternal via ipcRenderer
+                      if (window.electronAPI) {
+                        // @ts-ignore
+                        window.electronAPI.shell?.openExternal?.(facebookUrl);
+                        return;
+                      }
+                    } catch (error) {
+                      console.log('Method 2 failed:', error);
+                    }
+
+                    // Method 3: Fallback to window.open
+                    window.open(facebookUrl, '_blank', 'noopener,noreferrer');
+                  }}
+                  className="px-4 py-2 bg-blue-600 dark:bg-blue-600 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-700 transition-all duration-300 ease-in-out interactive-card w-full sm:w-auto hover:scale-105 active:scale-95 hover:shadow-lg dark:hover:shadow-blue-500/25"
+                >
+                  زيارة الصفحة
                 </button>
               </div>
 

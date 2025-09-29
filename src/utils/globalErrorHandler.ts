@@ -18,6 +18,18 @@ const originalConsole = {
 const createSafeConsoleMethod = (originalMethod: (...args: any[]) => void) => {
   return (...args: any[]) => {
     try {
+      // For error logging, preserve the original error object and its details
+      if (args.length > 0 && args[0] instanceof Error) {
+        // Log the error with full details
+        originalMethod.apply(console, [
+          args[0].message || 'Unknown error',
+          '\nStack:', args[0].stack || 'No stack trace',
+          '\nName:', args[0].name || 'Error',
+          ...args.slice(1)
+        ])
+        return
+      }
+      
       // Convert all arguments to safe strings
       const safeArgs = args.map(arg => {
         if (typeof arg === 'string') {

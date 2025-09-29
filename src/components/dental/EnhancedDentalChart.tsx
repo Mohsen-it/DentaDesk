@@ -537,19 +537,19 @@ export default function EnhancedDentalChart({
   return (
     <TooltipProvider>
       <Card className={cn("w-full", className)} id="dental-chart-section" key={`dental-chart-${forceUpdate}`}>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="w-5 h-5 text-blue-600" />
+        <CardHeader className="pb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="space-y-2">
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Activity className="w-6 h-6 text-blue-600" />
                 مخطط الأسنان التفاعلي
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-base">
                 انقر على أي سن لعرض وإدارة العلاجات المتعددة
               </CardDescription>
             </div>
 
-            <div className="flex items-center space-x-2 space-x-reverse">
+            <div className="flex items-center space-x-3 space-x-reverse p-3 bg-muted/50 rounded-lg">
               <Label htmlFor="teeth-type" className="text-sm font-medium">
                 أسنان لبنية
               </Label>
@@ -562,60 +562,60 @@ export default function EnhancedDentalChart({
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-6 bg-card dark:bg-card">
+        <CardContent className="space-y-8 bg-card dark:bg-card">
           {/* Treatment Categories Legend */}
-          <div className="flex flex-wrap justify-center gap-2 mb-4">
+          <div className="flex flex-wrap justify-center gap-3 p-4 bg-muted/30 rounded-lg">
             {TREATMENT_CATEGORIES.slice(0, 6).map((category) => (
               <Badge
                 key={category.value}
                 variant="secondary"
-                className="text-xs"
+                className="text-sm px-3 py-2"
                 style={{
                   backgroundColor: category.color + '20',
                   color: category.color,
                   borderColor: category.color + '40'
                 }}
               >
-                <span className="ml-1">{category.icon}</span>
+                <span className="ml-2">{category.icon}</span>
                 {category.label}
               </Badge>
             ))}
           </div>
 
           {/* Upper Jaw */}
-          <div className="space-y-2">
-            <div className="text-center text-sm font-medium text-muted-foreground">
+          <div className="space-y-4 p-4 bg-muted/20 rounded-lg">
+            <div className="text-center text-lg font-semibold text-foreground">
               {isPrimaryTeeth ? 'الفك العلوي اللبني' : 'الفك العلوي'}
             </div>
-            <div className={`grid gap-1 justify-center ${isPrimaryTeeth ? 'grid-cols-10' : 'grid-cols-16'}`}>
+            <div className={`grid gap-2 justify-center ${isPrimaryTeeth ? 'grid-cols-10' : 'grid-cols-16'}`}>
               {upperTeeth.map(tooth => renderTooth(tooth.number))}
             </div>
           </div>
 
           {/* Lower Jaw */}
-          <div className="space-y-2">
-            <div className="text-center text-sm font-medium text-muted-foreground">
+          <div className="space-y-4 p-4 bg-muted/20 rounded-lg">
+            <div className="text-center text-lg font-semibold text-foreground">
               {isPrimaryTeeth ? 'الفك السفلي اللبني' : 'الفك السفلي'}
             </div>
-            <div className={`grid gap-1 justify-center ${isPrimaryTeeth ? 'grid-cols-10' : 'grid-cols-16'}`}>
+            <div className={`grid gap-2 justify-center ${isPrimaryTeeth ? 'grid-cols-10' : 'grid-cols-16'}`}>
               {lowerTeeth.map(tooth => renderTooth(tooth.number))}
             </div>
           </div>
 
           {/* Instructions */}
-          <div className="text-center space-y-2">
-            <div className="text-xs text-muted-foreground">
+          <div className="text-center space-y-4 p-4 bg-muted/30 rounded-lg">
+            <div className="text-sm text-muted-foreground">
               انقر على أي سن لعرض تفاصيل العلاج وإدارة العلاجات المتعددة
             </div>
-            <div className="flex justify-center gap-4 text-xs text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs">
+            <div className="flex justify-center gap-6 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
                   #
                 </div>
                 <span>عدد العلاجات</span>
               </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-yellow-500 rounded-full" />
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-yellow-500 rounded-full" />
                 <span>قيد التنفيذ</span>
               </div>
             </div>

@@ -660,14 +660,14 @@ export default function Appointments() {
                         padding: 8px 12px;
                         font-weight: 500;
                         transition: all 0.2s ease;
-                        background-color: #334155;
+                        background-color: #1e293b;
                         color: #e2e8f0;
                         border: 1px solid #475569;
                       }
                       
                       .rbc-toolbar button:hover {
-                        background-color: #475569;
-                        color: white;
+                        background-color: #334155;
+                        color: #f1f5f9;
                         transform: translateY(-1px);
                       }
                       

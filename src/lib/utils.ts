@@ -238,29 +238,28 @@ export function getExchangeRates(): { [key: string]: number } {
   return { ...exchangeRates }
 }
 
-export function formatCurrency(amount: number, currency?: string, useArabicNumerals: boolean = false): string {
-  // Validate amount first
+export function formatCurrency(amount: number, currency?: string): string {
+  // Always use Western numerals regardless of parameter
   const validAmount = Number(amount)
   if (isNaN(validAmount) || !isFinite(validAmount)) {
     console.warn('Invalid amount for currency formatting:', amount)
     const config = getCurrencyConfig(currency || getDefaultCurrency())
-    return formatCurrencyWithConfig(0, config, useArabicNumerals)
+    return formatCurrencyWithConfig(0, config) // Always use Western numerals
   }
 
   // Use provided currency or default
   const currencyCode = currency || getDefaultCurrency()
   const config = getCurrencyConfig(currencyCode)
 
-  return formatCurrencyWithConfig(validAmount, config, useArabicNumerals)
+  return formatCurrencyWithConfig(validAmount, config) // Always use Western numerals
 }
 
 // Enhanced currency formatting with full configuration support and performance optimizations
-export function formatCurrencyWithConfig(amount: number, config: CurrencyConfig, useArabicNumerals: boolean = false): string {
+export function formatCurrencyWithConfig(amount: number, config: CurrencyConfig): string {
   const validAmount = Number(amount)
   if (isNaN(validAmount) || !isFinite(validAmount)) {
     const zeroAmount = `0.${'0'.repeat(config.decimals)}`
-    const displayAmount = useArabicNumerals ? toArabicNumeralsWithDecimal(zeroAmount) : zeroAmount
-    return `${config.symbol}${displayAmount}`
+    return `${config.symbol}${zeroAmount}` // Always use Western numerals
   }
 
   try {
@@ -268,8 +267,8 @@ export function formatCurrencyWithConfig(amount: number, config: CurrencyConfig,
     const formatter = getCurrencyFormatter(config.locale, config.code, config.decimals)
     const formattedCurrency = formatter.format(validAmount)
 
-    // Apply Arabic numerals if requested
-    return useArabicNumerals ? convertToArabicNumerals(formattedCurrency) : formattedCurrency
+    // Always return as-is since we're using English locale
+    return formattedCurrency
   } catch (error) {
     // Fallback: manual formatting with symbol positioning
     console.warn(`Error formatting currency ${config.code}, using manual formatting`)
@@ -281,29 +280,26 @@ export function formatCurrencyWithConfig(amount: number, config: CurrencyConfig,
       })
       const formattedNumber = formatter.format(validAmount)
 
-      const displayNumber = useArabicNumerals ? convertToArabicNumerals(formattedNumber) : formattedNumber
-
       if (config.position === 'before') {
-        return `${config.symbol}${displayNumber}`
+        return `${config.symbol}${formattedNumber}`
       } else {
-        return `${displayNumber} ${config.symbol}`
+        return `${formattedNumber} ${config.symbol}`
       }
     } catch (fallbackError) {
       // Ultimate fallback: simple formatting
       const fixedAmount = validAmount.toFixed(config.decimals)
-      const displayAmount = useArabicNumerals ? convertToArabicNumerals(fixedAmount) : fixedAmount
 
       if (config.position === 'before') {
-        return `${config.symbol}${displayAmount}`
+        return `${config.symbol}${fixedAmount}`
       } else {
-        return `${displayAmount} ${config.symbol}`
+        return `${fixedAmount} ${config.symbol}`
       }
     }
   }
 }
 
 // Format currency with symbol only (no decimals for display) - optimized
-export function formatCurrencySymbol(amount: number, currency?: string, useArabicNumerals: boolean = false): string {
+export function formatCurrencySymbol(amount: number, currency?: string): string {
   const currencyCode = currency || getDefaultCurrency()
   const config = getCurrencyConfig(currencyCode)
 
@@ -320,34 +316,30 @@ export function formatCurrencySymbol(amount: number, currency?: string, useArabi
     })
     const formattedNumber = formatter.format(Math.round(validAmount))
 
-    const displayNumber = useArabicNumerals ? convertToArabicNumerals(formattedNumber) : formattedNumber
-
     if (config.position === 'before') {
-      return `${config.symbol}${displayNumber}`
+      return `${config.symbol}${formattedNumber}`
     } else {
-      return `${displayNumber} ${config.symbol}`
+      return `${formattedNumber} ${config.symbol}`
     }
   } catch (error) {
     const roundedAmount = Math.round(validAmount).toString()
-    const displayAmount = useArabicNumerals ? convertToArabicNumerals(roundedAmount) : roundedAmount
 
     if (config.position === 'before') {
-      return `${config.symbol}${displayAmount}`
+      return `${config.symbol}${roundedAmount}`
     } else {
-      return `${displayAmount} ${config.symbol}`
+      return `${roundedAmount} ${config.symbol}`
     }
   }
 }
 
 // Import Gregorian calendar configuration
-import { GREGORIAN_MONTHS_AR, formatGregorianDate as formatGregorianDateCore, formatGregorianMonthYear as formatGregorianMonthYearCore, parseGregorianMonthString } from './gregorianCalendar'
+import { GREGORIAN_MONTHS_AR, formatGregorianMonthYear as formatGregorianMonthYearCore, parseGregorianMonthString } from './gregorianCalendar'
 
 // Gregorian months in Arabic - التقويم الميلادي
 // This application uses ONLY Gregorian calendar system
 const gregorianMonths = GREGORIAN_MONTHS_AR
 
-// Arabic-Indic numerals
-const arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩']
+// Using English numerals only - no conversion needed
 
 // Cache for Intl.NumberFormat instances to improve performance
 const numberFormatCache = new Map<string, Intl.NumberFormat>()
@@ -357,7 +349,8 @@ function getNumberFormatter(locale: string, options: Intl.NumberFormatOptions): 
   const cacheKey = `${locale}-${JSON.stringify(options)}`
 
   if (!numberFormatCache.has(cacheKey)) {
-    numberFormatCache.set(cacheKey, new Intl.NumberFormat(locale, options))
+    // Always use English locale for number formatting to ensure Western numerals
+    numberFormatCache.set(cacheKey, new Intl.NumberFormat('en-US', options))
   }
 
   return numberFormatCache.get(cacheKey)!
@@ -367,7 +360,8 @@ function getCurrencyFormatter(locale: string, currency: string, decimals: number
   const cacheKey = `${locale}-${currency}-${decimals}`
 
   if (!currencyFormatCache.has(cacheKey)) {
-    currencyFormatCache.set(cacheKey, new Intl.NumberFormat(locale, {
+    // Always use English locale for number formatting to ensure Western numerals
+    currencyFormatCache.set(cacheKey, new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency,
       minimumFractionDigits: decimals,
@@ -378,27 +372,11 @@ function getCurrencyFormatter(locale: string, currency: string, decimals: number
   return currencyFormatCache.get(cacheKey)!
 }
 
-function toArabicNumerals(num: number): string {
-  return num.toString().split('').map(digit => arabicNumerals[parseInt(digit)]).join('')
-}
+// Removed unused function
 
-// Optimized Arabic numeral conversion using a single pass replacement
-function convertToArabicNumerals(formattedString: string): string {
-  // Create a single regex that matches all Western digits
-  const digitRegex = /[0-9]/g
-  return formattedString.replace(digitRegex, (match) => arabicNumerals[parseInt(match)])
-}
+// Removed unused functions - always use Western numerals
 
-// Convert numbers with decimals to Arabic numerals
-function toArabicNumeralsWithDecimal(numStr: string): string {
-  // Handle decimal numbers
-  return numStr.split('').map(char => {
-    const digit = parseInt(char)
-    return isNaN(digit) ? char : arabicNumerals[digit]
-  }).join('')
-}
-
-export function formatDate(dateString: string | Date | null | undefined, format?: 'short' | 'long'): string {
+export function formatDate(dateString: string | Date | null | undefined): string {
   // Handle null, undefined, or empty string cases
   if (!dateString) {
     return '--'
@@ -457,7 +435,7 @@ export function formatDateTime(dateString: string | Date | null | undefined): st
     const formattedMonth = month.toString().padStart(2, '0')
     const formattedDate = `${formattedDay}/${formattedMonth}/${year}`
 
-    const time = date.toLocaleTimeString('ar-SA', {
+    const time = date.toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
       hour12: true
@@ -484,7 +462,7 @@ export function formatTime(dateString: string | null | undefined): string {
       return '--'
     }
 
-    return date.toLocaleTimeString('ar-SA', {
+    return date.toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
       hour12: true
@@ -669,9 +647,14 @@ export const chartColorSchemes = {
 export function getChartColors(scheme: keyof typeof chartColorSchemes = 'primary', isDarkMode: boolean = false): string[] {
   const colors = chartColorSchemes[scheme]
 
+  // Ensure colors is an array
+  if (!Array.isArray(colors)) {
+    return []
+  }
+
   if (isDarkMode) {
     // Brighten colors for dark mode
-    return colors.map(color => {
+    return colors.map((color: string) => {
       // Convert hex to RGB and brighten
       const r = parseInt(color.slice(1, 3), 16)
       const g = parseInt(color.slice(3, 5), 16)
@@ -822,10 +805,9 @@ export function getChartColorsWithFallback(
 export function formatChartValue(
   value: number,
   type: 'currency' | 'percentage' | 'number' = 'number',
-  currency?: string,
-  useArabicNumerals: boolean = false
+  currency?: string
 ): string {
-  // Validate input value
+  // Always use Western numerals regardless of parameter
   const validValue = Number(value)
   if (isNaN(validValue) || !isFinite(validValue)) {
     console.warn('Invalid value for chart formatting:', value)
@@ -833,38 +815,36 @@ export function formatChartValue(
       case 'currency':
         const config = getCurrencyConfig(currency || getDefaultCurrency())
         const zeroAmount = `0.${'0'.repeat(config.decimals)}`
-        const displayAmount = useArabicNumerals ? convertToArabicNumerals(zeroAmount) : zeroAmount
-        return `${config.symbol}${displayAmount}`
+        return `${config.symbol}${zeroAmount}`
       case 'percentage':
-        return useArabicNumerals ? convertToArabicNumerals('0%') : '0%'
+        return '0%'
       case 'number':
       default:
-        return useArabicNumerals ? convertToArabicNumerals('0') : '0'
+        return '0'
     }
   }
 
   try {
     switch (type) {
       case 'currency':
-        return formatCurrency(validValue, currency || getDefaultCurrency(), useArabicNumerals)
+        return formatCurrency(validValue, currency || getDefaultCurrency()) // Always use Western numerals
       case 'percentage':
         const percentage = Math.round(validValue * 10) / 10
-        const percentageStr = `${isNaN(percentage) ? 0 : percentage}%`
-        return useArabicNumerals ? convertToArabicNumerals(percentageStr) : percentageStr
+        return `${isNaN(percentage) ? 0 : percentage}%`
       case 'number':
       default:
         try {
-          const formattedNumber = validValue.toLocaleString('ar-SA', { maximumFractionDigits: 2 })
-          return useArabicNumerals ? convertToArabicNumerals(formattedNumber) : formattedNumber
+          const formattedNumber = validValue.toLocaleString('en-US', { maximumFractionDigits: 2 })
+          return formattedNumber
         } catch (localeError) {
           // Fallback to simple formatting
           const fixedNumber = validValue.toFixed(2)
-          return useArabicNumerals ? convertToArabicNumerals(fixedNumber) : fixedNumber
+          return fixedNumber
         }
     }
   } catch (error) {
     console.warn('Error formatting chart value:', error)
-    return useArabicNumerals ? convertToArabicNumerals(validValue.toString()) : validValue.toString()
+    return validValue.toString()
   }
 }
 
