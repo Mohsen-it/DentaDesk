@@ -58,27 +58,19 @@ export const useLabStore = create<LabStore>()(
       },
 
       createLab: async (labData) => {
-        console.log('🔍 [DEBUG] labStore.createLab() called with data:', labData)
         set({ isLoading: true, error: null })
         try {
-          console.log('📡 [DEBUG] Calling window.electronAPI.labs.create...')
           const newLab = await window.electronAPI?.labs?.create(labData)
-          console.log('📨 [DEBUG] Received response from electronAPI:', newLab)
 
           if (newLab) {
             const { labs } = get()
-            console.log('📊 [DEBUG] Current labs count before adding:', labs.length)
             const updatedLabs = [...labs, newLab]
-            console.log('📊 [DEBUG] Updated labs count after adding:', updatedLabs.length)
 
             set({
               labs: updatedLabs,
               isLoading: false
             })
-            console.log('✅ [DEBUG] Store state updated successfully')
-
             get().filterLabs()
-            console.log('✅ [DEBUG] Labs filtered successfully')
           } else {
             console.warn('⚠️ [DEBUG] No lab returned from electronAPI')
           }

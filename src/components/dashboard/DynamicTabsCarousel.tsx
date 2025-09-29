@@ -109,10 +109,6 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
     const handleResize = () => {
       clearTimeout(resizeTimeout)
       resizeTimeout = setTimeout(() => {
-        // Only log in development mode for debugging
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[DynamicTabsCarousel] Responsive layout updated for tab:', activeTab)
-        }
       }, 250)
     }
 
@@ -334,11 +330,6 @@ const DynamicTabsCarousel = memo(function DynamicTabsCarousel({
       </div>
 
       {/* Performance tracking - only in development */}
-      {process.env.NODE_ENV === 'development' && (() => {
-        const renderEnd = performance.now()
-        console.log(`[DynamicTabsCarousel] Render: ${(renderEnd - renderStart).toFixed(2)}ms for tab ${activeTab}`)
-        return null
-      })()}
     </div>
   )
 })

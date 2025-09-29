@@ -394,9 +394,6 @@ export default function ExpenseReports() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, value, percentage }) =>
-                      value > 0 ? `${name}: ${formatAmount(value)} (${percentage.toFixed(0)}%)` : ''
-                    }
                     outerRadius={120}
                     innerRadius={50}
                     fill="#8884d8"
@@ -430,18 +427,28 @@ export default function ExpenseReports() {
 
             {/* Type Legend */}
             {expensesByTypeData.length > 0 && (
-              <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
-                {expensesByTypeData.map((type, index) => (
-                  <div key={`type-legend-${index}`} className="flex items-center space-x-2 space-x-reverse">
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: categoricalColors[index % categoricalColors.length] }}
-                    />
-                    <span className="text-muted-foreground">
-                      {type.name}: <CurrencyDisplay amount={type.value} /> ({type.percentage.toFixed(1)}%)
-                    </span>
-                  </div>
-                ))}
+              <div className="mt-6 flex flex-col items-center space-y-3">
+                <div className="text-sm font-medium text-foreground mb-2">
+                  تفاصيل التوزيع
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-md">
+                  {expensesByTypeData.map((type, index) => (
+                    <div key={`type-legend-${index}`} className="flex items-center justify-center space-x-2 space-x-reverse bg-muted/30 rounded-lg p-3">
+                      <div
+                        className="w-4 h-4 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: categoricalColors[index % categoricalColors.length] }}
+                      />
+                      <div className="text-center">
+                        <div className="font-medium text-foreground">
+                          {type.name}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          <CurrencyDisplay amount={type.value} /> ({type.percentage.toFixed(1)}%)
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </CardContent>

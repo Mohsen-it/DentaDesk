@@ -10,7 +10,6 @@ export class MigrationService {
   }
 
   async runMigration001(): Promise<void> {
-    console.log('🔄 Starting patient schema migration...')
     
     try {
       // Check if migration is needed by checking if new columns exist
@@ -18,13 +17,11 @@ export class MigrationService {
       const hasNewSchema = tableInfo.some((col: any) => col.name === 'serial_number')
       
       if (hasNewSchema) {
-        console.log('✅ Migration already completed - new schema detected')
         return
       }
 
       // Begin transaction for safe migration
       const transaction = this.db.transaction(() => {
-        console.log('📋 Creating backup of existing patients...')
         
         // Step 1: Create backup table
         this.db.exec(`
@@ -32,12 +29,10 @@ export class MigrationService {
           SELECT * FROM patients
         `)
 
-        console.log('🗑️ Dropping old patients table...')
         
         // Step 2: Drop existing table
         this.db.exec('DROP TABLE IF EXISTS patients')
 
-        console.log('🏗️ Creating new patients table...')
         
         // Step 3: Create new table with updated schema
         this.db.exec(`

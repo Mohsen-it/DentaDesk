@@ -119,7 +119,6 @@ export const useDashboardStore = create<DashboardStore>()(
 
         // Listen for patient deletion events to update dashboard stats
         window.addEventListener('patient-deleted', async (event: any) => {
-          console.log('📊 Dashboard: Patient deleted, refreshing stats...')
           // Refresh dashboard stats after patient deletion
           await get().refreshStats()
         })
@@ -272,7 +271,6 @@ export const useDashboardStore = create<DashboardStore>()(
               setCachedStats(stats)
             }
             
-            console.log('📊 Dashboard stats refreshed after patient deletion')
           } catch (error) {
             console.error('Error refreshing dashboard stats:', error)
           }

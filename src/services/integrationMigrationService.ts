@@ -82,28 +82,23 @@ export class IntegrationMigrationService {
     const name = 'add_integration_fields'
     
     if (this.isMigrationApplied(version)) {
-      console.log(`✅ Migration ${version} مطبق مسبقاً`)
       return
     }
 
-    console.log(`🔄 تطبيق migration: ${version} - ${name}`)
 
     try {
       // إضافة عمود tooth_treatment_id إلى جدول prescriptions
       if (!this.columnExists('prescriptions', 'tooth_treatment_id')) {
         this.db.exec('ALTER TABLE prescriptions ADD COLUMN tooth_treatment_id TEXT')
-        console.log('✅ تم إضافة عمود tooth_treatment_id إلى جدول prescriptions')
       }
 
       // إضافة أعمدة جديدة إلى جدول lab_orders
       if (!this.columnExists('lab_orders', 'appointment_id')) {
         this.db.exec('ALTER TABLE lab_orders ADD COLUMN appointment_id TEXT')
-        console.log('✅ تم إضافة عمود appointment_id إلى جدول lab_orders')
       }
 
       if (!this.columnExists('lab_orders', 'tooth_treatment_id')) {
         this.db.exec('ALTER TABLE lab_orders ADD COLUMN tooth_treatment_id TEXT')
-        console.log('✅ تم إضافة عمود tooth_treatment_id إلى جدول lab_orders')
       }
 
       if (!this.columnExists('lab_orders', 'expected_delivery_date')) {

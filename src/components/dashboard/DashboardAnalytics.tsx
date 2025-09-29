@@ -150,15 +150,6 @@ function DashboardAnalyticsComponent({
         console.warn('⚠️ Data integrity issues detected. Analytics may not be accurate.')
       }
 
-      // Log data availability for debugging
-      __DEV__ && console.log('📊 Analytics Data Check:', {
-        patientsCount: patients.length,
-        appointmentsCount: appointments.length,
-        paymentsCount: payments.length,
-        patientsSample: patients.length > 0 ? patients.slice(0, 2) : [],
-        appointmentsSample: appointments.length > 0 ? appointments.slice(0, 2) : [],
-        paymentsSample: payments.length > 0 ? payments.slice(0, 2) : []
-      })
 
       // Calculate date range
       const endDate = new Date()
@@ -172,11 +163,6 @@ function DashboardAnalyticsComponent({
         isWithinInterval(new Date(payment.payment_date), { start: startDate, end: endDate })
       )
 
-      __DEV__ && console.log('📊 Filtered Data:', {
-        filteredAppointmentsCount: filteredAppointments.length,
-        filteredPaymentsCount: filteredPayments.length,
-        dateRange: { start: startDate.toISOString(), end: endDate.toISOString() }
-      })
 
       // Calculate overview metrics
       const totalRevenue = filteredPayments.reduce((sum, p) => sum + (p.amount || 0), 0)
@@ -208,11 +194,6 @@ function DashboardAnalyticsComponent({
         ageGroups: calculateAgeGroupDistribution()
       }
 
-      __DEV__ && console.log('📊 Calculated Distributions:', {
-        appointmentStatus: distributions.appointmentStatus,
-        gender: distributions.gender,
-        ageGroups: distributions.ageGroups
-      })
 
       // Calculate KPIs
       const averageRevenue = overview.totalPatients > 0 ? overview.totalRevenue / overview.totalPatients : 0
@@ -223,12 +204,6 @@ function DashboardAnalyticsComponent({
         noShowRate: calculateNoShowRate(filteredAppointments)
       }
 
-      __DEV__ && console.log('📊 KPIs:', {
-        patientRetention: kpis.patientRetention,
-        appointmentUtilization: kpis.appointmentUtilization,
-        averageRevenue: averageRevenue,
-        noShowRate: kpis.noShowRate
-      })
 
       const finalData = {
         overview,
@@ -237,7 +212,6 @@ function DashboardAnalyticsComponent({
         kpis
       }
 
-      __DEV__ && console.log('📊 Final Analytics Data:', finalData)
 
       setAnalyticsData(finalData)
       setLastUpdate(new Date())
@@ -353,10 +327,6 @@ function DashboardAnalyticsComponent({
   }
 
   const calculateGenderDistribution = () => {
-    __DEV__ && console.log('📊 Calculating Gender Distribution:', {
-      patientsCount: patients.length,
-      patientsSample: patients.slice(0, 5).map(p => ({ id: p.id, gender: p.gender }))
-    })
 
     const genderCounts = patients.reduce((acc, patient) => {
       // Validate gender data
@@ -373,7 +343,6 @@ function DashboardAnalyticsComponent({
       return acc
     }, {} as Record<string, number>)
 
-    __DEV__ && console.log('📊 Gender Counts:', genderCounts)
 
     const colors = [
       'hsl(var(--primary))',
@@ -389,10 +358,6 @@ function DashboardAnalyticsComponent({
   }
 
   const calculateAgeGroupDistribution = () => {
-    __DEV__ && console.log('📊 Calculating Age Group Distribution:', {
-      patientsCount: patients.length,
-      ageSample: patients.slice(0, 5).map(p => ({ id: p.id, age: p.age }))
-    })
 
     const ageGroups = {
       '0-18': 0,
@@ -411,7 +376,6 @@ function DashboardAnalyticsComponent({
       else ageGroups['65+']++
     })
 
-    __DEV__ && console.log('📊 Age Groups:', ageGroups)
 
     const colors = [
       'hsl(var(--primary))',

@@ -99,7 +99,6 @@ export const useLabOrderStore = create<LabOrderStore>()(
       createLabOrder: async (labOrderData) => {
         set({ isLoading: true, error: null })
         try {
-          console.log('➕ [DEBUG] Creating lab order:', labOrderData)
 
           // Check if electronAPI is available
           if (!window.electronAPI) {
@@ -121,10 +120,6 @@ export const useLabOrderStore = create<LabOrderStore>()(
             remaining_balance: remainingBalance
           }
 
-          console.log('🔍 [DEBUG] Calling electronAPI.labOrders.create with:', orderWithBalance)
-          console.log('🔍 [DEBUG] electronAPI.labOrders.create function:', typeof window.electronAPI.labOrders.create)
-          console.log('🔍 [DEBUG] electronAPI available:', !!window.electronAPI)
-          console.log('🔍 [DEBUG] electronAPI.labOrders available:', !!window.electronAPI?.labOrders)
           
 
           // Add timeout to prevent hanging
@@ -133,19 +128,14 @@ export const useLabOrderStore = create<LabOrderStore>()(
             setTimeout(() => reject(new Error('Request timeout after 10 seconds')), 10000)
           )
           
-          console.log('🔍 [DEBUG] About to call Promise.race...')
-          console.log('🔍 [DEBUG] createPromise:', createPromise)
-          console.log('🔍 [DEBUG] timeoutPromise:', timeoutPromise)
           
           try {
             const newLabOrder = await Promise.race([createPromise, timeoutPromise])
-            console.log('🔍 [DEBUG] Promise.race completed, result:', newLabOrder)
             
             if (!newLabOrder) {
               throw new Error('Failed to create lab order - no response from API')
             }
 
-            console.log('✅ [DEBUG] Lab order created successfully:', newLabOrder)
 
             // Add the new lab order to the local state instead of reloading all data
             const { labOrders } = get()
@@ -231,7 +221,6 @@ export const useLabOrderStore = create<LabOrderStore>()(
       updateLabOrder: async (id, labOrderData) => {
         set({ isLoading: true, error: null })
         try {
-          console.log('🔄 [DEBUG] Updating lab order:', id, labOrderData)
 
           // Recalculate remaining balance if cost or paid amount changed
           const currentOrder = get().labOrders.find(order => order.id === id)
@@ -243,20 +232,10 @@ export const useLabOrderStore = create<LabOrderStore>()(
 
           const updatedLabOrder = await window.electronAPI?.labOrders?.update(id, labOrderData)
           if (updatedLabOrder) {
-            console.log('✅ [DEBUG] Lab order updated successfully:', updatedLabOrder)
-
-            // Force reload from database to ensure consistency
-            console.log('🔄 [DEBUG] Force reloading lab orders after update...')
             await get().loadLabOrders()
 
             // Verify the update worked
             const verifyOrder = get().labOrders.find(order => order.id === id)
-            console.log('🔍 [DEBUG] Verification after update:', {
-              orderId: id,
-              found: !!verifyOrder,
-              tooth_treatment_id: verifyOrder?.tooth_treatment_id,
-              updatedData: labOrderData
-            })
           }
         } catch (error) {
           console.error('❌ [DEBUG] Error updating lab order:', error)

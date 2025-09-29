@@ -220,37 +220,30 @@ export const useReportsStore = create<ReportsStore>()(
               break
             case 'appointments':
               reportData = await window.electronAPI?.reports?.generateAppointmentReport(filter)
-              console.log(`✅ Appointment report generated:`, reportData)
               set({ appointmentReports: reportData })
               break
             case 'financial':
               reportData = await window.electronAPI?.reports?.generateFinancialReport(filter)
-              console.log(`✅ Financial report generated:`, reportData)
               set({ financialReports: reportData })
               break
             case 'inventory':
               reportData = await window.electronAPI?.reports?.generateInventoryReport(filter)
-              console.log(`✅ Inventory report generated:`, reportData)
               set({ inventoryReports: reportData })
               break
             case 'analytics':
               reportData = await window.electronAPI?.reports?.generateAnalyticsReport(filter)
-              console.log(`✅ Analytics report generated:`, reportData)
               set({ analyticsReports: reportData })
               break
             case 'treatments':
               reportData = await window.electronAPI?.reports?.generateTreatmentReport(filter)
-              console.log(`✅ Treatment report generated:`, reportData)
               set({ treatmentReports: reportData })
               break
             case 'clinicNeeds':
               reportData = await get().generateClinicNeedsReport(filter)
-              console.log(`✅ Clinic needs report generated:`, reportData)
               set({ clinicNeedsReports: reportData })
               break
             case 'overview':
               reportData = await window.electronAPI?.reports?.generateOverviewReport(filter)
-              console.log(`✅ Overview report generated:`, reportData)
               set({ reportData })
               break
           }
@@ -258,7 +251,6 @@ export const useReportsStore = create<ReportsStore>()(
           // Cache the result
           if (reportData) {
             setCachedReport(cacheKey, reportData)
-            console.log(`💾 Report cached with key: ${cacheKey}`)
           }
 
           set({ isLoading: false })
@@ -285,7 +277,6 @@ export const useReportsStore = create<ReportsStore>()(
             await generateReport(type, filterOverride)
           }
 
-          console.log('✅ All reports generated successfully')
           set({ isLoading: false })
         } catch (error) {
           console.error('❌ Error generating all reports:', error)
@@ -411,7 +402,6 @@ export const useReportsStore = create<ReportsStore>()(
             } else {
               await generateReport(activeReportType)
             }
-            console.log('Auto-refresh completed successfully')
           } catch (error) {
             console.error('Auto-refresh failed:', error)
           }

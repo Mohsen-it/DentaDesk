@@ -73,9 +73,7 @@ function AppointmentTableComponent({
 
   // Enhanced appointments with patient data and filtering
   const enhancedAppointments = useMemo(() => {
-    if (process.env.NODE_ENV !== 'production') console.log('📋 AppointmentTable: Processing appointments:', appointments.length)
     if (appointments.length > 0) {
-      if (process.env.NODE_ENV !== 'production') console.log('📋 AppointmentTable: First appointment sample:', appointments[0])
     }
 
     let filtered = appointments.map(appointment => {
@@ -87,13 +85,6 @@ function AppointmentTableComponent({
       }
 
       if (appointment.patient_name === 'مريض غير معروف' && process.env.NODE_ENV !== 'production') {
-        console.log('⚠️ AppointmentTable: Unknown patient for appointment:', {
-          id: appointment.id,
-          patient_id: appointment.patient_id,
-          patient_name: appointment.patient_name,
-          patient: appointment.patient,
-          patientFromMap: patientMap.get(appointment.patient_id)
-        })
       }
 
       return enhancedAppointment

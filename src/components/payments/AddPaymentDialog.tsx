@@ -375,17 +375,11 @@ function AddPaymentDialogComponent({ open, onOpenChange, preSelectedPatientId }:
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('🚀 Starting form submission...')
-      console.log('📝 Current form data:', formData)
-    }
 
     if (!validateForm()) {
-      console.log('❌ Form validation failed')
       return
     }
 
-    if (process.env.NODE_ENV !== 'production') console.log('✅ Form validation passed')
 
     try {
       // التأكد من أن amount رقم صحيح، استخدام 0 كقيمة افتراضية
@@ -445,12 +439,6 @@ function AddPaymentDialogComponent({ open, onOpenChange, preSelectedPatientId }:
         paymentData.remaining_balance = remainingBalance
       }
 
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('💰 Submitting payment data:', paymentData)
-        console.log('📊 Form data before submit:', formData)
-        console.log('🔍 Total amount due being sent:', totalAmountDue)
-        console.log('🔍 Payment data total_amount_due:', paymentData.total_amount_due)
-      }
 
       let result
 
@@ -493,18 +481,14 @@ function AddPaymentDialogComponent({ open, onOpenChange, preSelectedPatientId }:
             treatment_remaining_balance: Math.max(0, totalAmountDue - updatedAmount)
           }
 
-          if (process.env.NODE_ENV !== 'production') console.log('🔄 Updating existing payment for treatment:', targetPayment.id, updateData)
           result = await updatePayment(targetPayment.id, updateData)
-          if (process.env.NODE_ENV !== 'production') console.log('✅ Payment updated successfully:', result)
         } else {
           // إنشاء دفعة جديدة إذا لم توجد دفعة للعلاج
           result = await createPayment(paymentData)
-          if (process.env.NODE_ENV !== 'production') console.log('✅ Payment created successfully:', result)
         }
       } else {
         // للمدفوعات غير المرتبطة بعلاج، إنشاء دفعة جديدة
         result = await createPayment(paymentData)
-        if (process.env.NODE_ENV !== 'production') console.log('✅ Payment created successfully:', result)
       }
 
       // رسالة نجاح مخصصة حسب نوع العملية

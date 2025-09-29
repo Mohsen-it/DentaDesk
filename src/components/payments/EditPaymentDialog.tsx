@@ -306,7 +306,6 @@ function EditPaymentDialogComponent({ open, onOpenChange, payment }: EditPayment
         remaining_balance: remainingBalance,
       }
 
-      if (process.env.NODE_ENV !== 'production') console.log('🔄 Submitting payment update:', paymentData)
       await updatePayment(payment.id, paymentData)
 
       toast({

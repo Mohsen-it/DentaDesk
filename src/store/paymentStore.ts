@@ -102,7 +102,6 @@ export const usePaymentStore = create<PaymentStore>()(
           get().calculatePaymentMethodStats()
           get().filterPayments()
 
-          console.log(`💰 Removed ${payments.length - updatedPayments.length} payments for deleted patient ${patientId}`)
         })
       }
 
@@ -155,9 +154,7 @@ export const usePaymentStore = create<PaymentStore>()(
       createPayment: async (paymentData) => {
         set({ isLoading: true, error: null })
         try {
-          console.log('💰 Creating payment in store:', paymentData)
           const newPayment = await window.electronAPI.payments.create(paymentData)
-          console.log('✅ Payment created successfully in store:', newPayment)
 
           // إعادة تحميل جميع المدفوعات لضمان الاتساق
           await get().loadPayments()
@@ -194,7 +191,6 @@ export const usePaymentStore = create<PaymentStore>()(
       updatePayment: async (id, paymentData) => {
         set({ isLoading: true, error: null })
         try {
-          console.log('🔄 Updating payment in store:', { id, paymentData })
 
           // حذف التنبيهات القديمة المرتبطة بهذه الدفعة قبل التحديث
           try {
@@ -204,7 +200,6 @@ export const usePaymentStore = create<PaymentStore>()(
           }
 
           const updatedPayment = await window.electronAPI.payments.update(id, paymentData)
-          console.log('✅ Payment updated successfully in store:', updatedPayment)
 
           // إعادة تحميل جميع المدفوعات لضمان الاتساق
           await get().loadPayments()

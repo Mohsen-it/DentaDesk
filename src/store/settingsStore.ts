@@ -31,7 +31,6 @@ const saveSettingsBackup = (settings: ClinicSettings | null) => {
         timestamp: Date.now()
       }
       localStorage.setItem('dental-clinic-settings-backup', JSON.stringify(backup))
-      console.log('Settings backup saved to localStorage')
     } catch (error) {
       console.warn('Failed to save settings backup:', error)
     }
@@ -47,7 +46,6 @@ const restoreSettingsBackup = (): Partial<ClinicSettings> | null => {
       // Only restore if backup is recent (within 30 days) and has valid data
       if (backup.timestamp && (Date.now() - backup.timestamp) < 30 * 24 * 60 * 60 * 1000 &&
           backup.clinic_name && backup.clinic_name !== 'عيادة الأسنان') {
-        console.log('Restoring settings from localStorage backup')
         return backup
       }
     }

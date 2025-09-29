@@ -194,7 +194,6 @@ export default function Appointments() {
   }, [setSelectedAppointment])
 
   const handleSelectSlot = useCallback((slotInfo: any) => {
-    console.log('Selected slot:', slotInfo)
 
     // Extract date and time from slotInfo
     const selectedDate = slotInfo.start || new Date()
@@ -717,7 +716,6 @@ export default function Appointments() {
                   setShowDeleteDialog(true)
                 }}
                 onViewPatient={(patient) => {
-                  console.log('View patient:', patient)
                   setSelectedPatientForDetails(patient)
                   setShowPatientDetails(true)
                 }}
@@ -957,12 +955,7 @@ export default function Appointments() {
           try {
             if (selectedAppointment) {
               // Edit existing appointment
-              console.log('🔄 Updating appointment:', {
-                id: selectedAppointment.id,
-                data: appointmentData
-              })
               await updateAppointment(selectedAppointment.id, appointmentData)
-              console.log('✅ Appointment updated successfully')
               toast({
                 title: 'نجح',
                 description: 'تم تحديث الموعد بنجاح',
@@ -970,9 +963,7 @@ export default function Appointments() {
               })
             } else {
               // Create new appointment
-              console.log('➕ Creating new appointment:', appointmentData)
               await createAppointment(appointmentData)
-              console.log('✅ Appointment created successfully')
               toast({
                 title: 'نجح',
                 description: 'تم إضافة الموعد بنجاح',

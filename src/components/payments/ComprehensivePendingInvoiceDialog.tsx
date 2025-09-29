@@ -201,11 +201,6 @@ ${invoiceSettings.discount_reason ? `💸 سبب الخصم: ${invoiceSettings.d
   // توليد QR Code كصورة
   const generateQRCodeImage = async () => {
     if (!printSettings.includeQR || !pendingSummary || !patient) {
-      console.log('QR Code: شروط التوليد غير مكتملة', {
-        includeQR: printSettings.includeQR,
-        pendingSummary: !!pendingSummary,
-        patient: !!patient
-      })
       return
     }
 
@@ -227,7 +222,6 @@ ${invoiceSettings.discount_reason ? `💸 سبب الخصم: ${invoiceSettings.d
         }
       })
 
-      console.log('QR Code تم توليده بنجاح:', dataURL.substring(0, 50) + '...')
       setQrCodeDataURL(dataURL)
     } catch (error) {
       console.error('خطأ في توليد QR Code:', error)
@@ -237,10 +231,6 @@ ${invoiceSettings.discount_reason ? `💸 سبب الخصم: ${invoiceSettings.d
   // توليد باركود كصورة
   const generateBarcodeImage = async () => {
     if (!printSettings.includeBarcode || !pendingSummary) {
-      console.log('Barcode: شروط التوليد غير مكتملة', {
-        includeBarcode: printSettings.includeBarcode,
-        pendingSummary: !!pendingSummary
-      })
       return
     }
 
@@ -265,7 +255,6 @@ ${invoiceSettings.discount_reason ? `💸 سبب الخصم: ${invoiceSettings.d
       })
 
       const dataURL = canvas.toDataURL()
-      console.log('Barcode تم توليده بنجاح:', dataURL.substring(0, 50) + '...')
       setBarcodeDataURL(dataURL)
     } catch (error) {
       console.error('خطأ في توليد الباركود:', error)
@@ -315,7 +304,6 @@ ${invoiceSettings.discount_reason ? `💸 سبب الخصم: ${invoiceSettings.d
         toothTreatments: !!toothTreatments && toothTreatments.length > 0
       }
 
-      console.log('حالة البيانات:', dataStatus)
 
       if (!payments || !appointments || !toothTreatments) {
         console.warn('بعض البيانات المطلوبة غير متوفرة:', {
@@ -567,10 +555,6 @@ ${invoiceSettings.discount_reason ? `💸 سبب الخصم: ${invoiceSettings.d
     if (!pendingSummary || !patient) return
 
     // توليد QR Code والباركود قبل الطباعة
-    console.log('بدء الطباعة الحرارية...')
-    console.log('إعدادات الطباعة:', printSettings)
-    console.log('بيانات المريض:', patient.full_name)
-    console.log('ملخص المدفوعات:', pendingSummary.final_total)
 
     let currentQRCode = qrCodeDataURL
     let currentBarcode = barcodeDataURL
@@ -579,7 +563,6 @@ ${invoiceSettings.discount_reason ? `💸 سبب الخصم: ${invoiceSettings.d
     if (printSettings.includeQR) {
       try {
         const qrData = generateQRData()
-        console.log('QR Code Data:', qrData)
 
         if (qrData) {
           currentQRCode = await QRCode.toDataURL(qrData, {
@@ -590,7 +573,6 @@ ${invoiceSettings.discount_reason ? `💸 سبب الخصم: ${invoiceSettings.d
               light: '#FFFFFF'
             }
           })
-          console.log('QR Code تم توليده للطباعة:', currentQRCode.substring(0, 50) + '...')
         }
       } catch (error) {
         console.error('خطأ في توليد QR Code للطباعة:', error)
@@ -601,7 +583,6 @@ ${invoiceSettings.discount_reason ? `💸 سبب الخصم: ${invoiceSettings.d
       try {
         const canvas = document.createElement('canvas')
         const barcodeData = generateBarcode()
-        console.log('Barcode Data:', barcodeData)
 
         if (barcodeData) {
           JsBarcode(canvas, barcodeData, {
@@ -614,15 +595,12 @@ ${invoiceSettings.discount_reason ? `💸 سبب الخصم: ${invoiceSettings.d
           })
 
           currentBarcode = canvas.toDataURL()
-          console.log('Barcode تم توليده للطباعة:', currentBarcode.substring(0, 50) + '...')
         }
       } catch (error) {
         console.error('خطأ في توليد الباركود للطباعة:', error)
       }
     }
 
-    console.log('QR Code للطباعة:', currentQRCode ? 'موجود' : 'غير موجود')
-    console.log('Barcode للطباعة:', currentBarcode ? 'موجود' : 'غير موجود')
 
     const printWindow = window.open('', '_blank')
     if (printWindow) {
@@ -967,7 +945,6 @@ ${invoiceSettings.discount_reason ? `💸 سبب الخصم: ${invoiceSettings.d
         return
       }
     } catch (error) {
-      console.log('Method 1 failed:', error)
     }
 
     try {
@@ -983,7 +960,6 @@ ${invoiceSettings.discount_reason ? `💸 سبب الخصم: ${invoiceSettings.d
         return
       }
     } catch (error) {
-      console.log('Method 2 failed:', error)
     }
 
     // Method 3: Fallback to window.open

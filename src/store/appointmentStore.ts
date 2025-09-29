@@ -61,23 +61,9 @@ export const useAppointmentStore = create<AppointmentStore>()(
           const apiStartTime = performance.now()
           const appointments = await window.electronAPI.appointments.getAll()
           const apiEndTime = performance.now()
-          console.log(`📡 Appointments API Call: ${(apiEndTime - apiStartTime).toFixed(2)}ms`)
-          console.log('🏪 Store: Loaded appointments:', appointments.length)
 
           if (appointments.length > 0) {
-            console.log('🏪 Store: First appointment sample:', appointments[0])
 
-            // Log patient data for debugging
-            appointments.forEach((appointment, index) => {
-              if (index < 3) { // Log first 3 appointments for debugging
-                console.log(`🏪 Store: Appointment ${index + 1} patient data:`, {
-                  id: appointment.id,
-                  patient_id: appointment.patient_id,
-                  patient: appointment.patient,
-                  patient_name: appointment.patient_name || (appointment as any).patient_name
-                })
-              }
-            })
           }
 
           const updateStartTime = performance.now()
@@ -86,16 +72,10 @@ export const useAppointmentStore = create<AppointmentStore>()(
             isLoading: false
           })
           const updateEndTime = performance.now()
-          console.log(`💾 Appointments State Update: ${(updateEndTime - updateStartTime).toFixed(2)}ms`)
-
           // Convert to calendar events
           get().convertToCalendarEvents()
-
-          const endTime = performance.now()
-          console.log(`📅 Appointment Store: Load Appointments: ${(endTime - startTime).toFixed(2)}ms`)
         } catch (error) {
           const endTime = performance.now()
-          console.log(`📅 Appointment Store: Load Appointments Failed: ${(endTime - startTime).toFixed(2)}ms`)
           console.error('🏪 Store: Failed to load appointments:', error)
           set({
             error: error instanceof Error ? error.message : 'Failed to load appointments',

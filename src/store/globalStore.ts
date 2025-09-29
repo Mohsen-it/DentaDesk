@@ -94,7 +94,6 @@ export const useGlobalStore = create<GlobalStore>()(
       // Listen for data change events to refresh alerts automatically
       if (typeof window !== 'undefined') {
         const handleDataChange = () => {
-          console.log('🔄 Global Store: Data changed, refreshing alerts...')
           get().loadAlerts()
         }
 
@@ -203,8 +202,6 @@ export const useGlobalStore = create<GlobalStore>()(
           // حساب التنبيهات غير المقروءة والغير مخفية
           const unreadCount = alerts.filter(alert => !alert.isRead && !alert.isDismissed).length
 
-          console.log('📊 Loaded alerts:', alerts.length, 'unread:', unreadCount)
-          console.log('📋 Alert details:', alerts.map(a => ({ id: a.id, title: a.title, isRead: a.isRead, isDismissed: a.isDismissed })))
 
           set({
             alerts,
@@ -226,7 +223,6 @@ export const useGlobalStore = create<GlobalStore>()(
 
       markAlertAsRead: async (alertId: string) => {
         try {
-          console.log('🏪 GlobalStore: markAlertAsRead called for:', alertId)
 
           // التحقق من وجود التنبيه قبل التحديث
           const currentAlert = get().alerts.find(alert => alert.id === alertId)
@@ -235,20 +231,11 @@ export const useGlobalStore = create<GlobalStore>()(
             throw new Error(`Alert with ID ${alertId} not found`)
           }
 
-          console.log('📋 Current alert state:', {
-            id: currentAlert.id,
-            title: currentAlert.title,
-            isRead: currentAlert.isRead
-          })
 
-          console.log('🔄 Calling SmartAlertsService.updateAlert...')
           await SmartAlertsService.updateAlert(alertId, { isRead: true })
-          console.log('✅ SmartAlertsService.updateAlert completed')
 
           // Force immediate reload to ensure UI updates
-          console.log('🔄 Reloading alerts after mark as read...')
           await get().loadAlerts()
-          console.log('✅ Alerts reloaded after marking as read')
 
         } catch (error) {
           console.error('❌ Mark alert as read error:', error)

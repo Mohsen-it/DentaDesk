@@ -204,11 +204,6 @@ window.electronAPI?.whatsappReminders?.getStatus) {
 
   // Debug: Monitor showDeleteConfirm state changes
   useEffect(() => {
-    if (showDeleteConfirm) {
-      console.log('🔍 Delete confirmation dialog opened for:', showDeleteConfirm)
-    } else {
-      console.log('🔍 Delete confirmation dialog closed')
-    }
   }, [showDeleteConfirm])
 
   // Subscribe to WhatsApp QR events when modal is open
@@ -223,7 +218,6 @@ window.electronAPI?.whatsappReminders?.getStatus) {
           // @ts-ignore
           const status = await window.electronAPI.whatsappReminders.getStatus()
           if (status.qr) {
-            console.log('🔍 Found existing QR data:', status.qr.substring(0, 50) + '...')
             setQrData(status.qr)
             return
           }
@@ -237,46 +231,38 @@ window.electronAPI?.whatsappReminders?.getStatus) {
 
     // Subscribe to QR events - fallback to direct event listener
     const handleQrReceived = (_event: any, qr: string) => {
-      console.log('🔄 QR data received:', qr.substring(0, 50) + '...')
       setQrData(qr)
     }
 
     const handleReady = (_event: any, data: any) => {
-      console.log('✅ WhatsApp client is ready', data)
       showNotification('تم ربط واتساب بنجاح!', 'success')
       setShowQRModal(false)
       updateSessionStatus()
     }
 
     const handleSessionConnected = (_event: any, data: any) => {
-      console.log('📱 WhatsApp session connected', data)
       showNotification(data?.message || 'تم ربط واتساب بنجاح!', 'success')
       updateSessionStatus()
     }
 
     const handleAuthFailure = (_event: any, _data: any) => {
-      console.log('❌ WhatsApp authentication failed')
       showNotification('فشل في ربط واتساب. يرجى المحاولة مرة أخرى.', 'error')
     }
 
     const handleSessionCleared = (_event: any, _data: any) => {
-      console.log('📱 WhatsApp session cleared')
       setQrData('')
       showNotification('تم مسح جلسة واتساب', 'info')
     }
 
     const handleConnectionFailure = (_event: any, data: any) => {
-      console.log('❌ WhatsApp connection failure:', data)
       showNotification(`فشل في الاتصال: ${data?.message || 'خطأ غير معروف'}`, 'error')
     }
 
     const handleInitFailure = (_event: any, data: any) => {
-      console.log('❌ WhatsApp initialization failure:', data)
       showNotification(`فشل في تهيئة واتساب: ${data?.message || 'خطأ غير معروف'}`, 'error')
     }
 
     const handleSessionAutoCleared = (_event: any, data: any) => {
-      console.log('📱 WhatsApp session auto-cleared:', data)
       showNotification('تم مسح جلسة واتساب تلقائياً بسبب خطأ 401. يرجى مسح رمز QR مرة أخرى.', 'info')
 
       // Clear QR data to show waiting message
@@ -285,7 +271,6 @@ window.electronAPI?.whatsappReminders?.getStatus) {
       // Auto-retry QR generation after a short delay
       setTimeout(async () => {
         try {
-          console.log('🔄 Auto-retrying QR generation after session clear...')
           const generateResult = await window.electronAPI?.whatsappReminders?.generateNewQR?.()
           if (generateResult?.success) {
             showNotification('تم بدء عملية توليد رمز QR جديد', 'info')
@@ -359,13 +344,11 @@ window.electronAPI?.whatsappReminders?.getStatus) {
     let isCancelled = false
     const generate = async () => {
       if (!qrData || qrData.trim() === '') {
-        console.log('📱 QR data is empty or invalid, clearing images')
         setQrImageUrl('')
         setQrSvg('')
         return
       }
 
-      console.log('🔄 Generating QR code for data length:', qrData.length)
 
       try {
         // Validate QR data before processing
@@ -388,7 +371,6 @@ window.electronAPI?.whatsappReminders?.getStatus) {
 
         if (!isCancelled) {
           setQrSvg(svg)
-          console.log('✅ SVG QR code generated successfully')
         }
 
         // Also prepare a PNG fallback with better quality settings
@@ -400,7 +382,6 @@ window.electronAPI?.whatsappReminders?.getStatus) {
 
         if (!isCancelled) {
           setQrImageUrl(url)
-          console.log('✅ PNG QR code generated successfully')
         }
       } catch (e) {
         console.error('❌ Failed to generate QR code:', e)
@@ -449,13 +430,6 @@ window.electronAPI?.whatsappReminders?.getStatus) {
         if (window.electronAPI?.whatsappReminders?.getSettings) {
           // @ts-ignore
           data = await window.electronAPI.whatsappReminders.getSettings()
-          console.log('📱 Loaded WhatsApp settings from electron:', data)
-          console.log('🧪 [DEBUG] Raw data from database:', JSON.stringify(data, null, 2))
-          console.log('📱 Setting enableReminder to:', Boolean(data.whatsapp_reminder_enabled))
-          console.log('📱 Setting hoursBefore to:', Number(data.hours_before ?? 24))
-          console.log('📱 Setting minutesBefore to:', Number(data.minutes_before ?? (data.hours_before ?? 0) * 60))
-          console.log('📱 Setting messageText to:', String(data.message ?? ''))
-          console.log('📱 Setting allowCustomMessage to:', Boolean(data.custom_enabled))
           setEnableReminder(Boolean(data.whatsapp_reminder_enabled))
           setHoursBefore(Number(data.hours_before ?? 24))
           setMinutesBefore(Number(data.minutes_before ?? (data.hours_before ?? 0) * 60))
@@ -484,7 +458,6 @@ window.electronAPI?.whatsappReminders?.getStatus) {
   // Fetch initial WhatsApp settings (only once on component mount)
   useEffect(() => {
     if (!initialLoadComplete) {
-      console.log('🚀 Initial WhatsApp settings load')
       fetchWhatsAppSettings()
     }
   }, [initialLoadComplete])
@@ -493,14 +466,12 @@ window.electronAPI?.whatsappReminders?.getStatus) {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && activeTab === 'whatsapp' && !settingsLoaded && !initialLoadComplete) {
-        console.log('🔄 Page became visible, loading WhatsApp settings')
         fetchWhatsAppSettings()
       }
     }
 
     const handleFocus = () => {
       if (activeTab === 'whatsapp' && !settingsLoaded && !initialLoadComplete) {
-        console.log('🔄 Window focused, loading WhatsApp settings')
         fetchWhatsAppSettings()
       }
     }
@@ -517,10 +488,8 @@ window.electronAPI?.whatsappReminders?.getStatus) {
   // Fetch WhatsApp settings when switching to WhatsApp tab (only if not already loaded)
   useEffect(() => {
     if (activeTab === 'whatsapp' && !settingsLoaded && !initialLoadComplete) {
-      console.log('🔄 Loading WhatsApp settings for the first time')
       fetchWhatsAppSettings()
     } else if (activeTab === 'whatsapp' && (settingsLoaded || initialLoadComplete)) {
-      console.log('✅ WhatsApp settings already loaded, skipping reload')
     }
   }, [activeTab, settingsLoaded, initialLoadComplete])
 
@@ -544,18 +513,14 @@ window.electronAPI?.whatsappReminders?.getStatus) {
           // @ts-ignore
           // @ts-ignore
           if (window.electronAPI?.whatsappReminders?.setSettings) {
-            // console.log('🧪 [DEBUG] About to save settings to database:', settingsPayload)
             // @ts-ignore
             const saveResult = await window.electronAPI.whatsappReminders.setSettings(settingsPayload)
-            // console.log('🧪 [DEBUG] Save result from database:', saveResult)
-            // console.log('📱 Auto-saved WhatsApp settings:', settingsPayload)
             
             // Test: Immediately reload settings to verify they were saved
             setTimeout(async () => {
               try {
                 // @ts-ignore
                 const testReload = await window.electronAPI.whatsappReminders.getSettings()
-                // console.log('🧪 [TEST] Settings reloaded from database after save:', testReload)
               } catch (error) {
                 // console.error('🧪 [TEST] Failed to reload settings for verification:', error)
               }
@@ -593,7 +558,6 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
             // Use synchronous save if possible
             // @ts-ignore
             await window.electronAPI.whatsappReminders.setSettings(settingsPayload)
-            console.log('📱 Saved WhatsApp settings before unload:', settingsPayload)
           }
         } catch (error) {
           console.error('Error saving WhatsApp settings before unload:', error)
@@ -759,11 +723,9 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
 
   const handleDeleteBackup = async (backupName: string) => {
     try {
-      console.log('🗑️ Attempting to delete backup:', backupName)
       await deleteBackup(backupName)
       showNotification('تم حذف النسخة الاحتياطية بنجاح', 'success')
       setShowDeleteConfirm(null)
-      console.log('✅ Backup deleted successfully:', backupName)
     } catch (error) {
       console.error('❌ Failed to delete backup:', error)
       showNotification(`فشل في حذف النسخة الاحتياطية: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`, 'error')
@@ -1113,7 +1075,6 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                           onClick={(e) => {
                             e.preventDefault()
                             e.stopPropagation()
-                            console.log('🗑️ Delete button clicked for backup:', backup.name)
                             setShowDeleteConfirm(backup.name)
                           }}
                           className="p-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 rounded-lg transition-all duration-300 ease-in-out interactive-card min-h-[44px] min-w-[44px] flex items-center justify-center hover:scale-110 active:scale-95 hover:shadow-md"
@@ -1394,15 +1355,12 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                       </div>
                       <button
                         onClick={async () => {
-                          console.log('🔗 QR button clicked in WhatsApp reminders tab')
                           try {
                             setQrData('')
                             setShowQRModal(true)
-                            console.log('📱 QR modal opened, initializing WhatsApp service...')
 
                             // Use the IPC handler to generate new QR
                             try {
-                              console.log('🔄 Starting QR generation process...')
 
                               // Add detailed debugging for IPC call
                               console.log('🔍 Debug: Checking electronAPI availability:', {
@@ -1419,12 +1377,9 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                                 return
                               }
 
-                              console.log('🔄 Calling generateNewQR function...')
                               let generateResult
                               try {
                                 generateResult = await generateNewQRFunction()
-                                console.log('🔄 IPC call completed, result type:', typeof generateResult)
-                                console.log('🔄 IPC call completed, result value:', generateResult)
                               } catch (ipcError: any) {
                                 console.error('❌ IPC call failed:', ipcError)
                                 console.error('❌ IPC error details:', {
@@ -1436,7 +1391,6 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                               }
 
                               if (generateResult?.success) {
-                                console.log('✅ QR generation initiated successfully')
                                 showNotification('تم بدء عملية توليد رمز QR جديد', 'info')
 
                                 // Check for QR after generation with multiple attempts
@@ -1448,15 +1402,12 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                                     // @ts-ignore
                                     const status = await window.electronAPI?.whatsappReminders?.getStatus?.()
                                     if (status?.qr && status.qr.trim() !== '') {
-                                      console.log('🔍 Found QR data after generation attempt', attempts)
                                       setQrData(status.qr)
                                       showNotification('تم توليد رمز QR بنجاح!', 'success')
                                       return
                                     } else if (attempts < maxAttempts) {
-                                      console.log('📱 No QR found, retrying... (attempt', attempts, 'of', maxAttempts, ')')
                                       setTimeout(checkForQr, 1000)
                                     } else {
-                                      console.log('📱 No QR found after', maxAttempts, 'attempts')
                                       showNotification('لم يتم توليد رمز QR. يرجى المحاولة مرة أخرى.', 'error')
                                     }
                                   } catch (statusError) {

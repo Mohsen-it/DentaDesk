@@ -21,7 +21,6 @@ class DatabaseConnectionPool {
   }
 
   private initializePool(): void {
-    console.log(`🏗️ Initializing database connection pool with max ${this.maxConnections} connections`)
 
     for (let i = 0; i < this.maxConnections; i++) {
       try {
@@ -35,7 +34,6 @@ class DatabaseConnectionPool {
       }
     }
 
-    console.log(`✅ Database connection pool initialized with ${this.connections.length} connections`)
   }
 
   async getConnection(): Promise<Database.Database> {
@@ -84,7 +82,6 @@ class DatabaseConnectionPool {
   }
 
   closeAll(): void {
-    console.log('🔌 Closing all database connections...')
     this.connections.forEach(db => {
       try {
         db.close()
@@ -95,7 +92,6 @@ class DatabaseConnectionPool {
     this.connections = []
     this.activeConnections = 0
     this.connectionQueue = []
-    console.log('✅ All database connections closed')
   }
 
   getStats(): { total: number, active: number, queued: number } {
@@ -127,13 +123,10 @@ export class DatabaseService {
   private readonly MAX_CACHE_SIZE = 100 // Maximum cache entries
 
   constructor() {
-    console.time('🗄️ Database Service Initialization')
-    console.log('🚀 Initializing optimized database service...')
 
     // Start memory cleanup timer
     this.startMemoryCleanupTimer()
 
-    console.timeEnd('🗄️ Database Service Initialization')
   }
 
   private startMemoryCleanupTimer(): void {
@@ -166,7 +159,6 @@ export class DatabaseService {
     }
 
     if (cleanedCount > 0) {
-      console.log(`🧹 Memory cleanup: removed ${cleanedCount} cache entries`)
     }
 
     // Update last activity time
@@ -178,16 +170,13 @@ export class DatabaseService {
    */
   private async recoverFromError(error: any): Promise<boolean> {
     try {
-      console.log('🔄 Attempting database error recovery...')
 
       // Check if connection pool is healthy
       if (this.connectionPool) {
         const stats = this.connectionPool.getStats()
-        console.log('📊 Connection pool stats:', stats)
 
         // If too many connections are in use, wait a bit
         if (stats.active > stats.total * 0.8) {
-          console.log('⏳ Waiting for connections to be released...')
           await new Promise(resolve => setTimeout(resolve, 2000))
         }
       }
@@ -196,10 +185,8 @@ export class DatabaseService {
       if (this.db) {
         try {
           this.db.prepare('SELECT 1').get()
-          console.log('✅ Main connection is healthy')
           return true
         } catch (connectionError) {
-          console.log('⚠️ Main connection failed, reinitializing...')
           this.db = null
         }
       }
@@ -213,7 +200,6 @@ export class DatabaseService {
       const testDb = await this.getMainConnection()
       testDb.prepare('SELECT 1').get()
 
-      console.log('✅ Database error recovery successful')
       return true
 
     } catch (recoveryError) {
@@ -235,7 +221,6 @@ export class DatabaseService {
       const canRecover = await this.recoverFromError(error)
 
       if (canRecover && !error.message.includes('SQLITE_CANTOPEN')) {
-        console.log(`🔄 Retrying ${operationName} after recovery...`)
         try {
           return await operation()
         } catch (retryError: any) {
@@ -253,13 +238,11 @@ export class DatabaseService {
       if (this.connectionPool) return // Already initialized
 
       const dbPath = join(app.getPath('userData'), 'dental_clinic.db')
-      console.log('🗄️ Initializing connection pool at:', dbPath)
 
       // Create connection pool with minimal initial connections
       this.connectionPool = new DatabaseConnectionPool(dbPath, 2) // Start with 2 connections
 
       // Don't create main connection immediately - will be created on first use
-      console.log('✅ Connection pool initialized successfully')
 
     } catch (error) {
       console.error('❌ Failed to initialize connection pool:', error)
@@ -299,7 +282,6 @@ export class DatabaseService {
     try {
       await this.initPromise
       this.isInitialized = true
-      console.log('✅ Database initialization completed successfully')
     } catch (error) {
       console.error('❌ Database initialization failed:', error)
       throw error
@@ -376,7 +358,6 @@ export class DatabaseService {
       db.pragma('synchronous = NORMAL')
       db.pragma('cache_size = -10000')
       db.pragma('temp_store = MEMORY')
-      console.log('✅ Basic database optimizations applied')
     } catch (error) {
       console.warn('⚠️ Failed to apply basic optimizations:', error)
     }
@@ -386,7 +367,6 @@ export class DatabaseService {
    * Synchronous initialization for critical operations only
    */
   private initializeDatabaseSync(): void {
-    console.log('🔧 Starting database initialization...')
 
     // Manual table creation as fallback
     this.createEssentialTablesManually()
@@ -394,28 +374,23 @@ export class DatabaseService {
     // Try to load full schema as well
     this.tryLoadFullSchema()
 
-    console.log('✅ Database schema initialization completed')
   }
 
   private createEssentialTablesManually(): void {
-    console.log('🔧 Creating essential tables manually...')
 
     try {
       // First, drop any existing tables to ensure clean state
       const existingTables = this.db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as { name: string }[]
-      console.log('📊 Existing tables:', existingTables.map(t => t.name).join(', '))
 
       // Drop existing tables in reverse dependency order
       const tablesToDrop = ['payments', 'appointments', 'treatments', 'patients', 'settings']
       for (const tableName of tablesToDrop) {
         if (existingTables.some(t => t.name === tableName)) {
-          console.log(`🗑️ Dropping existing table: ${tableName}`)
           this.db.exec(`DROP TABLE IF EXISTS ${tableName}`)
         }
       }
 
       // Now create tables without foreign keys first
-      console.log('🏗️ Creating tables without foreign keys...')
 
       // Create settings table (no dependencies)
       this.db.exec(`
@@ -449,7 +424,6 @@ export class DatabaseService {
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
       `)
-      console.log('✅ Settings table created')
 
       // Create patients table (no dependencies)
       this.db.exec(`
@@ -471,7 +445,6 @@ export class DatabaseService {
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
       `)
-      console.log('✅ Patients table created')
 
       // Create treatments table (no dependencies)
       this.db.exec(`
@@ -486,7 +459,6 @@ export class DatabaseService {
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
       `)
-      console.log('✅ Treatments table created')
 
       // Create appointments table (depends on patients and treatments)
       this.db.exec(`
@@ -507,7 +479,6 @@ export class DatabaseService {
           FOREIGN KEY (treatment_id) REFERENCES treatments(id) ON DELETE SET NULL
         )
       `)
-      console.log('✅ Appointments table created')
 
       // Create payments table (depends on patients and appointments)
       this.db.exec(`
@@ -531,13 +502,11 @@ export class DatabaseService {
           FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE SET NULL
         )
       `)
-      console.log('✅ Payments table created')
 
       // Insert default settings
       this.db.exec(`
         INSERT OR IGNORE INTO settings (id) VALUES ('clinic_settings')
       `)
-      console.log('✅ Default settings inserted')
 
       // Insert default treatments
       this.db.exec(`
@@ -550,7 +519,6 @@ export class DatabaseService {
         ('whitening', 'تبييض الأسنان', 'تبييض الأسنان المهني', 300.00, 60, 'العلاجات التجميلية'),
         ('checkup', 'فحص عام', 'فحص روتيني شامل للأسنان', 75.00, 30, 'العلاجات الوقائية')
       `)
-      console.log('✅ Default treatments inserted')
 
       // Create basic indexes
       this.db.exec(`
@@ -566,12 +534,9 @@ export class DatabaseService {
         CREATE INDEX IF NOT EXISTS idx_treatments_name ON treatments(name);
         CREATE INDEX IF NOT EXISTS idx_treatments_category ON treatments(category);
       `)
-      console.log('✅ Basic indexes created')
 
       // Verify tables were created
       const tables = this.db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all()
-      console.log('📊 Manual tables created:', tables.length)
-      console.log('📋 Tables:', tables.map((t: any) => t.name).join(', '))
 
     } catch (error: any) {
       console.error('❌ Failed to create essential tables manually:', error.message)
@@ -591,7 +556,6 @@ export class DatabaseService {
     for (const schemaPath of possiblePaths) {
       try {
         if (require('fs').existsSync(schemaPath)) {
-          console.log('🔍 Loading full schema from:', schemaPath)
           const schemaContent = readFileSync(schemaPath, 'utf-8')
           const statements = schemaContent.split(';').filter(stmt => stmt.trim().length > 0)
 
@@ -606,13 +570,11 @@ export class DatabaseService {
                   successful++
                 }
               } catch (stmtError: any) {
-                console.log(`⚠️ Schema statement failed (continuing): ${stmtError.message}`)
                 // Continue with other statements
               }
             }
           }
 
-          console.log(`✅ Full schema loaded: ${successful} statements executed`)
           return
         }
       } catch (error: any) {
@@ -620,7 +582,6 @@ export class DatabaseService {
       }
     }
 
-    console.log('⚠️ Full schema loading skipped (manual tables created)')
 
     // Enable foreign keys and basic optimizations
     this.db.pragma('foreign_keys = ON')
@@ -636,7 +597,6 @@ export class DatabaseService {
    */
   private async initializeDatabaseAsync(): Promise<void> {
     // Additional async operations can be added here
-    console.log('✅ Database async initialization completed')
   }
 
   /**
@@ -648,7 +608,6 @@ export class DatabaseService {
       this.db.exec('CREATE INDEX IF NOT EXISTS idx_patients_id ON patients(id)')
       this.db.exec('CREATE INDEX IF NOT EXISTS idx_appointments_id ON appointments(id)')
       this.db.exec('CREATE INDEX IF NOT EXISTS idx_settings_id ON settings(id)')
-      console.log('✅ Basic indexes created')
     } catch (error) {
       console.warn('⚠️ Failed to create basic indexes:', error)
     }
@@ -659,7 +618,6 @@ export class DatabaseService {
    */
   private async runMigrationsAsync(): Promise<void> {
     // Move migration logic here, making it async
-    console.log('✅ Migrations completed (async)')
   }
 
   /**
@@ -669,7 +627,6 @@ export class DatabaseService {
     try {
       const migrationService = new MigrationService(this.db)
       migrationService.runMigration001()
-      console.log('✅ Patient schema migration completed (async)')
     } catch (error) {
       console.error('❌ Patient schema migration failed:', error)
       // Don't throw error to prevent app from crashing
@@ -692,7 +649,6 @@ export class DatabaseService {
       if (status.tables.patient_treatment_timeline && status.appliedMigrations > 0) {
         await migrationService.createSampleTimelineData()
       }
-      console.log('✅ Integration migration completed (async)')
     } catch (error) {
       console.error('❌ Integration migration failed:', error)
       // لا نرمي الخطأ لتجنب توقف التطبيق
@@ -704,7 +660,6 @@ export class DatabaseService {
    */
   private async ensureLabOrdersColumnsAsync(): Promise<boolean> {
     // Move the heavy column checking logic here
-    console.log('✅ Lab orders columns verification completed (async)')
     return true
   }
 
@@ -713,13 +668,11 @@ export class DatabaseService {
    */
   private async ensureWhatsAppTablesAsync(): Promise<void> {
     try {
-      console.log('📱 Ensuring WhatsApp tables exist...')
       
       // Check if whatsapp_reminders table exists
       const tables = this.db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='whatsapp_reminders'").all() as { name: string }[]
       
       if (tables.length === 0) {
-        console.log('📱 Creating whatsapp_reminders table...')
         
         // Create whatsapp_reminders table
         this.db.exec(`
@@ -742,9 +695,7 @@ export class DatabaseService {
         this.db.exec('CREATE INDEX IF NOT EXISTS idx_whatsapp_reminders_status ON whatsapp_reminders(status)')
         this.db.exec('CREATE INDEX IF NOT EXISTS idx_whatsapp_reminders_sent_at ON whatsapp_reminders(sent_at)')
         
-        console.log('✅ whatsapp_reminders table created successfully')
       } else {
-        console.log('✅ whatsapp_reminders table already exists')
       }
       
     } catch (error) {
@@ -759,7 +710,6 @@ export class DatabaseService {
   private async testDatabaseConnectionAsync(): Promise<void> {
     const testQuery = this.db.prepare('SELECT COUNT(*) as count FROM patients')
     const result = testQuery.get() as { count: number }
-    console.log('✅ Database async test successful. Patient count:', result.count)
   }
 
   /**

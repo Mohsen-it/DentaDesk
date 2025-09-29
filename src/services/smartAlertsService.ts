@@ -19,7 +19,6 @@ class AlertsEventSystem {
   static init() {
     if (this.isInitialized) return
 
-    console.log('🔔 AlertsEventSystem: Initializing...')
     this.isInitialized = true
 
     // تنظيف دوري للمستمعين المنتهية الصلاحية
@@ -35,13 +34,11 @@ class AlertsEventSystem {
       this.listeners.set(event, new Set())
     }
     this.listeners.get(event)!.add(callback)
-    console.log(`🔔 AlertsEventSystem: Added listener for '${event}' (total: ${this.listeners.get(event)!.size})`)
   }
 
   static removeEventListener(event: string, callback: Function) {
     if (this.listeners.has(event)) {
       this.listeners.get(event)!.delete(callback)
-      console.log(`🔔 AlertsEventSystem: Removed listener for '${event}' (remaining: ${this.listeners.get(event)!.size})`)
 
       // إزالة المجموعة إذا كانت فارغة
       if (this.listeners.get(event)!.size === 0) {
@@ -51,27 +48,21 @@ class AlertsEventSystem {
   }
 
   static emit(event: string, data?: any) {
-    console.log(`🔔 AlertsEventSystem: Emitting event '${event}'`, data ? 'with data:' : 'without data', data)
 
     if (this.listeners.has(event)) {
       const listeners = Array.from(this.listeners.get(event)!)
-      console.log(`🔔 AlertsEventSystem: Notifying ${listeners.length} listeners for '${event}'`)
 
       listeners.forEach((callback, index) => {
         try {
-          console.log(`🔔 AlertsEventSystem: Calling listener ${index} for '${event}'`)
           callback(data)
-          console.log(`✅ AlertsEventSystem: Listener ${index} for '${event}' completed`)
         } catch (error) {
           console.error(`❌ Error in event listener ${index} for '${event}':`, error)
         }
       })
     } else {
-      console.log(`🔔 AlertsEventSystem: No listeners for event '${event}'`)
     }
 
     // إرسال أحداث window للتوافق مع الأنظمة القديمة
-    console.log(`🔔 AlertsEventSystem: Emitting window event for '${event}'`)
     this.emitWindowEvent(event, data)
   }
 
@@ -118,7 +109,6 @@ class AlertsEventSystem {
   }
 
   static removeAllListeners() {
-    console.log('🔔 AlertsEventSystem: Removing all listeners')
     this.listeners.clear()
   }
 

@@ -68,9 +68,7 @@ export const useDentalTreatmentStore = create<DentalTreatmentState>((set, get) =
   loadToothTreatmentsByPatient: async (patientId: string) => {
     set({ isLoading: true, error: null })
     try {
-      console.log('🦷 Loading treatments for patient:', patientId)
       const toothTreatments = await window.electronAPI.toothTreatments.getByPatient(patientId)
-      console.log('🦷 Loaded treatments:', toothTreatments.length, 'treatments')
       set({
         toothTreatments,
         isLoading: false,
@@ -159,9 +157,7 @@ export const useDentalTreatmentStore = create<DentalTreatmentState>((set, get) =
   updateToothTreatment: async (id: string, updates: Partial<ToothTreatment>) => {
     set({ isLoading: true, error: null })
     try {
-      console.log('🦷 Store: Updating treatment in database:', id, updates)
       await window.electronAPI.toothTreatments.update(id, updates)
-      console.log('🦷 Store: Database update successful')
 
       const { toothTreatments, selectedPatientId } = get()
 
@@ -176,7 +172,6 @@ export const useDentalTreatmentStore = create<DentalTreatmentState>((set, get) =
         try {
           const refreshedTreatments = await window.electronAPI.toothTreatments.getByPatient(selectedPatientId)
           set({ toothTreatments: refreshedTreatments })
-          console.log('🦷 Store: Refreshed treatments from database')
         } catch (refreshError) {
           console.warn('🦷 Store: Failed to refresh treatments, but update was successful:', refreshError)
           // لا نرمي خطأ هنا لأن التحديث الأساسي نجح
@@ -211,7 +206,6 @@ export const useDentalTreatmentStore = create<DentalTreatmentState>((set, get) =
         }))
       }
 
-      console.log('🦷 Store: Treatment update completed successfully')
     } catch (error) {
       console.error('🦷 Store: Error updating treatment:', error)
       set({
@@ -356,7 +350,6 @@ export const useDentalTreatmentStore = create<DentalTreatmentState>((set, get) =
     try {
       const images = await window.electronAPI.dentalTreatmentImages.getAll()
       set({ images, isLoading: false })
-      console.log('✅ All images refreshed after backup restore')
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Failed to refresh images',

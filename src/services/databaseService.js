@@ -12,30 +12,23 @@ class DatabaseService {
         // Try to get userData path from electron app (consistent with main.js)
         const { app } = require('electron')
         dbPath = join(app.getPath('userData'), 'dental_clinic.db')
-        console.log('🗄️ Using userData path for database:', dbPath)
       } catch (error) {
         // Fallback for testing or non-electron environments
-        console.log('⚠️ Electron app not available, using fallback path')
         const appDir = process.execPath ? require('path').dirname(process.execPath) : process.cwd()
         dbPath = join(appDir, 'dental_clinic.db')
       }
     }
 
-    console.log('🗄️ Initializing SQLite database at:', dbPath)
 
     try {
       this.db = new Database(dbPath)
-      console.log('✅ Database connection established successfully')
 
       // Test database connection
       this.db.pragma('user_version')
-      console.log('✅ Database connection test passed')
 
       this.initializeDatabase()
-      console.log('✅ Database schema initialized')
 
       this.runMigrations()
-      console.log('✅ Database migrations completed')
 
       // Initialize image migration service
       this.imageMigrationService = new ImageMigrationService(this)
@@ -43,7 +36,6 @@ class DatabaseService {
       // Check if image migration is needed
       this.checkAndRunImageMigration()
 
-      console.log('✅ DatabaseService initialization completed successfully')
     } catch (error) {
       console.error('❌ Failed to initialize DatabaseService:', error)
       throw error
@@ -88,7 +80,6 @@ class DatabaseService {
           if (require('fs').existsSync(path)) {
             schemaPath = path
             schema = readFileSync(path, 'utf-8')
-            console.log('✅ Found schema.sql at:', path)
             break
           }
         } catch (e) {
@@ -142,9 +133,7 @@ class DatabaseService {
                trimmed.startsWith('CREATE TRIGGER')
       })
 
-      console.log(`📋 Found ${tableStatements.length} table statements and ${indexStatements.length} index statements`)
 
-      console.log(`📋 Executing ${tableStatements.length} table statements first...`)
       
       // Execute table creation statements first
       for (let i = 0; i < tableStatements.length; i++) {
@@ -153,7 +142,6 @@ class DatabaseService {
           if (statement) {
             this.db.exec(statement)
             if (i % 5 === 0) { // Log progress every 5 statements
-              console.log(`📋 Table progress: ${i + 1}/${tableStatements.length}`)
             }
           }
         } catch (error) {
@@ -164,7 +152,6 @@ class DatabaseService {
         }
       }
 
-      console.log(`📋 Executing ${indexStatements.length} index statements...`)
       
       // Execute index creation statements after tables are created
       for (let i = 0; i < indexStatements.length; i++) {
@@ -173,7 +160,6 @@ class DatabaseService {
           if (statement) {
             this.db.exec(statement)
             if (i % 10 === 0) { // Log progress every 10 statements
-              console.log(`📋 Index progress: ${i + 1}/${indexStatements.length}`)
             }
           }
         } catch (error) {
@@ -184,7 +170,6 @@ class DatabaseService {
         }
       }
       
-      console.log('✅ Schema execution completed')
     } catch (error) {
       console.warn('⚠️ Schema file execution failed, using fallback initialization')
       this.initializeFallbackSchema()
@@ -212,7 +197,6 @@ class DatabaseService {
   }
 
   initializeFallbackSchema() {
-    console.log('🔄 Initializing fallback schema...')
 
     // Create basic tables without foreign key constraints first
     const basicTables = [
@@ -295,7 +279,6 @@ class DatabaseService {
       }
     })
 
-    console.log('✅ Fallback schema initialized')
   }
 
   createIndexes() {
@@ -734,10 +717,8 @@ class DatabaseService {
     migrations.forEach(migration => {
       if (version < migration.version) {
         try {
-          console.log(`🔄 Applying migration version ${migration.version}`)
           this.db.exec(migration.sql)
           this.db.prepare('INSERT INTO schema_version (version) VALUES (?)').run(migration.version)
-          console.log(`✅ Applied migration version ${migration.version}`)
         } catch (error) {
           console.warn(`❌ Migration ${migration.version} warning:`, error.message)
         }
@@ -752,7 +733,6 @@ class DatabaseService {
       `).get()
 
       if (dentalTreatmentsSchema && dentalTreatmentsSchema.sql.includes('tooth_number >= 1 AND tooth_number <= 32')) {
-        console.log('🔄 Force applying migration 9: Fix tooth_number constraint for FDI numbering system')
 
         // Apply migration 9 SQL directly
         this.db.exec(`
@@ -807,9 +787,7 @@ class DatabaseService {
 
         // Record that migration 9 was applied
         this.db.prepare('INSERT OR REPLACE INTO schema_version (version) VALUES (?)').run(9)
-        console.log('✅ Force applied migration 9: tooth_number constraint fixed for FDI numbering')
       } else {
-        console.log('✅ dental_treatments table tooth_number constraint is correct')
       }
     } catch (error) {
       console.error('❌ Error checking/fixing dental_treatments table:', error.message)
@@ -819,10 +797,8 @@ class DatabaseService {
     try {
       const imageTableColumns = this.db.prepare("PRAGMA table_info(dental_treatment_images)").all()
       const imageColumnNames = imageTableColumns.map(col => col.name)
-      console.log('🔍 [DEBUG] Current dental_treatment_images columns:', imageColumnNames)
 
       if (imageColumnNames.includes('tooth_record_id')) {
-        console.log('🔄 Force applying migration 8: Fix dental_treatment_images table structure')
 
         // Apply migration 8 SQL directly
         this.db.exec(`
@@ -869,9 +845,7 @@ class DatabaseService {
 
         // Record that migration 8 was applied
         this.db.prepare('INSERT OR REPLACE INTO schema_version (version) VALUES (?)').run(8)
-        console.log('✅ Force applied migration 8: dental_treatment_images table fixed')
       } else {
-        console.log('✅ dental_treatment_images table structure is correct')
       }
     } catch (error) {
       console.error('❌ Error checking/fixing dental_treatment_images table:', error.message)
@@ -880,14 +854,12 @@ class DatabaseService {
 
   runMigrations() {
     try {
-      console.log('🔄 Running additional migrations...')
 
       // Check if date_added column exists in patients table
       const patientColumns = this.db.prepare("PRAGMA table_info(patients)").all()
       const patientColumnNames = patientColumns.map(col => col.name)
 
       if (!patientColumnNames.includes('date_added')) {
-        console.log('🔄 Adding date_added column to patients table...')
         // Add column without default value first
         this.db.exec('ALTER TABLE patients ADD COLUMN date_added DATETIME')
 
@@ -897,9 +869,7 @@ class DatabaseService {
         // Create index for better performance
         this.db.exec('CREATE INDEX IF NOT EXISTS idx_patients_date_added ON patients(date_added)')
 
-        console.log('✅ Added date_added column to patients table')
       } else {
-        console.log('✅ date_added column already exists in patients table')
       }
 
     } catch (error) {
@@ -914,7 +884,6 @@ class DatabaseService {
       const patientColumnNames = patientColumns.map(col => col.name)
 
       if (!patientColumnNames.includes('date_added')) {
-        console.log('🔄 Adding date_added column to patients table...')
         // Add column without default value first
         this.db.exec('ALTER TABLE patients ADD COLUMN date_added DATETIME')
 
@@ -924,7 +893,6 @@ class DatabaseService {
         // Create index for better performance
         this.db.exec('CREATE INDEX IF NOT EXISTS idx_patients_date_added ON patients(date_added)')
 
-        console.log('✅ Added date_added column to patients table')
       }
     } catch (error) {
       console.error('❌ Error ensuring date_added column:', error.message)
@@ -933,30 +901,25 @@ class DatabaseService {
 
   ensureLabTablesExist() {
     try {
-      console.log('🧪 [DEBUG] ensureLabTablesExist() called')
 
       // List all existing tables first
       const allTables = this.db.prepare(`
         SELECT name FROM sqlite_master WHERE type='table'
       `).all()
-      console.log('📋 [DEBUG] All existing tables:', allTables.map(t => t.name))
 
       // Check if labs table exists
       const labsTableExists = this.db.prepare(`
         SELECT name FROM sqlite_master
         WHERE type='table' AND name='labs'
       `).get()
-      console.log('🔍 [DEBUG] Labs table exists:', !!labsTableExists)
 
       // Check if lab_orders table exists
       const labOrdersTableExists = this.db.prepare(`
         SELECT name FROM sqlite_master
         WHERE type='table' AND name='lab_orders'
       `).get()
-      console.log('🔍 [DEBUG] Lab orders table exists:', !!labOrdersTableExists)
 
       if (!labsTableExists) {
-        console.log('🏗️ [DEBUG] Creating labs table...')
         this.db.exec(`
           CREATE TABLE labs (
             id TEXT PRIMARY KEY,
@@ -967,19 +930,15 @@ class DatabaseService {
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
           )
         `)
-        console.log('✅ [DEBUG] Labs table created successfully')
 
         // Verify table was created
         const verifyLabs = this.db.prepare(`
           SELECT name FROM sqlite_master WHERE type='table' AND name='labs'
         `).get()
-        console.log('🔍 [DEBUG] Labs table verification after creation:', !!verifyLabs)
       } else {
-        console.log('✅ [DEBUG] Labs table already exists')
       }
 
       if (!labOrdersTableExists) {
-        console.log('🏗️ [DEBUG] Creating lab_orders table...')
         this.db.exec(`
           CREATE TABLE lab_orders (
             id TEXT PRIMARY KEY,
@@ -1009,15 +968,12 @@ class DatabaseService {
             FOREIGN KEY (tooth_treatment_id) REFERENCES tooth_treatments(id) ON DELETE CASCADE
           )
         `)
-        console.log('✅ [DEBUG] Lab orders table created successfully')
 
         // Verify table was created
         const verifyLabOrders = this.db.prepare(`
           SELECT name FROM sqlite_master WHERE type='table' AND name='lab_orders'
         `).get()
-        console.log('🔍 [DEBUG] Lab orders table verification after creation:', !!verifyLabOrders)
       } else {
-        console.log('✅ [DEBUG] Lab orders table already exists')
       }
 
       // Create indexes if they don't exist
@@ -1027,7 +983,6 @@ class DatabaseService {
       const finalTables = this.db.prepare(`
         SELECT name FROM sqlite_master WHERE type='table'
       `).all()
-      console.log('📋 [DEBUG] All tables after ensureLabTablesExist:', finalTables.map(t => t.name))
 
     } catch (error) {
       console.error('❌ [DEBUG] Error in ensureLabTablesExist:', error)
@@ -1038,7 +993,6 @@ class DatabaseService {
 
   createLabIndexes() {
     try {
-      console.log('🔍 Creating laboratory indexes...')
 
       const indexes = [
         'CREATE INDEX IF NOT EXISTS idx_labs_name ON labs(name)',
@@ -1060,7 +1014,6 @@ class DatabaseService {
         }
       })
 
-      console.log('✅ Laboratory indexes created successfully')
     } catch (error) {
       console.error('❌ Error creating lab indexes:', error)
     }
@@ -1068,7 +1021,6 @@ class DatabaseService {
 
   runPatientSchemaMigration() {
     try {
-      console.log('🔄 Starting patient schema migration...')
 
       // Check if patients table exists and what schema it has
       const tableExists = this.db.prepare(`
@@ -1077,28 +1029,21 @@ class DatabaseService {
       `).get()
 
       if (!tableExists) {
-        console.log('✅ No patients table found - will be created by schema.sql')
         return
       }
 
       // Check if migration is needed by checking if new columns exist
       const tableInfo = this.db.pragma('table_info(patients)')
-      console.log('📋 Current table structure:', tableInfo.map(col => col.name))
 
       const hasNewSchema = tableInfo.some(col => col.name === 'serial_number')
       const hasOldSchema = tableInfo.some(col => col.name === 'first_name')
 
-      console.log('🔍 Schema analysis:')
-      console.log('  - Has new schema (serial_number):', hasNewSchema)
-      console.log('  - Has old schema (first_name):', hasOldSchema)
 
       if (hasNewSchema && !hasOldSchema) {
-        console.log('✅ Migration already completed - new schema detected')
         return
       }
 
       if (!hasOldSchema) {
-        console.log('✅ No old schema detected - no migration needed')
         return
       }
 

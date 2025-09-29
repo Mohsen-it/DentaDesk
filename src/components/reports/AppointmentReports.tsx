@@ -1,23 +1,18 @@
-/**
- * Appointment Reports - تقارير المواعيد تستخدم التقويم الميلادي فقط
- * All appointment charts use ONLY Gregorian calendar system
- */
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { useReportsStore } from '@/store/reportsStore'
 import { useAppointmentStore } from '@/store/appointmentStore'
 import { useSettingsStore } from '@/store/settingsStore'
 import { useRealTimeReportsByType } from '@/hooks/useRealTimeReports'
-import { formatDate, getChartColors, getChartConfig, getChartColorsWithFallback, formatChartValue, formatGregorianMonthYear } from '@/lib/utils'
+import { getChartColors, getChartConfig, getChartColorsWithFallback, formatChartValue, formatGregorianMonthYear } from '@/lib/utils'
 import { validateNumericData, validateDateData, transformToChartData, groupDataByPeriod, ensureAppointmentStatusData } from '@/lib/chartDataHelpers'
 import { getCardStyles, getIconStyles } from '@/lib/cardStyles'
 import { useTheme } from '@/contexts/ThemeContext'
 import { PdfService } from '@/services/pdfService'
 import { ExportService } from '@/services/exportService'
 import { notify } from '@/services/notificationService'
-import TimeFilter, { TimeFilterOptions } from '@/components/ui/time-filter'
+import TimeFilter from '@/components/ui/time-filter'
 import useTimeFilteredStats from '@/hooks/useTimeFilteredStats'
 import {
   Calendar,
@@ -162,7 +157,9 @@ export default function AppointmentReports() {
           // Use Gregorian calendar with Arabic month names
           const month = date.getMonth() // 0-11
           const year = date.getFullYear()
-          const monthName = formatGregorianMonthYear(year, month)
+          const monthNames = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+                             'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
+          const monthName = `${monthNames[month]} ${year}`
 
           acc[monthName] = (acc[monthName] || 0) + 1
           return acc
@@ -173,16 +170,34 @@ export default function AppointmentReports() {
       }, {} as Record<string, number>)
 
       const chartData = Object.entries(monthlyData)
-        .map(([month, count]) => ({
-          month,
-          count,
-          formattedCount: `${count} موعد`
-        }))
+        .map(([month, count]) => {
+          // Extract just the month name for display
+          const monthNames = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+                             'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
+          const monthName = monthNames.find(m => month.includes(m)) || month.split(' ')[0]
+          
+          return {
+            month: monthName, // Show only month name
+            fullMonth: month, // Keep full month for sorting
+            count,
+            formattedCount: `${count} موعد`
+          }
+        })
         .sort((a, b) => {
-          // Sort chronologically
-          const dateA = new Date(a.month)
-          const dateB = new Date(b.month)
-          return dateA.getTime() - dateB.getTime()
+          // Sort chronologically using full month data
+          const monthOrder = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+                             'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
+          const aMonthIndex = monthOrder.findIndex(m => a.fullMonth.includes(m))
+          const bMonthIndex = monthOrder.findIndex(m => b.fullMonth.includes(m))
+          
+          if (aMonthIndex !== bMonthIndex) {
+            return aMonthIndex - bMonthIndex
+          }
+          
+          // If same month, sort by year
+          const aYear = parseInt(a.fullMonth.split(' ')[1]) || 0
+          const bYear = parseInt(b.fullMonth.split(' ')[1]) || 0
+          return aYear - bYear
         })
         .filter(item => item.count > 0) // Only include months with appointments
 
@@ -503,9 +518,6 @@ export default function AppointmentReports() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, value, percent }) =>
-                      value > 0 ? `${name}: ${value} (${(percent * 100).toFixed(0)}%)` : ''
-                    }
                     outerRadius={120}
                     innerRadius={50}
                     fill="#8884d8"
@@ -532,18 +544,28 @@ export default function AppointmentReports() {
 
             {/* Status Legend */}
             {statusData.length > 0 && (
-              <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
-                {statusData.map((status, index) => (
-                  <div key={`status-legend-${index}`} className="flex items-center space-x-2 space-x-reverse">
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: status.color }}
-                    />
-                    <span className="text-muted-foreground">
-                      {status.name}: {status.value} ({status.percentage}%)
-                    </span>
-                  </div>
-                ))}
+              <div className="mt-6 flex flex-col items-center space-y-3">
+                <div className="text-sm font-medium text-foreground mb-2">
+                  تفاصيل التوزيع
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-md">
+                  {statusData.map((status, index) => (
+                    <div key={`status-legend-${index}`} className="flex items-center justify-center space-x-2 space-x-reverse bg-muted/30 rounded-lg p-3">
+                      <div
+                        className="w-4 h-4 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: status.color }}
+                      />
+                      <div className="text-center">
+                        <div className="font-medium text-foreground">
+                          {status.name}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {status.value} موعد ({status.percentage}%)
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </CardContent>
@@ -572,7 +594,7 @@ export default function AppointmentReports() {
               <ResponsiveContainer width="100%" height={chartConfiguration.responsive.desktop.height}>
                 <BarChart
                   data={monthlyChartData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 70 }}
                   barCategoryGap={chartConfiguration.bar.barCategoryGap}
                 >
                   <CartesianGrid
@@ -582,13 +604,14 @@ export default function AppointmentReports() {
                   />
                   <XAxis
                     dataKey="month"
-                    tick={{ fontSize: 14, fill: isDarkMode ? '#9ca3af' : '#6b7280' }}
+                    tick={{ fontSize: 12, fill: isDarkMode ? '#9ca3af' : '#6b7280' }}
                     axisLine={{ stroke: isDarkMode ? '#4b5563' : '#d1d5db' }}
                     tickLine={{ stroke: isDarkMode ? '#4b5563' : '#d1d5db' }}
                     interval={0}
                     angle={-45}
                     textAnchor="end"
-                    height={60}
+                    height={100}
+                    dy={15}
                   />
                   <YAxis
                     tick={{ fontSize: 14, fill: isDarkMode ? '#9ca3af' : '#6b7280' }}

@@ -102,7 +102,6 @@ export default function Payments() {
         const stored = localStorage.getItem('selectedPatientForPayment')
         if (stored) {
           const parsed = JSON.parse(stored)
-          console.log('Found pre-selected patient for payment:', parsed)
 
           // Set pre-selected patient
           setPreSelectedPatientId(parsed.selectedPatientId)
@@ -173,7 +172,6 @@ export default function Payments() {
   }
 
   const handleAddPayment = () => {
-    console.log('Add payment clicked')
     setPreSelectedPatientId(undefined) // Clear any pre-selection for manual add
     setShowAddDialog(true)
   }

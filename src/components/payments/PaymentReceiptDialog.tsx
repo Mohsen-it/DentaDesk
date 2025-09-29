@@ -722,7 +722,6 @@ ${address ? `📍 العنوان: ${address}` : ''}
                       maxHeight: '60px'
                     }}
                     onError={(e) => {
-                      console.log('Logo failed to load:', clinicLogo)
                       e.currentTarget.style.display = 'none'
                     }}
                   />

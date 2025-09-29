@@ -494,10 +494,6 @@ contextBridge.exposeInMainWorld('onWhatsAppReady', (callback: () => void) => {
   return () => ipcRenderer.removeListener('whatsapp:ready', listener)
 })
 
-// Debug: Log available APIs
-console.log('Preload: electronAPI exposed with keys:', Object.keys(electronAPI))
-console.log('Preload: files API available:', !!electronAPI.files)
-console.log('Preload: uploadDentalImage available:', !!electronAPI.files?.uploadDentalImage)
 
 // Type declaration for global window object
 declare global {

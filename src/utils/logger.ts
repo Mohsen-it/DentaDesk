@@ -43,7 +43,6 @@ class Logger {
 
   debug(message: string, ...args: any[]): void {
     if (this.shouldLog(LogLevel.DEBUG)) {
-      console.log(this.formatMessage('DEBUG', message, ...args))
     }
   }
 
@@ -68,7 +67,6 @@ class Logger {
   // تسجيل معلومات النظام (مهم للتشخيص)
   system(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`🔧 [SYSTEM] ${message}`, ...args)
     }
   }
 
@@ -80,35 +78,30 @@ class Logger {
   // تسجيل معلومات الأداء
   performance(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`⚡ [PERF] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات المستخدم (بدون معلومات حساسة)
   user(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`👤 [USER] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات قاعدة البيانات
   database(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`🗄️ [DB] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات API
   api(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`🌐 [API] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات WhatsApp
   whatsapp(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`📱 [WHATSAPP] ${message}`, ...args)
     }
   }
 
@@ -125,147 +118,126 @@ class Logger {
   // تسجيل معلومات الدفع
   payment(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`💳 [PAYMENT] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات المواعيد
   appointment(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`📅 [APPOINTMENT] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات المرضى
   patient(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`👥 [PATIENT] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات العلاج
   treatment(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`🦷 [TREATMENT] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات المختبر
   lab(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`🧪 [LAB] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات المخزون
   inventory(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`📦 [INVENTORY] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات التقارير
   report(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`📊 [REPORT] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات الإعدادات
   settings(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`⚙️ [SETTINGS] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات الواجهة
   ui(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`🖥️ [UI] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات البحث
   search(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`🔍 [SEARCH] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات التصدير
   export(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`📤 [EXPORT] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات الاستيراد
   import(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`📥 [IMPORT] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات النسخ الاحتياطي
   backup(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`💾 [BACKUP] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات الاستعادة
   restore(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`🔄 [RESTORE] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات التحديث
   update(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`🔄 [UPDATE] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات الحذف
   delete(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`🗑️ [DELETE] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات الإنشاء
   create(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`➕ [CREATE] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات التعديل
   edit(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`✏️ [EDIT] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات العرض
   view(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`👁️ [VIEW] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات الطباعة
   print(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`🖨️ [PRINT] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات الإشعارات
   notification(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`🔔 [NOTIFICATION] ${message}`, ...args)
     }
   }
 
@@ -282,7 +254,6 @@ class Logger {
   // تسجيل معلومات النجاح
   success(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`✅ [SUCCESS] ${message}`, ...args)
     }
   }
 
@@ -294,98 +265,84 @@ class Logger {
   // تسجيل معلومات التحميل
   loading(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`⏳ [LOADING] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات الإكمال
   complete(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`✅ [COMPLETE] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات البدء
   start(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`🚀 [START] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات التوقف
   stop(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`🛑 [STOP] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات الإعادة المحاولة
   retry(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`🔄 [RETRY] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات الإلغاء
   cancel(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`❌ [CANCEL] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات الإلغاء
   skip(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`⏭️ [SKIP] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات التخطي
   ignore(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`🙈 [IGNORE] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات التخطي
   bypass(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`🚧 [BYPASS] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات التجاوز
   override(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`🔄 [OVERRIDE] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات التجاوز
   fallback(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`🔄 [FALLBACK] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات الاحتياطي
   alternative(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`🔄 [ALTERNATIVE] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات البديل
   default(message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`🔄 [DEFAULT] ${message}`, ...args)
     }
   }
 
   // تسجيل معلومات الافتراضي
   custom(category: string, message: string, ...args: any[]): void {
     if (this.isDev) {
-      console.log(`🏷️ [${category.toUpperCase()}] ${message}`, ...args)
     }
   }
 
