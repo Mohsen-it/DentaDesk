@@ -44,30 +44,30 @@ UninstallIcon "${ICON_UNINSTALL}"
 ; Function to create icons and shortcuts
 Function CreateIcons
   ; Create Start Menu folder
-  CreateDirectory "$SMPROGRAMS\DentalClinic - agorracode"
+  CreateDirectory "$SMPROGRAMS\DentalClinic - DentaDesk"
 
   ; Main program shortcut
-  CreateShortCut "$SMPROGRAMS\DentalClinic - agorracode\DentalClinic - agorracode.lnk" \
-                 "$INSTDIR\dentalclinic-agorracode.exe" \
+  CreateShortCut "$SMPROGRAMS\DentalClinic - DentaDesk\DentalClinic - DentaDesk.lnk" \
+                 "$INSTDIR\dentalclinic-DentaDesk.exe" \
                  "" \
-                 "$INSTDIR\dentalclinic-agorracode.exe" \
+                 "$INSTDIR\dentalclinic-DentaDesk.exe" \
                  0 \
                  SW_SHOWNORMAL \
                  "" \
                  "Comprehensive Dental Clinic Management System"
 
   ; Uninstall shortcut
-  CreateShortCut "$SMPROGRAMS\DentalClinic - agorracode\Uninstall DentalClinic - agorracode.lnk" \
+  CreateShortCut "$SMPROGRAMS\DentalClinic - DentaDesk\Uninstall DentalClinic - DentaDesk.lnk" \
                  "$INSTDIR\uninstall.exe" \
                  "" \
                  "$INSTDIR\uninstall.exe" \
                  0 \
                  SW_SHOWNORMAL \
                  "" \
-                 "Uninstall DentalClinic - agorracode"
+                 "Uninstall DentalClinic - DentaDesk"
 
   ; Help file shortcut
-  CreateShortCut "$SMPROGRAMS\DentalClinic - agorracode\User Guide.lnk" \
+  CreateShortCut "$SMPROGRAMS\DentalClinic - DentaDesk\User Guide.lnk" \
                  "$INSTDIR\README.txt" \
                  "" \
                  "$INSTDIR\README.txt" \
@@ -77,46 +77,46 @@ Function CreateIcons
                  "User Guide and Help"
 
   ; Website shortcut
-  WriteINIStr "$SMPROGRAMS\DentalClinic - agorracode\Website.url" \
+  WriteINIStr "$SMPROGRAMS\DentalClinic - DentaDesk\Website.url" \
               "InternetShortcut" \
               "URL" \
-              "https://agorracode.com"
+              "https://DentaDesk.com"
 
   ; Desktop shortcut
-  CreateShortCut "$DESKTOP\DentalClinic - agorracode.lnk" \
-                 "$INSTDIR\dentalclinic-agorracode.exe" \
+  CreateShortCut "$DESKTOP\DentalClinic - DentaDesk.lnk" \
+                 "$INSTDIR\dentalclinic-DentaDesk.exe" \
                  "" \
-                 "$INSTDIR\dentalclinic-agorracode.exe" \
+                 "$INSTDIR\dentalclinic-DentaDesk.exe" \
                  0 \
                  SW_SHOWNORMAL \
                  "" \
                  "Comprehensive Dental Clinic Management System"
 
   ; Quick Launch shortcut (if available)
-  CreateShortCut "$QUICKLAUNCH\DentalClinic - agorracode.lnk" \
-                 "$INSTDIR\dentalclinic-agorracode.exe" \
+  CreateShortCut "$QUICKLAUNCH\DentalClinic - DentaDesk.lnk" \
+                 "$INSTDIR\dentalclinic-DentaDesk.exe" \
                  "" \
-                 "$INSTDIR\dentalclinic-agorracode.exe" \
+                 "$INSTDIR\dentalclinic-DentaDesk.exe" \
                  0 \
                  SW_SHOWNORMAL \
                  "" \
-                 "DentalClinic - agorracode"
+                 "DentalClinic - DentaDesk"
 FunctionEnd
 
 ; Function to remove icons and shortcuts
 Function un.RemoveIcons
   ; Delete Start Menu shortcuts
-  Delete "$SMPROGRAMS\DentalClinic - agorracode\DentalClinic - agorracode.lnk"
-  Delete "$SMPROGRAMS\DentalClinic - agorracode\Uninstall DentalClinic - agorracode.lnk"
-  Delete "$SMPROGRAMS\DentalClinic - agorracode\User Guide.lnk"
-  Delete "$SMPROGRAMS\DentalClinic - agorracode\Website.url"
-  RMDir "$SMPROGRAMS\DentalClinic - agorracode"
+  Delete "$SMPROGRAMS\DentalClinic - DentaDesk\DentalClinic - DentaDesk.lnk"
+  Delete "$SMPROGRAMS\DentalClinic - DentaDesk\Uninstall DentalClinic - DentaDesk.lnk"
+  Delete "$SMPROGRAMS\DentalClinic - DentaDesk\User Guide.lnk"
+  Delete "$SMPROGRAMS\DentalClinic - DentaDesk\Website.url"
+  RMDir "$SMPROGRAMS\DentalClinic - DentaDeskcode"
 
   ; Delete desktop shortcut
-  Delete "$DESKTOP\DentalClinic - agorracode.lnk"
+  Delete "$DESKTOP\DentalClinic - DentaDeskcode.lnk"
 
   ; Delete Quick Launch shortcut
-  Delete "$QUICKLAUNCH\DentalClinic - agorracode.lnk"
+  Delete "$QUICKLAUNCH\DentalClinic - DentaDeskcode.lnk"
 FunctionEnd
 
 ; دالة تسجيل أنواع الملفات
@@ -153,13 +153,13 @@ FunctionEnd
 Function CreateAppInfo
   ; Create application info file
   FileOpen $0 "$INSTDIR\app-info.txt" w
-  FileWrite $0 "DentalClinic - agorracode$\r$\n"
+  FileWrite $0 "DentalClinic - DentaDeskcode$\r$\n"
   FileWrite $0 "Version: v2.1$\r$\n"
   FileWrite $0 "Installation Date: $\r$\n"
   FileWrite $0 "Installation Folder: $INSTDIR$\r$\n"
-  FileWrite $0 "Application ID: com.agorracode.dentalclinic$\r$\n"
-  FileWrite $0 "Publisher: AgorraCode Team$\r$\n"
-  FileWrite $0 "Website: https://agorracode.com$\r$\n"
-  FileWrite $0 "Technical Support: dev@agorracode.com$\r$\n"
+  FileWrite $0 "Application ID: com.DentaDeskcode.dentalclinic$\r$\n"
+  FileWrite $0 "Publisher: DentaDeskCode Team$\r$\n"
+  FileWrite $0 "Website: https://DentaDeskcode.com$\r$\n"
+  FileWrite $0 "Technical Support: dev@DentaDeskcode.com$\r$\n"
   FileClose $0
 FunctionEnd

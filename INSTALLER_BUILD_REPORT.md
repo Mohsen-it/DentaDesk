@@ -13,7 +13,7 @@ The professional installer for ORalSoft v1.10 has been successfully created acco
 - **Architecture**: x64 (64-bit)
 
 ### Additional Files
-- **Blockmap**: `DentalClinic-agorracode-v2.1.0-Setup.exe.blockmap`
+- **Blockmap**: `DentalClinic-DentaDeskcode-v2.1.0-Setup.exe.blockmap`
 - **Unpacked Application**: `dist-electron/win-unpacked/ORalSoft.exe`
 
 ## ✅ Implemented Requirements
@@ -21,7 +21,7 @@ The professional installer for ORalSoft v1.10 has been successfully created acco
 ### 1. Application Name & Version
 - ✅ **Application Name**: `ORalSoft` (exactly as requested)
 - ✅ **Version**: `v2.1` (as specified)
-- ✅ **Publisher**: AgorraCode Team
+- ✅ **Publisher**: DentaDeskCode Team
 
 ### 2. Installation Language & Interface
 - ✅ **English Only**: Installer interface is in English only
@@ -101,8 +101,8 @@ When users run the installer:
 ### File Structure
 ```
 dist-electron/
-├── DentalClinic-agorracode-v2.1.0-Setup.exe  (Main installer)
-├── DentalClinic-agorracode-v2.1.0-Setup.exe.blockmap
+├── DentalClinic-DentaDeskcode-v2.1.0-Setup.exe  (Main installer)
+├── DentalClinic-DentaDeskcode-v2.1.0-Setup.exe.blockmap
 └── win-unpacked/
     └── ORalSoft.exe  (Application executable)
 ```
@@ -115,9 +115,9 @@ dist-electron/
 
 ## 📞 Support Information
 
-- **Developer**: AgorraCode Team
-- **Email**: dev@agorracode.com
-- **Website**: https://agorracode.com
+- **Developer**: 
+- **Email**: 
+- **Website**: 
 
 ---
 

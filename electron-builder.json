@@ -1,5 +1,5 @@
 {
-  "appId": "com.agorracode.dentalclinic",
+  "appId": "com.DentaDeskcode.dentalclinic",
   "productName": "ORalSoft",
   "directories": {
     "output": "dist-electron"

@@ -247,7 +247,7 @@ export default function LoginScreen({ onLogin, isLoading = false }: LoginScreenP
           <div className={`inline-flex items-center space-x-3 space-x-reverse px-8 py-4 ${themeClasses.card} backdrop-blur-md rounded-full shadow-lg hover:shadow-xl transition-all duration-300 border border-border/30`}>
             <Shield className="w-5 h-5 text-primary" />
             <p className={`text-base ${themeClasses.textSecondary} font-semibold arabic-enhanced`}>
-              نظام إدارة العيادة - AgorraCode
+              نظام إدارة العيادة - DentaDeskCode
             </p>
           </div>
         </div>

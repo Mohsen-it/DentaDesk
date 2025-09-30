@@ -7,7 +7,7 @@ async function checkWhatsAppDatabase() {
   console.log('🔍 Checking WhatsApp database status...\n');
 
   // Find the database path
-  const dbPath = path.join(require('os').homedir(), 'AppData', 'Roaming', 'DentalClinic - agorracode', 'dental_clinic.db');
+  const dbPath = path.join(require('os').homedir(), 'AppData', 'Roaming', 'DentalClinic - DentaDeskcode', 'dental_clinic.db');
 
   console.log('📁 Database path:', dbPath);
 
