@@ -336,14 +336,9 @@ function AppointmentTableComponent({
                     {startIndex + index + 1}
                   </TableCell>
                   <TableCell className="font-medium text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-sm font-medium flex-shrink-0">
-                        {appointment.patient_name.charAt(0)}
-                      </div>
-                      <span className="arabic-enhanced" title={appointment.patient_name}>
-                        {appointment.patient_name}
-                      </span>
-                    </div>
+                    <span className="arabic-enhanced" title={appointment.patient_name}>
+                      {appointment.patient_name}
+                    </span>
                   </TableCell>
                   <TableCell className="text-center">
                     <div className="text-sm font-medium arabic-enhanced">

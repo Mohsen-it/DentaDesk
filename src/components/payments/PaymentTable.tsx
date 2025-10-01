@@ -287,12 +287,7 @@ function PaymentTableComponent({
                     {startIndex + index + 1}
                   </TableCell>
                   <TableCell className="font-medium text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-sm font-medium">
-                        {getPatientName(payment).charAt(0)}
-                      </div>
-                      <span className="arabic-enhanced">{getPatientName(payment)}</span>
-                    </div>
+                    <span className="arabic-enhanced">{getPatientName(payment)}</span>
                   </TableCell>
                   <TableCell className="text-center">
                     {payment.tooth_treatment_id ? (

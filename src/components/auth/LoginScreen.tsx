@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Eye, EyeOff, Lock, Shield, AlertCircle, Moon, Sun, HelpCircle } from 'lucide-react'
 import { useTheme, useThemeClasses } from '../../contexts/ThemeContext'
+import { useStableClinicLogo } from '../../hooks/useStableSettings'
 import PasswordRecoveryDialog from './PasswordRecoveryDialog'
 
 interface LoginScreenProps {
@@ -11,6 +12,7 @@ interface LoginScreenProps {
 export default function LoginScreen({ onLogin, isLoading = false }: LoginScreenProps) {
   const { isDarkMode, toggleDarkMode } = useTheme()
   const themeClasses = useThemeClasses()
+  const clinicLogo = useStableClinicLogo()
 
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -124,9 +126,17 @@ export default function LoginScreen({ onLogin, isLoading = false }: LoginScreenP
       <div className="w-full max-w-md relative z-10">
         {/* Logo and Title */}
         <div className="text-center mb-12">
-          <div className="mx-auto w-28 h-28 bg-gradient-to-br from-primary/20 via-primary/15 to-secondary/20 rounded-full flex items-center justify-center mb-8 shadow-2xl backdrop-blur-sm border border-primary/20 hover:scale-105 hover:shadow-3xl transition-all duration-500 relative">
+          <div className="mx-auto w-28 h-28 bg-gradient-to-br from-primary/20 via-primary/15 to-secondary/20 rounded-full flex items-center justify-center mb-8 shadow-2xl backdrop-blur-sm border border-primary/20 hover:scale-105 hover:shadow-3xl transition-all duration-500 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent rounded-full animate-pulse"></div>
-            <Shield className="w-14 h-14 text-primary drop-shadow-lg relative z-10" />
+            {clinicLogo ? (
+              <img 
+                src={clinicLogo} 
+                alt="Clinic Logo" 
+                className="w-full h-full object-cover rounded-full relative z-10"
+              />
+            ) : (
+              <Shield className="w-14 h-14 text-primary drop-shadow-lg relative z-10" />
+            )}
           </div>
           <h1 className={`text-5xl font-bold ${themeClasses.textPrimary} arabic-enhanced mb-4 drop-shadow-lg`}>
             نظام إدارة العيادة
@@ -247,7 +257,7 @@ export default function LoginScreen({ onLogin, isLoading = false }: LoginScreenP
           <div className={`inline-flex items-center space-x-3 space-x-reverse px-8 py-4 ${themeClasses.card} backdrop-blur-md rounded-full shadow-lg hover:shadow-xl transition-all duration-300 border border-border/30`}>
             <Shield className="w-5 h-5 text-primary" />
             <p className={`text-base ${themeClasses.textSecondary} font-semibold arabic-enhanced`}>
-              نظام إدارة العيادة - DentaDeskCode
+              نظام إدارة العيادة - DentaDesk
             </p>
           </div>
         </div>

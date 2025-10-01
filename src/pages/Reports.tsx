@@ -28,6 +28,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import RealTimeIndicator from '@/components/ui/real-time-indicator'
 import TimeFilter from '@/components/ui/time-filter'
+import ReportsPasswordSettings from '@/components/reports/ReportsPasswordSettings'
 
 import {
   Table,
@@ -597,6 +598,9 @@ export default function Reports() {
 
       </div>
 
+      {/* Security Settings Section */}
+      <ReportsPasswordSettings />
+
       {/* Error Alert */}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -785,7 +789,7 @@ export default function Reports() {
                       <DollarSign className={`w-6 h-6 ${getIconStyles("green")}`} />
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">الإيرادات المفلترة</p>
+                      <p className="text-sm text-muted-foreground">الواردات المفلترة</p>
                       <p className="text-xl font-bold">
                         <CurrencyDisplay
                           amount={safeSum(filteredPayments, (p: any) => safeNumber(p.amount))}
@@ -823,7 +827,7 @@ export default function Reports() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex justify-between items-center p-4 bg-green-50/80 dark:bg-green-950/50 border border-green-200/50 dark:border-green-700/50 rounded-lg backdrop-blur-sm">
-                    <span className="text-sm font-medium text-green-800 dark:text-green-200">الإيرادات المفلترة</span>
+                    <span className="text-sm font-medium text-green-800 dark:text-green-200">الواردات المفلترة</span>
                     <span className="text-lg font-bold text-green-700 dark:text-green-100">
                       <CurrencyDisplay
                         amount={safeSum(filteredPayments, (p: any) => safeNumber(p.amount))}
@@ -832,7 +836,7 @@ export default function Reports() {
                     </span>
                   </div>
                   <div className="flex justify-between items-center p-4 bg-yellow-50/80 dark:bg-yellow-950/50 border border-yellow-200/50 dark:border-yellow-700/50 rounded-lg backdrop-blur-sm">
-                    <span className="text-sm font-medium text-yellow-800 dark:text-yellow-200">المدفوعات الآجلة المفلترة</span>
+                    <span className="text-sm font-medium text-yellow-800 dark:text-yellow-200">الإيرادات الآجلة المفلترة</span>
                     <span className="text-lg font-bold text-yellow-700 dark:text-yellow-100">
                       <CurrencyDisplay
                         amount={safeNumber(filteredPendingAmount)}
@@ -841,7 +845,7 @@ export default function Reports() {
                     </span>
                   </div>
                   <div className="flex justify-between items-center p-4 bg-orange-50/80 dark:bg-orange-950/50 border border-orange-200/50 dark:border-orange-700/50 rounded-lg backdrop-blur-sm">
-                    <span className="text-sm font-medium text-orange-800 dark:text-orange-200">المدفوعات الجزئية المفلترة</span>
+                    <span className="text-sm font-medium text-orange-800 dark:text-orange-200">الإيرادات الجزئية المفلترة</span>
                     <span className="text-lg font-bold text-orange-700 dark:text-orange-100">
                       <CurrencyDisplay
                         amount={safeSum(

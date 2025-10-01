@@ -270,12 +270,7 @@ export default function PatientSelectionTable({
                     {startIndex + index + 1}
                   </TableCell>
                   <TableCell className="font-medium table-cell-wrap-truncate-md">
-                    <div className="flex items-center justify-center space-x-2 space-x-reverse">
-                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white text-sm font-semibold shadow-sm">
-                        {patient.full_name.charAt(0)}
-                      </div>
-                      <span className="text-slate-800 dark:text-slate-200 font-medium">{patient.full_name}</span>
-                    </div>
+                    <span className="text-slate-800 dark:text-slate-200 font-medium">{patient.full_name}</span>
                   </TableCell>
                   <TableCell>
                     <Badge 

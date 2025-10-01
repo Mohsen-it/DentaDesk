@@ -1913,11 +1913,11 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                 </div>
                 <div className="flex-1">
                   <h4 className="text-sm font-medium text-foreground dark:text-white">البريد الإلكتروني</h4>
-                  <p className="text-lg font-bold text-foreground dark:text-white">ORalSoft@gmail.com</p>
+                  <p className="text-lg font-bold text-foreground dark:text-white">ORalSoft24@gmail.com البريد</p>
                   <p className="text-sm text-muted-foreground dark:text-gray-300">للاستفسارات والدعم الفني</p>
                 </div>
                 <button
-                  onClick={() => window.open('mailto:ORalSoft@gmail.com', '_blank')}
+                  onClick={() => window.open('mailto:ORalSoft24@gmail.com البريد', '_blank')}
                   className="px-4 py-2 bg-blue-600 dark:bg-blue-600 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-700 transition-all duration-300 ease-in-out interactive-card w-full sm:w-auto hover:scale-105 active:scale-95 hover:shadow-lg dark:hover:shadow-blue-500/25"
                 >
                   إرسال إيميل

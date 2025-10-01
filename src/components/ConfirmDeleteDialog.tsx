@@ -97,7 +97,7 @@ export default function ConfirmDeleteDialog({
                   </p>
                   <ul className="text-sm text-destructive/80 mt-2 list-disc list-inside">
                     <li>جميع المواعيد المجدولة</li>
-                    <li>سجل المدفوعات</li>
+                    <li>سجل الإيرادات</li>
                     <li>التاريخ الطبي والملاحظات</li>
                     <li>الصور الطبية والأشعة</li>
                     <li>سجل استخدام المخزون</li>

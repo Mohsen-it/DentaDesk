@@ -10,6 +10,7 @@ import { useAuth } from './hooks/useAuth'
 import { useLicense } from './hooks/useLicense'
 import { enhanceKeyboardEvent } from '@/utils/arabicKeyboardMapping'
 import logger from './utils/logger'
+import SplashScreen from './components/SplashScreen'
 import LoginScreen from './components/auth/LoginScreen'
 import LicenseEntryScreen from './components/auth/LicenseEntryScreen'
 import AddPatientDialog from './components/patients/AddPatientDialog'
@@ -57,6 +58,12 @@ import PaymentPasswordModal from './components/payments/PaymentPasswordModal'
 import PasswordResetModal from './components/payments/PasswordResetModal'
 import PasswordSetupModal from './components/payments/PasswordSetupModal'
 import { isPasswordSet } from './utils/paymentSecurity'
+
+// Reports password protection components
+import ReportsPasswordModal from './components/reports/ReportsPasswordModal'
+import ReportsPasswordResetModal from './components/reports/ReportsPasswordResetModal'
+import ReportsPasswordSetupModal from './components/reports/ReportsPasswordSetupModal'
+import { isPasswordSet as isReportsPasswordSet } from './utils/reportsSecurity'
 
 // shadcn/ui imports
 import { Input } from '@/components/ui/input'
@@ -127,8 +134,13 @@ function AppContent() {
   const [showPasswordResetModal, setShowPasswordResetModal] = useState(false)
   const [showPasswordSetupModal, setShowPasswordSetupModal] = useState(false)
   const [isPaymentsAuthenticated, setIsPaymentsAuthenticated] = useState(false)
+  const [showReportsPasswordModal, setShowReportsPasswordModal] = useState(false)
+  const [showReportsPasswordResetModal, setShowReportsPasswordResetModal] = useState(false)
+  const [showReportsPasswordSetupModal, setShowReportsPasswordSetupModal] = useState(false)
+  const [isReportsAuthenticated, setIsReportsAuthenticated] = useState(false)
   const [showGlobalSearch, setShowGlobalSearch] = useState(false)
   const [showDiagnostics, setShowDiagnostics] = useState(false)
+  const [showSplash, setShowSplash] = useState(true)
 
   // Appointment states
   const [showAddAppointment, setShowAddAppointment] = useState(false)
@@ -181,10 +193,26 @@ function AppContent() {
         // No password set, allow direct access
         setActiveTab('payments')
       }
+    } else if (tab === 'reports') {
+      if (isReportsPasswordSet()) {
+        // Password is set, check if already authenticated
+        if (!isReportsAuthenticated) {
+          setShowReportsPasswordModal(true)
+        } else {
+          setActiveTab('reports')
+        }
+      } else {
+        // No password set, allow direct access
+        setActiveTab('reports')
+      }
     } else {
       // Reset payments authentication when switching away
       if (isPaymentsAuthenticated) {
         setIsPaymentsAuthenticated(false)
+      }
+      // Reset reports authentication when switching away
+      if (isReportsAuthenticated) {
+        setIsReportsAuthenticated(false)
       }
       setActiveTab(tab)
     }
@@ -356,6 +384,27 @@ function AppContent() {
     }, 500)
   }
 
+  // Handle successful reports authentication
+  const handleReportsAuthSuccess = () => {
+    setIsReportsAuthenticated(true)
+    setActiveTab('reports')
+  }
+
+  // Handle reports password setup success
+  const handleReportsPasswordSetupSuccess = () => {
+    setIsReportsAuthenticated(true)
+    setActiveTab('reports')
+  }
+
+  // Handle reports password reset success
+  const handleReportsPasswordResetSuccess = () => {
+    setShowReportsPasswordResetModal(false)
+    // After reset, user needs to authenticate again
+    setTimeout(() => {
+      setShowReportsPasswordModal(true)
+    }, 500)
+  }
+
   const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
     toast({
       title: type === 'success' ? 'نجح' : 'خطأ',
@@ -450,6 +499,11 @@ function AppContent() {
         error: errorMessage
       }
     }
+  }
+
+  // Show splash screen on first load only
+  if (showSplash) {
+    return <SplashScreen onComplete={() => setShowSplash(false)} duration={6000} />
   }
 
   // Show loading screen while checking license or auth status
@@ -799,7 +853,7 @@ function AppContent() {
 
 
 
-        {/* Password Protection Modals */}
+        {/* Password Protection Modals - Payments */}
         <PaymentPasswordModal
           isOpen={showPaymentPasswordModal}
           onClose={() => setShowPaymentPasswordModal(false)}
@@ -820,6 +874,29 @@ function AppContent() {
           isOpen={showPasswordSetupModal}
           onClose={() => setShowPasswordSetupModal(false)}
           onSuccess={handlePasswordSetupSuccess}
+        />
+
+        {/* Password Protection Modals - Reports */}
+        <ReportsPasswordModal
+          isOpen={showReportsPasswordModal}
+          onClose={() => setShowReportsPasswordModal(false)}
+          onSuccess={handleReportsAuthSuccess}
+          onForgotPassword={() => {
+            setShowReportsPasswordModal(false)
+            setShowReportsPasswordResetModal(true)
+          }}
+        />
+
+        <ReportsPasswordResetModal
+          isOpen={showReportsPasswordResetModal}
+          onClose={() => setShowReportsPasswordResetModal(false)}
+          onSuccess={handleReportsPasswordResetSuccess}
+        />
+
+        <ReportsPasswordSetupModal
+          isOpen={showReportsPasswordSetupModal}
+          onClose={() => setShowReportsPasswordSetupModal(false)}
+          onSuccess={handleReportsPasswordSetupSuccess}
         />
 
         {/* Global Search Overlay */}

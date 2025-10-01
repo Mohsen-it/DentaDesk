@@ -171,7 +171,7 @@ class LicenseGeneratorGUI:
         device_label.pack(anchor="w", pady=(5, 5))
         
         # حقل معرف الجهاز فقط
-        device_entry = tk.Entry(
+        self.device_entry = tk.Entry(
             frame,
             textvariable=self.device_id,
             font=font.Font(family="Consolas", size=13),
@@ -182,9 +182,13 @@ class LicenseGeneratorGUI:
             bd=0,
             highlightthickness=2,
             highlightbackground=self.colors['border'],
-            highlightcolor=self.colors['info']
+            highlightcolor=self.colors['info'],
+            state='normal'
         )
-        device_entry.pack(fill="x", ipady=12, pady=(0, 10))
+        self.device_entry.pack(fill="x", ipady=12, pady=(0, 10))
+        
+        # تأكيد focus على الحقل
+        self.device_entry.focus_set()
         
     def create_buttons(self, parent):
         """إنشاء أزرار التحكم"""

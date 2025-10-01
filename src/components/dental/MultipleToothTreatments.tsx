@@ -108,6 +108,25 @@ export default function MultipleToothTreatments({
   const [treatmentSessions, setTreatmentSessions] = useState<{ [treatmentId: string]: TreatmentSession[] }>({})
   const [selectedTreatmentForSessions, setSelectedTreatmentForSessions] = useState<string | null>(null)
 
+  // Helper functions for number formatting with thousands separators
+  const formatNumberWithCommas = (value: string | number): string => {
+    const stringValue = typeof value === 'number' ? value.toString() : value
+    if (!stringValue) return ''
+    // Remove any existing commas
+    const cleanValue = stringValue.replace(/,/g, '')
+    // Check if it's a valid number
+    if (isNaN(Number(cleanValue))) return stringValue
+    // Split into integer and decimal parts
+    const parts = cleanValue.split('.')
+    // Format integer part with commas
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+    return parts.join('.')
+  }
+
+  const removeCommas = (value: string): string => {
+    return value.replace(/,/g, '')
+  }
+
   // Load labs on component mount
   useEffect(() => {
     loadLabs()
@@ -1012,19 +1031,21 @@ export default function MultipleToothTreatments({
                   isDarkMode ? "text-blue-200" : "text-blue-800"
                 )}>التكلفة ($)</Label>
                 <Input
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  value={newTreatment.cost || ''}
+                  type="text"
+                  value={formatNumberWithCommas((newTreatment.cost || 0).toString())}
                   onChange={(e) => {
-                    const value = e.target.value
-                    setNewTreatment(prev => ({
-                      ...prev,
-                      cost: value === '' ? 0 : parseFloat(value) || 0
-                    }))
+                    const rawValue = removeCommas(e.target.value)
+                    // Allow only numbers and one decimal point
+                    if (rawValue === '' || /^\d*\.?\d*$/.test(rawValue)) {
+                      setNewTreatment(prev => ({
+                        ...prev,
+                        cost: rawValue === '' ? 0 : parseFloat(rawValue) || 0
+                      }))
+                    }
                   }}
                   onBlur={(e) => {
-                    const value = parseFloat(e.target.value) || 0
+                    const rawValue = removeCommas(e.target.value)
+                    const value = parseFloat(rawValue) || 0
                     setNewTreatment(prev => ({ ...prev, cost: value }))
                   }}
                   placeholder="0.00"
@@ -1134,16 +1155,18 @@ export default function MultipleToothTreatments({
                     💰 تكلفة المخبر ($)
                   </Label>
                   <Input
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    value={addLabCost || ''}
+                    type="text"
+                    value={formatNumberWithCommas(addLabCost.toString())}
                     onChange={(e) => {
-                      const value = e.target.value
-                      setAddLabCost(value === '' ? 0 : parseFloat(value) || 0)
+                      const rawValue = removeCommas(e.target.value)
+                      // Allow only numbers and one decimal point
+                      if (rawValue === '' || /^\d*\.?\d*$/.test(rawValue)) {
+                        setAddLabCost(rawValue === '' ? 0 : parseFloat(rawValue) || 0)
+                      }
                     }}
                     onBlur={(e) => {
-                      const value = parseFloat(e.target.value) || 0
+                      const rawValue = removeCommas(e.target.value)
+                      const value = parseFloat(rawValue) || 0
                       setAddLabCost(value)
                     }}
                     placeholder="0.00"
@@ -1929,23 +1952,25 @@ function EditTreatmentFormContent({ treatment, onSave, onCancel }: EditTreatment
             isDarkMode ? "text-orange-200" : "text-orange-800"
           )}>التكلفة ($)</Label>
           <Input
-            type="number"
-            min="0"
-            step="0.1"
-            value={editData.cost || ''}
+            type="text"
+            value={formatNumberWithCommas((editData.cost || 0).toString())}
             onChange={(e) => {
               // منع انتشار حدث التغيير
               e.stopPropagation()
-              const value = e.target.value
-              setEditData(prev => ({
-                ...prev,
-                cost: value === '' ? 0 : parseFloat(value) || 0
-              }))
+              const rawValue = removeCommas(e.target.value)
+              // Allow only numbers and one decimal point
+              if (rawValue === '' || /^\d*\.?\d*$/.test(rawValue)) {
+                setEditData(prev => ({
+                  ...prev,
+                  cost: rawValue === '' ? 0 : parseFloat(rawValue) || 0
+                }))
+              }
             }}
             onBlur={(e) => {
               // منع انتشار حدث فقدان التركيز
               e.stopPropagation()
-              const value = parseFloat(e.target.value) || 0
+              const rawValue = removeCommas(e.target.value)
+              const value = parseFloat(rawValue) || 0
               setEditData(prev => ({ ...prev, cost: value }))
             }}
             onInput={(e) => {
@@ -2146,20 +2171,22 @@ function EditTreatmentFormContent({ treatment, onSave, onCancel }: EditTreatment
             </Label>
             <Input
               key={`lab-cost-${treatment.id}-${labCost}`}
-              type="number"
-              min="0"
-              step="0.1"
-              value={labCost || ''}
+              type="text"
+              value={formatNumberWithCommas(labCost.toString())}
               onChange={(e) => {
                 // منع انتشار حدث التغيير
                 e.stopPropagation()
-                const value = e.target.value
-                setLabCost(value === '' ? 0 : parseFloat(value) || 0)
+                const rawValue = removeCommas(e.target.value)
+                // Allow only numbers and one decimal point
+                if (rawValue === '' || /^\d*\.?\d*$/.test(rawValue)) {
+                  setLabCost(rawValue === '' ? 0 : parseFloat(rawValue) || 0)
+                }
               }}
               onBlur={(e) => {
                 // منع انتشار حدث فقدان التركيز
                 e.stopPropagation()
-                const value = parseFloat(e.target.value) || 0
+                const rawValue = removeCommas(e.target.value)
+                const value = parseFloat(rawValue) || 0
                 setLabCost(value)
               }}
               onInput={(e) => {

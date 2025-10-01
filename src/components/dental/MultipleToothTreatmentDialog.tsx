@@ -68,6 +68,25 @@ export default function MultipleToothTreatmentDialog({
     start_date: new Date().toISOString().split('T')[0]
   })
 
+  // Helper functions for number formatting with thousands separators
+  const formatNumberWithCommas = (value: string | number): string => {
+    const stringValue = typeof value === 'number' ? value.toString() : value
+    if (!stringValue) return ''
+    // Remove any existing commas
+    const cleanValue = stringValue.replace(/,/g, '')
+    // Check if it's a valid number
+    if (isNaN(Number(cleanValue))) return stringValue
+    // Split into integer and decimal parts
+    const parts = cleanValue.split('.')
+    // Format integer part with commas
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+    return parts.join('.')
+  }
+
+  const removeCommas = (value: string): string => {
+    return value.replace(/,/g, '')
+  }
+
   useEffect(() => {
     if (open) {
       loadLabs()
@@ -422,14 +441,23 @@ export default function MultipleToothTreatmentDialog({
             <div className="space-y-2">
               <Label>التكلفة</Label>
               <Input
-                type="number"
-                min="0"
-                step="0.01"
-                value={treatmentData.cost || ''}
-                onChange={(e) => setTreatmentData(prev => ({
-                  ...prev,
-                  cost: parseFloat(e.target.value) || 0
-                }))}
+                type="text"
+                value={formatNumberWithCommas((treatmentData.cost || 0).toString())}
+                onChange={(e) => {
+                  const rawValue = removeCommas(e.target.value)
+                  // Allow only numbers and one decimal point
+                  if (rawValue === '' || /^\d*\.?\d*$/.test(rawValue)) {
+                    setTreatmentData(prev => ({
+                      ...prev,
+                      cost: rawValue === '' ? 0 : parseFloat(rawValue) || 0
+                    }))
+                  }
+                }}
+                onBlur={(e) => {
+                  const rawValue = removeCommas(e.target.value)
+                  const value = parseFloat(rawValue) || 0
+                  setTreatmentData(prev => ({ ...prev, cost: value }))
+                }}
                 placeholder="0.00"
               />
             </div>
@@ -476,11 +504,20 @@ export default function MultipleToothTreatmentDialog({
                   <div className="space-y-2">
                     <Label>تكلفة المختبر</Label>
                     <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={labCost || ''}
-                      onChange={(e) => setLabCost(parseFloat(e.target.value) || 0)}
+                      type="text"
+                      value={formatNumberWithCommas(labCost.toString())}
+                      onChange={(e) => {
+                        const rawValue = removeCommas(e.target.value)
+                        // Allow only numbers and one decimal point
+                        if (rawValue === '' || /^\d*\.?\d*$/.test(rawValue)) {
+                          setLabCost(rawValue === '' ? 0 : parseFloat(rawValue) || 0)
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const rawValue = removeCommas(e.target.value)
+                        const value = parseFloat(rawValue) || 0
+                        setLabCost(value)
+                      }}
                       placeholder="0.00"
                     />
                   </div>

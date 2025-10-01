@@ -62,6 +62,24 @@ function EditPaymentDialogComponent({ open, onOpenChange, payment }: EditPayment
     isCalculating: false
   })
 
+  // Helper functions for number formatting with thousands separators
+  const formatNumberWithCommas = (value: string): string => {
+    if (!value) return ''
+    // Remove any existing commas
+    const cleanValue = value.replace(/,/g, '')
+    // Check if it's a valid number
+    if (isNaN(Number(cleanValue))) return value
+    // Split into integer and decimal parts
+    const parts = cleanValue.split('.')
+    // Format integer part with commas
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+    return parts.join('.')
+  }
+
+  const removeCommas = (value: string): string => {
+    return value.replace(/,/g, '')
+  }
+
   // توليد رقم إيصال تلقائي احترافي
   const generateReceiptNumber = () => {
     const now = new Date()
@@ -529,15 +547,21 @@ function EditPaymentDialogComponent({ open, onOpenChange, payment }: EditPayment
                   <Label htmlFor="amount" className="text-foreground font-medium">المبلغ</Label>
                   <Input
                     id="amount"
-                    type="number"
-                    step="0.1"
-                    value={formData.amount}
-                    onChange={(e) => handleInputChange('amount', e.target.value)}
+                    type="text"
+                    value={formatNumberWithCommas(formData.amount)}
+                    onChange={(e) => {
+                      const rawValue = removeCommas(e.target.value)
+                      // Allow only numbers and one decimal point
+                      if (rawValue === '' || /^\d*\.?\d*$/.test(rawValue)) {
+                        handleInputChange('amount', rawValue)
+                      }
+                    }}
                     onBlur={(e) => {
-                      const value = parseFloat(e.target.value) || 0
+                      const rawValue = removeCommas(e.target.value)
+                      const value = parseFloat(rawValue) || 0
                       handleInputChange('amount', value.toString())
                     }}
-                    placeholder="0.00"
+                    placeholder="0"
                     className="bg-background border-input text-foreground"
                   />
                 </div>
@@ -624,15 +648,21 @@ function EditPaymentDialogComponent({ open, onOpenChange, payment }: EditPayment
                   <Label htmlFor="discount_amount" className="text-foreground font-medium">مبلغ الخصم</Label>
                   <Input
                     id="discount_amount"
-                    type="number"
-                    step="0.1"
-                    value={formData.discount_amount}
-                    onChange={(e) => handleInputChange('discount_amount', e.target.value)}
+                    type="text"
+                    value={formatNumberWithCommas(formData.discount_amount)}
+                    onChange={(e) => {
+                      const rawValue = removeCommas(e.target.value)
+                      // Allow only numbers and one decimal point
+                      if (rawValue === '' || /^\d*\.?\d*$/.test(rawValue)) {
+                        handleInputChange('discount_amount', rawValue)
+                      }
+                    }}
                     onBlur={(e) => {
-                      const value = parseFloat(e.target.value) || 0
+                      const rawValue = removeCommas(e.target.value)
+                      const value = parseFloat(rawValue) || 0
                       handleInputChange('discount_amount', value.toString())
                     }}
-                    placeholder="0.00"
+                    placeholder="0"
                     className="bg-background border-input text-foreground"
                   />
                 </div>
@@ -641,15 +671,21 @@ function EditPaymentDialogComponent({ open, onOpenChange, payment }: EditPayment
                   <Label htmlFor="tax_amount" className="text-foreground font-medium">مبلغ الضريبة</Label>
                   <Input
                     id="tax_amount"
-                    type="number"
-                    step="0.1"
-                    value={formData.tax_amount}
-                    onChange={(e) => handleInputChange('tax_amount', e.target.value)}
+                    type="text"
+                    value={formatNumberWithCommas(formData.tax_amount)}
+                    onChange={(e) => {
+                      const rawValue = removeCommas(e.target.value)
+                      // Allow only numbers and one decimal point
+                      if (rawValue === '' || /^\d*\.?\d*$/.test(rawValue)) {
+                        handleInputChange('tax_amount', rawValue)
+                      }
+                    }}
                     onBlur={(e) => {
-                      const value = parseFloat(e.target.value) || 0
+                      const rawValue = removeCommas(e.target.value)
+                      const value = parseFloat(rawValue) || 0
                       handleInputChange('tax_amount', value.toString())
                     }}
-                    placeholder="0.00"
+                    placeholder="0"
                     className="bg-background border-input text-foreground"
                   />
                 </div>
@@ -724,15 +760,21 @@ function EditPaymentDialogComponent({ open, onOpenChange, payment }: EditPayment
                   </Label>
                   <Input
                     id="total_amount_due"
-                    type="number"
-                    step="0.1"
-                    value={formData.total_amount_due}
-                    onChange={(e) => handleInputChange('total_amount_due', e.target.value)}
+                    type="text"
+                    value={formatNumberWithCommas(formData.total_amount_due)}
+                    onChange={(e) => {
+                      const rawValue = removeCommas(e.target.value)
+                      // Allow only numbers and one decimal point
+                      if (rawValue === '' || /^\d*\.?\d*$/.test(rawValue)) {
+                        handleInputChange('total_amount_due', rawValue)
+                      }
+                    }}
                     onBlur={(e) => {
-                      const value = parseFloat(e.target.value) || 0
+                      const rawValue = removeCommas(e.target.value)
+                      const value = parseFloat(rawValue) || 0
                       handleInputChange('total_amount_due', value.toString())
                     }}
-                    placeholder="0.00"
+                    placeholder="0"
                     className={`bg-background border-input text-foreground ${
                       formData.tooth_treatment_id !== 'none'
                         ? 'opacity-60 cursor-not-allowed bg-muted'

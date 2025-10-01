@@ -64,6 +64,24 @@ function AddPaymentDialogComponent({ open, onOpenChange, preSelectedPatientId }:
     isCalculating: false
   })
 
+  // Helper functions for number formatting with thousands separators
+  const formatNumberWithCommas = (value: string): string => {
+    if (!value) return ''
+    // Remove any existing commas
+    const cleanValue = value.replace(/,/g, '')
+    // Check if it's a valid number
+    if (isNaN(Number(cleanValue))) return value
+    // Split into integer and decimal parts
+    const parts = cleanValue.split('.')
+    // Format integer part with commas
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+    return parts.join('.')
+  }
+
+  const removeCommas = (value: string): string => {
+    return value.replace(/,/g, '')
+  }
+
   // توليد رقم إيصال تلقائي احترافي
   const generateReceiptNumber = () => {
     const now = new Date()
@@ -691,14 +709,19 @@ function AddPaymentDialogComponent({ open, onOpenChange, preSelectedPatientId }:
                 <div className="space-y-2">
                   <Label className="text-foreground font-medium">المبلغ *</Label>
                   <Input
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    placeholder="0.00"
-                    value={formData.amount}
-                    onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                    type="text"
+                    placeholder="0"
+                    value={formatNumberWithCommas(formData.amount)}
+                    onChange={(e) => {
+                      const rawValue = removeCommas(e.target.value)
+                      // Allow only numbers and one decimal point
+                      if (rawValue === '' || /^\d*\.?\d*$/.test(rawValue)) {
+                        setFormData(prev => ({ ...prev, amount: rawValue }))
+                      }
+                    }}
                     onBlur={(e) => {
-                      const value = parseFloat(e.target.value) || 0
+                      const rawValue = removeCommas(e.target.value)
+                      const value = parseFloat(rawValue) || 0
                       setFormData(prev => ({ ...prev, amount: value.toString() }))
                     }}
                     onKeyDown={(e) => {
@@ -717,14 +740,19 @@ function AddPaymentDialogComponent({ open, onOpenChange, preSelectedPatientId }:
                 <div className="space-y-2">
                   <Label className="text-foreground font-medium">مبلغ الخصم</Label>
                   <Input
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    placeholder="0.00"
-                    value={formData.discount_amount}
-                    onChange={(e) => setFormData(prev => ({ ...prev, discount_amount: e.target.value }))}
+                    type="text"
+                    placeholder="0"
+                    value={formatNumberWithCommas(formData.discount_amount)}
+                    onChange={(e) => {
+                      const rawValue = removeCommas(e.target.value)
+                      // Allow only numbers and one decimal point
+                      if (rawValue === '' || /^\d*\.?\d*$/.test(rawValue)) {
+                        setFormData(prev => ({ ...prev, discount_amount: rawValue }))
+                      }
+                    }}
                     onBlur={(e) => {
-                      const value = parseFloat(e.target.value) || 0
+                      const rawValue = removeCommas(e.target.value)
+                      const value = parseFloat(rawValue) || 0
                       setFormData(prev => ({ ...prev, discount_amount: value.toString() }))
                     }}
                     className="bg-background border-input text-foreground"
@@ -735,14 +763,19 @@ function AddPaymentDialogComponent({ open, onOpenChange, preSelectedPatientId }:
                 <div className="space-y-2">
                   <Label className="text-foreground font-medium">مبلغ الضريبة</Label>
                   <Input
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    placeholder="0.00"
-                    value={formData.tax_amount}
-                    onChange={(e) => setFormData(prev => ({ ...prev, tax_amount: e.target.value }))}
+                    type="text"
+                    placeholder="0"
+                    value={formatNumberWithCommas(formData.tax_amount)}
+                    onChange={(e) => {
+                      const rawValue = removeCommas(e.target.value)
+                      // Allow only numbers and one decimal point
+                      if (rawValue === '' || /^\d*\.?\d*$/.test(rawValue)) {
+                        setFormData(prev => ({ ...prev, tax_amount: rawValue }))
+                      }
+                    }}
                     onBlur={(e) => {
-                      const value = parseFloat(e.target.value) || 0
+                      const rawValue = removeCommas(e.target.value)
+                      const value = parseFloat(rawValue) || 0
                       setFormData(prev => ({ ...prev, tax_amount: value.toString() }))
                     }}
                     className="bg-background border-input text-foreground"
@@ -921,13 +954,19 @@ function AddPaymentDialogComponent({ open, onOpenChange, preSelectedPatientId }:
                     </Badge>
                   </Label>
                   <Input
-                    type="number"
-                    step="0.1"
+                    type="text"
                     placeholder="أدخل المبلغ الإجمالي المطلوب (اختياري)"
-                    value={formData.total_amount_due}
-                    onChange={(e) => setFormData(prev => ({ ...prev, total_amount_due: e.target.value }))}
+                    value={formatNumberWithCommas(formData.total_amount_due)}
+                    onChange={(e) => {
+                      const rawValue = removeCommas(e.target.value)
+                      // Allow only numbers and one decimal point
+                      if (rawValue === '' || /^\d*\.?\d*$/.test(rawValue)) {
+                        setFormData(prev => ({ ...prev, total_amount_due: rawValue }))
+                      }
+                    }}
                     onBlur={(e) => {
-                      const value = parseFloat(e.target.value) || 0
+                      const rawValue = removeCommas(e.target.value)
+                      const value = parseFloat(rawValue) || 0
                       setFormData(prev => ({ ...prev, total_amount_due: value.toString() }))
                     }}
                     className={`bg-background border-input text-foreground ${errors.total_amount_due ? 'border-destructive' : ''}`}

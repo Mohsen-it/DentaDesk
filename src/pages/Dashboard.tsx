@@ -418,7 +418,7 @@ const Dashboard = React.memo(function Dashboard({ onAddPatient, onAddAppointment
         <Card className="bg-slate-800/50 dark:bg-slate-800/50 border-slate-700 dark:border-slate-600 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm hover:bg-slate-800/70 dark:hover:bg-slate-800/70">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-slate-300 dark:text-slate-300">
-              {paymentStats.timeFilter.preset === 'all' || (!paymentStats.timeFilter.startDate && !paymentStats.timeFilter.endDate) ? 'المدفوعات الآجلة' : 'المدفوعات الآجلة المفلترة'}
+              {paymentStats.timeFilter.preset === 'all' || (!paymentStats.timeFilter.startDate && !paymentStats.timeFilter.endDate) ? 'الإيرادات الآجلة' : 'الإيرادات الآجلة المفلترة'}
             </CardTitle>
             <Clock className="h-4 w-4 text-slate-400 dark:text-slate-400" />
           </CardHeader>
