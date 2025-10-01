@@ -5,7 +5,7 @@ a = Analysis(
     ['license_generator_gui_simple.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[('scripts', 'scripts')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -35,4 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=['assets\\icon.ico'],
 )

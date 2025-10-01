@@ -7,6 +7,12 @@ Build EXE for DentaDesk License Generator
 import os
 import subprocess
 import sys
+import io
+
+# Set UTF-8 encoding for console output
+if sys.platform == 'win32':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 def build_exe():
     """Build standalone EXE using PyInstaller"""
@@ -20,54 +26,58 @@ def build_exe():
     print("[1/4] Checking PyInstaller...")
     try:
         import PyInstaller
-        print("✓ PyInstaller is installed")
+        print("[OK] PyInstaller is installed")
     except ImportError:
-        print("✗ PyInstaller not found, installing...")
+        print("[INFO] PyInstaller not found, installing...")
         subprocess.run([sys.executable, "-m", "pip", "install", "pyinstaller"])
-        print("✓ PyInstaller installed")
+        print("[OK] PyInstaller installed")
     
     # Install required packages
     print()
     print("[2/4] Installing dependencies...")
-    subprocess.run([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
-    print("✓ Dependencies installed")
+    subprocess.run([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"], 
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    print("[OK] Dependencies installed")
     
     # Build PyInstaller command
     print()
     print("[3/4] Building EXE...")
     
+    # Use simple GUI version
     pyinstaller_args = [
         "pyinstaller",
         "--onefile",                          # Single EXE file
         "--windowed",                         # No console window
         "--name=DentaDesk_License_Generator", # EXE name
-        "--icon=icon.ico",                    # Icon (if exists)
         "--add-data=scripts;scripts",         # Include scripts folder
         "--noconsole",                        # No console
         "--clean",                            # Clean cache
-        "license_generator_gui.py"
+        "license_generator_gui_simple.py"
     ]
     
-    # If icon doesn't exist, remove icon argument
-    if not os.path.exists("icon.ico"):
-        pyinstaller_args.remove("--icon=icon.ico")
+    # Add icon if exists
+    icon_path = os.path.join("assets", "icon.ico")
+    if os.path.exists(icon_path):
+        pyinstaller_args.insert(-1, f"--icon={icon_path}")
+    elif os.path.exists("icon.ico"):
+        pyinstaller_args.insert(-1, "--icon=icon.ico")
     
     try:
         subprocess.run(pyinstaller_args, check=True)
-        print("✓ EXE built successfully!")
+        print("[OK] EXE built successfully!")
     except subprocess.CalledProcessError as e:
-        print(f"✗ Build failed: {e}")
+        print(f"[ERROR] Build failed: {e}")
         return False
     
     print()
     print("[4/4] Finalizing...")
     print()
     print("=" * 60)
-    print("✓ Build completed successfully!")
+    print("[SUCCESS] Build completed successfully!")
     print("=" * 60)
     print()
     print("Your EXE file is located at:")
-    print(f"  dist\\DentaDesk_License_Generator.exe")
+    print("  dist\\DentaDesk_License_Generator.exe")
     print()
     print("You can now:")
     print("  1. Run the EXE directly")
