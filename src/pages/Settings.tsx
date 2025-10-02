@@ -1913,7 +1913,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
                 </div>
                 <div className="flex-1">
                   <h4 className="text-sm font-medium text-foreground dark:text-white">البريد الإلكتروني</h4>
-                  <p className="text-lg font-bold text-foreground dark:text-white">ORalSoft24@gmail.com البريد</p>
+                  <p className="text-lg font-bold text-foreground dark:text-white">ORalSoft24@gmail.com</p>
                   <p className="text-sm text-muted-foreground dark:text-gray-300">للاستفسارات والدعم الفني</p>
                 </div>
                 <button
