@@ -1,746 +1,59 @@
 import Database from 'better-sqlite3'
 import { join } from 'path'
 import { app } from 'electron'
-import { readFile } from 'fs/promises'
-import { existsSync, readFileSync } from 'fs'
+import { readFileSync } from 'fs'
 import { v4 as uuidv4 } from 'uuid'
-import type { Patient, Appointment, Payment, Treatment, InventoryItem, ClinicSettings, DashboardStats, Lab, LabOrder } from '../types'
+import type {
+  Patient,
+  Appointment,
+  Payment,
+  Treatment,
+  InventoryItem,
+  ClinicSettings,
+  DashboardStats,
+  Lab,
+  LabOrder
+} from '../types'
 import { MigrationService } from './migrationService'
 import { IntegrationMigrationService } from './integrationMigrationService'
 
-// Connection Pool for better performance
-class DatabaseConnectionPool {
-  private connections: Database.Database[] = []
-  private maxConnections = 5
-  private activeConnections = 0
-  private connectionQueue: Array<{ resolve: (db: Database.Database) => void, reject: (error: Error) => void }> = []
-
-  constructor(private dbPath: string, initialConnections: number = 5) {
-    this.maxConnections = initialConnections
-    this.initializePool()
-  }
-
-  private initializePool(): void {
-
-    for (let i = 0; i < this.maxConnections; i++) {
-      try {
-        const db = new Database(this.dbPath, {
-          verbose: false,
-          timeout: 30000, // 30 second timeout for pool connections
-        })
-        this.connections.push(db)
-      } catch (error) {
-        console.error(`❌ Failed to create connection ${i + 1}:`, error)
-      }
-    }
-
-  }
-
-  async getConnection(): Promise<Database.Database> {
-    return new Promise((resolve, reject) => {
-      // Try to get an available connection
-      const availableConnection = this.connections.find(db => !db.busy)
-
-      if (availableConnection) {
-        this.activeConnections++
-        resolve(availableConnection)
-        return
-      }
-
-      // If no connection available and under limit, create new one
-      if (this.connections.length < this.maxConnections) {
-        try {
-          const newDb = new Database(this.dbPath, {
-            verbose: false,
-            timeout: 30000,
-          })
-          this.connections.push(newDb)
-          this.activeConnections++
-          resolve(newDb)
-        } catch (error) {
-          reject(error)
-        }
-        return
-      }
-
-      // Queue the request if all connections are busy
-      this.connectionQueue.push({ resolve, reject })
-    })
-  }
-
-  releaseConnection(db: Database.Database): void {
-    this.activeConnections = Math.max(0, this.activeConnections - 1)
-
-    // Process queued requests
-    if (this.connectionQueue.length > 0) {
-      const next = this.connectionQueue.shift()
-      if (next) {
-        this.activeConnections++
-        next.resolve(db)
-      }
-    }
-  }
-
-  closeAll(): void {
-    this.connections.forEach(db => {
-      try {
-        db.close()
-      } catch (error) {
-        console.error('❌ Error closing database connection:', error)
-      }
-    })
-    this.connections = []
-    this.activeConnections = 0
-    this.connectionQueue = []
-  }
-
-  getStats(): { total: number, active: number, queued: number } {
-    return {
-      total: this.connections.length,
-      active: this.activeConnections,
-      queued: this.connectionQueue.length
-    }
-  }
-}
-
 export class DatabaseService {
-  private db: Database.Database | null = null
-  private connectionPool: DatabaseConnectionPool | null = null
-  private isInitialized = false
-  private isInitializing = false
-  private initPromise: Promise<void> | null = null
-  private cache = new Map<string, { data: any, timestamp: number }>()
-  private readonly CACHE_TTL = 5 * 60 * 1000 // 5 minutes
-
-  // Lazy loading for heavy services
-  private migrationService: MigrationService | null = null
-  private integrationMigrationService: IntegrationMigrationService | null = null
-
-  // Memory management
-  private memoryCleanupTimer: NodeJS.Timeout | null = null
-  private lastActivityTime = Date.now()
-  private readonly MEMORY_CLEANUP_INTERVAL = 10 * 60 * 1000 // 10 minutes
-  private readonly MAX_CACHE_SIZE = 100 // Maximum cache entries
+  private db: Database.Database
 
   constructor() {
-
-    // Start memory cleanup timer
-    this.startMemoryCleanupTimer()
-
-  }
-
-  private startMemoryCleanupTimer(): void {
-    this.memoryCleanupTimer = setInterval(() => {
-      this.performMemoryCleanup()
-    }, this.MEMORY_CLEANUP_INTERVAL)
-  }
-
-  private performMemoryCleanup(): void {
-    // Clean up old cache entries
-    const now = Date.now()
-    let cleanedCount = 0
-
-    for (const [key, value] of this.cache.entries()) {
-      if (now - value.timestamp > this.CACHE_TTL) {
-        this.cache.delete(key)
-        cleanedCount++
-      }
-    }
-
-    // Limit cache size
-    if (this.cache.size > this.MAX_CACHE_SIZE) {
-      const entriesToDelete = this.cache.size - this.MAX_CACHE_SIZE
-      const keys = Array.from(this.cache.keys()).slice(0, entriesToDelete)
-
-      keys.forEach(key => {
-        this.cache.delete(key)
-        cleanedCount++
-      })
-    }
-
-    if (cleanedCount > 0) {
-    }
-
-    // Update last activity time
-    this.lastActivityTime = now
-  }
-
-  /**
-   * Enhanced error recovery mechanism
-   */
-  private async recoverFromError(error: any): Promise<boolean> {
-    try {
-
-      // Check if connection pool is healthy
-      if (this.connectionPool) {
-        const stats = this.connectionPool.getStats()
-
-        // If too many connections are in use, wait a bit
-        if (stats.active > stats.total * 0.8) {
-          await new Promise(resolve => setTimeout(resolve, 2000))
-        }
-      }
-
-      // Test main connection
-      if (this.db) {
-        try {
-          this.db.prepare('SELECT 1').get()
-          return true
-        } catch (connectionError) {
-          this.db = null
-        }
-      }
-
-      // Reinitialize connection pool if needed
-      if (!this.connectionPool) {
-        await this.initializeConnectionPool()
-      }
-
-      // Test new connection
-      const testDb = await this.getMainConnection()
-      testDb.prepare('SELECT 1').get()
-
-      return true
-
-    } catch (recoveryError) {
-      console.error('❌ Database error recovery failed:', recoveryError)
-      return false
-    }
-  }
-
-  /**
-   * Safe database operation wrapper with automatic recovery
-   */
-  private async safeDbOperation<T>(operation: () => T, operationName: string): Promise<T> {
-    try {
-      return await operation()
-    } catch (error: any) {
-      console.error(`❌ ${operationName} failed:`, error)
-
-      // Attempt recovery for certain types of errors
-      const canRecover = await this.recoverFromError(error)
-
-      if (canRecover && !error.message.includes('SQLITE_CANTOPEN')) {
-        try {
-          return await operation()
-        } catch (retryError: any) {
-          console.error(`❌ ${operationName} failed again after recovery:`, retryError)
-          throw retryError
-        }
-      }
-
-      throw error
-    }
-  }
-
-  private async initializeConnectionPool(): Promise<void> {
-    try {
-      if (this.connectionPool) return // Already initialized
-
-      const dbPath = join(app.getPath('userData'), 'dental_clinic.db')
-
-      // Create connection pool with minimal initial connections
-      this.connectionPool = new DatabaseConnectionPool(dbPath, 2) // Start with 2 connections
-
-      // Don't create main connection immediately - will be created on first use
-
-    } catch (error) {
-      console.error('❌ Failed to initialize connection pool:', error)
-      throw error
-    }
-  }
-
-  /**
-   * Get or create main database connection lazily
-   */
-  private async getMainConnection(): Promise<Database.Database> {
-    if (this.db) return this.db
-
-    if (!this.connectionPool) {
-      await this.initializeConnectionPool()
-    }
-
-    // Get connection from pool
-    this.db = await this.connectionPool!.getConnection()
-    return this.db
-  }
-
-  /**
-   * Initialize heavy database operations asynchronously with lazy loading
-   */
-  async initializeAsync(): Promise<void> {
-    if (this.isInitialized) return
-    if (this.isInitializing) {
-      // Wait for ongoing initialization
-      return this.initPromise || Promise.resolve()
-    }
-
-    this.isInitializing = true
-
-    this.initPromise = this.performInitialization()
+    const dbPath = join(app.getPath('userData'), 'dental_clinic.db')
+    console.log('🗄️ Initializing SQLite database at:', dbPath)
 
     try {
-      await this.initPromise
-      this.isInitialized = true
+      this.db = new Database(dbPath)
+      console.log('✅ Database connection established')
+
+      this.initializeDatabase()
+      console.log('✅ Database schema initialized')
+
+      this.runMigrations()
+      console.log('✅ Database migrations completed')
+
+      // Run patient schema migration
+      this.runPatientSchemaMigration()
+      console.log('✅ Patient schema migration completed')
+
+      // Run integration migration
+      this.runIntegrationMigration()
+      console.log('✅ Integration migration completed')
+
+      // Ensure lab_orders table has all required columns
+      await this.ensureLabOrdersColumns()
+      console.log('✅ Lab orders columns verification completed')
+
+      // Test database connection
+      const testQuery = this.db.prepare('SELECT COUNT(*) as count FROM patients')
+      const result = testQuery.get() as { count: number }
+      console.log('✅ Database test successful. Patient count:', result.count)
+
     } catch (error) {
       console.error('❌ Database initialization failed:', error)
       throw error
-    } finally {
-      this.isInitializing = false
-    }
-  }
-
-  private async performInitialization(): Promise<void> {
-    try {
-      console.time('🔄 Async Database Initialization')
-
-      // Initialize connection pool first (lazy)
-      console.time('🏗️ Connection Pool')
-      await this.initializeConnectionPool()
-      console.timeEnd('🏗️ Connection Pool')
-
-      // Initialize essential components first (fast)
-      console.time('📋 Essential Setup')
-      await this.initializeEssentialComponents()
-      console.timeEnd('📋 Essential Setup')
-
-      // Initialize schema and basic structure
-      console.time('🏗️ Schema Setup')
-      await this.initializeDatabaseAsync()
-      console.timeEnd('🏗️ Schema Setup')
-
-      // Run migrations in background (can be done in parallel)
-      console.time('🔄 Background Migrations')
-      const migrationPromises = [
-        this.runMigrationsAsync(),
-        this.runPatientSchemaMigrationAsync(),
-        this.runIntegrationMigrationAsync()
-      ]
-
-      await Promise.allSettled(migrationPromises)
-      console.timeEnd('🔄 Background Migrations')
-
-      // Initialize additional features
-      console.time('⚙️ Additional Features')
-      await Promise.allSettled([
-        this.ensureLabOrdersColumnsAsync(),
-        this.ensureWhatsAppTablesAsync(),
-        this.testDatabaseConnectionAsync()
-      ])
-      console.timeEnd('⚙️ Additional Features')
-
-      console.timeEnd('🔄 Async Database Initialization')
-
-    } catch (error) {
-      console.error('❌ Initialization error:', error)
-      throw error
-    }
-  }
-
-  private async initializeEssentialComponents(): Promise<void> {
-    if (!this.connectionPool) {
-      await this.initializeConnectionPool()
-    }
-
-    // Apply basic optimizations to main connection
-    const db = await this.getMainConnection()
-    try {
-      this.applyBasicOptimizations(db)
-    } catch (error) {
-      console.warn('⚠️ Failed to apply optimizations:', error)
-    }
-  }
-
-  private applyBasicOptimizations(db: Database.Database): void {
-    try {
-      db.pragma('foreign_keys = ON')
-      db.pragma('journal_mode = WAL')
-      db.pragma('synchronous = NORMAL')
-      db.pragma('cache_size = -10000')
-      db.pragma('temp_store = MEMORY')
-    } catch (error) {
-      console.warn('⚠️ Failed to apply basic optimizations:', error)
-    }
-  }
-
-  /**
-   * Synchronous initialization for critical operations only
-   */
-  private initializeDatabaseSync(): void {
-
-    // Manual table creation as fallback
-    this.createEssentialTablesManually()
-
-    // Try to load full schema as well
-    this.tryLoadFullSchema()
-
-  }
-
-  private createEssentialTablesManually(): void {
-
-    try {
-      // First, drop any existing tables to ensure clean state
-      const existingTables = this.db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as { name: string }[]
-
-      // Drop existing tables in reverse dependency order
-      const tablesToDrop = ['payments', 'appointments', 'treatments', 'patients', 'settings']
-      for (const tableName of tablesToDrop) {
-        if (existingTables.some(t => t.name === tableName)) {
-          this.db.exec(`DROP TABLE IF EXISTS ${tableName}`)
-        }
-      }
-
-      // Now create tables without foreign keys first
-
-      // Create settings table (no dependencies)
-      this.db.exec(`
-        CREATE TABLE settings (
-          id TEXT PRIMARY KEY DEFAULT 'clinic_settings',
-          clinic_name TEXT DEFAULT 'Dental Clinic',
-          doctor_name TEXT DEFAULT 'د. محمد أحمد',
-          clinic_address TEXT,
-          clinic_phone TEXT,
-          clinic_email TEXT,
-          clinic_logo TEXT,
-          currency TEXT DEFAULT 'USD',
-          language TEXT DEFAULT 'en',
-          timezone TEXT DEFAULT 'UTC',
-          backup_frequency TEXT DEFAULT 'daily',
-          auto_save_interval INTEGER DEFAULT 300,
-          appointment_duration INTEGER DEFAULT 60,
-          working_hours_start TEXT DEFAULT '09:00',
-          working_hours_end TEXT DEFAULT '17:00',
-          working_days TEXT DEFAULT 'monday,tuesday,wednesday,thursday,friday',
-          app_password TEXT,
-          password_enabled INTEGER DEFAULT 0,
-          security_question TEXT,
-          security_answer TEXT,
-          whatsapp_reminder_enabled INTEGER DEFAULT 0,
-          whatsapp_reminder_hours_before INTEGER DEFAULT 3,
-          whatsapp_reminder_minutes_before INTEGER DEFAULT 180,
-          whatsapp_reminder_message TEXT DEFAULT 'مرحبًا {{patient_name}}، تذكير بموعدك في عيادة الأسنان بتاريخ {{appointment_date}} الساعة {{appointment_time}}. نشكرك على التزامك.',
-          whatsapp_reminder_custom_enabled INTEGER DEFAULT 0,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-      `)
-
-      // Create patients table (no dependencies)
-      this.db.exec(`
-        CREATE TABLE patients (
-          id TEXT PRIMARY KEY,
-          serial_number TEXT UNIQUE NOT NULL,
-          full_name TEXT NOT NULL,
-          gender TEXT NOT NULL CHECK (gender IN ('male', 'female')),
-          age INTEGER NOT NULL CHECK (age > 0),
-          patient_condition TEXT,
-          allergies TEXT,
-          medical_conditions TEXT,
-          email TEXT,
-          address TEXT,
-          notes TEXT,
-          phone TEXT,
-          date_added DATETIME DEFAULT CURRENT_TIMESTAMP,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-      `)
-
-      // Create treatments table (no dependencies)
-      this.db.exec(`
-        CREATE TABLE treatments (
-          id TEXT PRIMARY KEY,
-          name TEXT NOT NULL,
-          description TEXT,
-          default_cost DECIMAL(10,2),
-          duration_minutes INTEGER,
-          category TEXT,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-      `)
-
-      // Create appointments table (depends on patients and treatments)
-      this.db.exec(`
-        CREATE TABLE appointments (
-          id TEXT PRIMARY KEY,
-          patient_id TEXT NOT NULL,
-          treatment_id TEXT,
-          title TEXT NOT NULL,
-          description TEXT,
-          start_time DATETIME NOT NULL,
-          end_time DATETIME NOT NULL,
-          status TEXT DEFAULT 'scheduled',
-          cost DECIMAL(10,2),
-          notes TEXT,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
-          FOREIGN KEY (treatment_id) REFERENCES treatments(id) ON DELETE SET NULL
-        )
-      `)
-
-      // Create payments table (depends on patients and appointments)
-      this.db.exec(`
-        CREATE TABLE payments (
-          id TEXT PRIMARY KEY,
-          patient_id TEXT NOT NULL,
-          appointment_id TEXT,
-          amount DECIMAL(10,2) NOT NULL,
-          payment_method TEXT NOT NULL,
-          payment_date DATETIME NOT NULL,
-          description TEXT,
-          receipt_number TEXT,
-          status TEXT DEFAULT 'completed',
-          notes TEXT,
-          discount_amount DECIMAL(10,2) DEFAULT 0,
-          tax_amount DECIMAL(10,2) DEFAULT 0,
-          total_amount DECIMAL(10,2),
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
-          FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE SET NULL
-        )
-      `)
-
-      // Insert default settings
-      this.db.exec(`
-        INSERT OR IGNORE INTO settings (id) VALUES ('clinic_settings')
-      `)
-
-      // Insert default treatments
-      this.db.exec(`
-        INSERT OR IGNORE INTO treatments (id, name, description, default_cost, duration_minutes, category) VALUES
-        ('cleaning', 'تنظيف الأسنان', 'تنظيف وتلميع الأسنان بشكل منتظم', 100.00, 60, 'العلاجات الوقائية'),
-        ('filling', 'حشو الأسنان', 'إجراء حشو الأسنان المتضررة', 150.00, 90, 'الترميمية (المحافظة)'),
-        ('extraction', 'قلع الأسنان', 'إجراء إزالة الأسنان', 200.00, 45, 'العلاجات الجراحية'),
-        ('crown', 'تاج الأسنان', 'إجراء تركيب تاج الأسنان', 800.00, 120, 'التعويضات'),
-        ('root_canal', 'علاج العصب', 'علاج عصب الأسنان', 600.00, 90, 'علاج العصب'),
-        ('whitening', 'تبييض الأسنان', 'تبييض الأسنان المهني', 300.00, 60, 'العلاجات التجميلية'),
-        ('checkup', 'فحص عام', 'فحص روتيني شامل للأسنان', 75.00, 30, 'العلاجات الوقائية')
-      `)
-
-      // Create basic indexes
-      this.db.exec(`
-        CREATE INDEX IF NOT EXISTS idx_patients_name ON patients(full_name);
-        CREATE INDEX IF NOT EXISTS idx_patients_serial ON patients(serial_number);
-        CREATE INDEX IF NOT EXISTS idx_patients_phone ON patients(phone);
-        CREATE INDEX IF NOT EXISTS idx_appointments_patient ON appointments(patient_id);
-        CREATE INDEX IF NOT EXISTS idx_appointments_date ON appointments(start_time);
-        CREATE INDEX IF NOT EXISTS idx_appointments_status ON appointments(status);
-        CREATE INDEX IF NOT EXISTS idx_payments_patient ON payments(patient_id);
-        CREATE INDEX IF NOT EXISTS idx_payments_date ON payments(payment_date);
-        CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
-        CREATE INDEX IF NOT EXISTS idx_treatments_name ON treatments(name);
-        CREATE INDEX IF NOT EXISTS idx_treatments_category ON treatments(category);
-      `)
-
-      // Verify tables were created
-      const tables = this.db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all()
-
-    } catch (error: any) {
-      console.error('❌ Failed to create essential tables manually:', error.message)
-    }
-  }
-
-  private tryLoadFullSchema(): void {
-    // Try to load the full schema file as well
-    const possiblePaths = [
-      join(__dirname, '../../src/database/schema.sql'),
-      join(__dirname, '../src/database/schema.sql'),
-      join(process.cwd(), 'src/database/schema.sql'),
-      join(process.cwd(), 'database/schema.sql'),
-      join(__dirname, '../database/schema.sql'),
-    ]
-
-    for (const schemaPath of possiblePaths) {
-      try {
-        if (require('fs').existsSync(schemaPath)) {
-          const schemaContent = readFileSync(schemaPath, 'utf-8')
-          const statements = schemaContent.split(';').filter(stmt => stmt.trim().length > 0)
-
-          let successful = 0
-          for (const statement of statements) {
-            if (statement.trim().length > 10) {
-              try {
-                const trimmedStmt = statement.trim()
-                // Skip CREATE TABLE statements since we already created them manually
-                if (!trimmedStmt.toUpperCase().startsWith('CREATE TABLE')) {
-                  this.db.exec(trimmedStmt + ';')
-                  successful++
-                }
-              } catch (stmtError: any) {
-                // Continue with other statements
-              }
-            }
-          }
-
-          return
-        }
-      } catch (error: any) {
-        // Continue trying other paths
-      }
-    }
-
-
-    // Enable foreign keys and basic optimizations
-    this.db.pragma('foreign_keys = ON')
-    this.db.pragma('journal_mode = WAL')
-    this.db.pragma('synchronous = NORMAL')
-
-    // Create basic indexes only (defer complex ones)
-    this.createBasicIndexes()
-  }
-
-  /**
-   * Async version of database initialization
-   */
-  private async initializeDatabaseAsync(): Promise<void> {
-    // Additional async operations can be added here
-  }
-
-  /**
-   * Create only essential indexes synchronously
-   */
-  private createBasicIndexes(): void {
-    try {
-      // Only create essential indexes synchronously
-      this.db.exec('CREATE INDEX IF NOT EXISTS idx_patients_id ON patients(id)')
-      this.db.exec('CREATE INDEX IF NOT EXISTS idx_appointments_id ON appointments(id)')
-      this.db.exec('CREATE INDEX IF NOT EXISTS idx_settings_id ON settings(id)')
-    } catch (error) {
-      console.warn('⚠️ Failed to create basic indexes:', error)
-    }
-  }
-
-  /**
-   * Async version of migrations
-   */
-  private async runMigrationsAsync(): Promise<void> {
-    // Move migration logic here, making it async
-  }
-
-  /**
-   * Async version of patient schema migration
-   */
-  private async runPatientSchemaMigrationAsync(): Promise<void> {
-    try {
-      const migrationService = new MigrationService(this.db)
-      migrationService.runMigration001()
-    } catch (error) {
-      console.error('❌ Patient schema migration failed:', error)
-      // Don't throw error to prevent app from crashing
-    }
-  }
-
-  /**
-   * Async version of integration migration
-   */
-  private async runIntegrationMigrationAsync(): Promise<void> {
-    try {
-      const migrationService = new IntegrationMigrationService(this.db)
-      await migrationService.applyIntegrationMigration()
-
-      // التحقق من حالة قاعدة البيانات
-      const status = migrationService.checkDatabaseStatus()
-      console.log('📊 حالة قاعدة البيانات بعد migration:', status)
-
-      // إنشاء بيانات تجريبية إذا لزم الأمر
-      if (status.tables.patient_treatment_timeline && status.appliedMigrations > 0) {
-        await migrationService.createSampleTimelineData()
-      }
-    } catch (error) {
-      console.error('❌ Integration migration failed:', error)
-      // لا نرمي الخطأ لتجنب توقف التطبيق
-    }
-  }
-
-  /**
-   * Async version of lab orders columns check
-   */
-  private async ensureLabOrdersColumnsAsync(): Promise<boolean> {
-    // Move the heavy column checking logic here
-    return true
-  }
-
-  /**
-   * Ensure WhatsApp tables exist
-   */
-  private async ensureWhatsAppTablesAsync(): Promise<void> {
-    try {
-      
-      // Check if whatsapp_reminders table exists
-      const tables = this.db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='whatsapp_reminders'").all() as { name: string }[]
-      
-      if (tables.length === 0) {
-        
-        // Create whatsapp_reminders table
-        this.db.exec(`
-          CREATE TABLE whatsapp_reminders (
-            id TEXT PRIMARY KEY,
-            appointment_id TEXT NOT NULL,
-            patient_id TEXT NOT NULL,
-            sent_at DATETIME,
-            status TEXT DEFAULT 'pending',
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE CASCADE,
-            FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE
-          )
-        `)
-        
-        // Create indexes for better performance
-        this.db.exec('CREATE INDEX IF NOT EXISTS idx_whatsapp_reminders_appointment ON whatsapp_reminders(appointment_id)')
-        this.db.exec('CREATE INDEX IF NOT EXISTS idx_whatsapp_reminders_patient ON whatsapp_reminders(patient_id)')
-        this.db.exec('CREATE INDEX IF NOT EXISTS idx_whatsapp_reminders_status ON whatsapp_reminders(status)')
-        this.db.exec('CREATE INDEX IF NOT EXISTS idx_whatsapp_reminders_sent_at ON whatsapp_reminders(sent_at)')
-        
-      } else {
-      }
-      
-    } catch (error) {
-      console.error('❌ Error ensuring WhatsApp tables:', error)
-      throw error
-    }
-  }
-
-  /**
-   * Async database connection test
-   */
-  private async testDatabaseConnectionAsync(): Promise<void> {
-    const testQuery = this.db.prepare('SELECT COUNT(*) as count FROM patients')
-    const result = testQuery.get() as { count: number }
-  }
-
-  /**
-   * Apply performance optimizations to the database
-   */
-  private optimizeDatabase(): void {
-    try {
-      // Enable WAL mode for better concurrency
-      this.db.pragma('journal_mode = WAL')
-      
-      // Set synchronous mode to NORMAL for better performance
-      this.db.pragma('synchronous = NORMAL')
-      
-      // Set cache size to 10MB
-      this.db.pragma('cache_size = -10000')
-      
-      // Set temp store to memory
-      this.db.pragma('temp_store = MEMORY')
-      
-      // Set page size to 4096 for better performance
-      this.db.pragma('page_size = 4096')
-      
-      // Enable foreign key constraints
-      this.db.pragma('foreign_keys = ON')
-      
-      // Set busy timeout to 5 seconds
-      this.db.pragma('busy_timeout = 5000')
-      
-      console.log('✅ Database performance optimizations applied')
-    } catch (error) {
-      console.warn('⚠️ Failed to apply some database optimizations:', error)
     }
   }
 
@@ -918,7 +231,7 @@ export class DatabaseService {
 
         // Migration 4: Ensure all tables exist with proper structure
         if (!appliedMigrations.has(4)) {
-          console.log('🔄 Applying migration 4: Ensure all tables exist')
+          console.log('🔄 Applying migration 3: Ensure all tables exist')
 
           // Check if installment_payments table exists
           const tables = this.db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as { name: string }[]
@@ -959,13 +272,13 @@ export class DatabaseService {
             `)
           }
 
-          this.db.prepare('INSERT INTO schema_migrations (version, description) VALUES (?, ?)').run(4, 'Ensure all tables exist')
-          console.log('✅ Migration 4 completed successfully')
+          this.db.prepare('INSERT INTO schema_migrations (version, description) VALUES (?, ?)').run(3, 'Ensure all tables exist')
+          console.log('✅ Migration 3 completed successfully')
         }
 
-        // Migration 5: Add doctor_name to settings table
-        if (!appliedMigrations.has(5)) {
-          console.log('🔄 Applying migration 5: Add doctor_name to settings')
+        // Migration 4: Add doctor_name to settings table
+        if (!appliedMigrations.has(4)) {
+          console.log('🔄 Applying migration 4: Add doctor_name to settings')
 
           const settingsColumns = this.db.prepare("PRAGMA table_info(settings)").all() as any[]
           const settingsColumnNames = settingsColumns.map(col => col.name)
@@ -975,13 +288,13 @@ export class DatabaseService {
             this.db.exec('UPDATE settings SET doctor_name = \'د. محمد أحمد\' WHERE doctor_name IS NULL')
           }
 
-          this.db.prepare('INSERT INTO schema_migrations (version, description) VALUES (?, ?)').run(5, 'Add doctor_name to settings')
-          console.log('✅ Migration 5 completed successfully')
+          this.db.prepare('INSERT INTO schema_migrations (version, description) VALUES (?, ?)').run(4, 'Add doctor_name to settings')
+          console.log('✅ Migration 4 completed successfully')
         }
 
-        // Migration 6: Add password fields to settings table
-        if (!appliedMigrations.has(6)) {
-          console.log('🔄 Applying migration 6: Add password fields to settings')
+        // Migration 5: Add password fields to settings table
+        if (!appliedMigrations.has(5)) {
+          console.log('🔄 Applying migration 5: Add password fields to settings')
 
           const settingsColumns = this.db.prepare("PRAGMA table_info(settings)").all() as any[]
           const settingsColumnNames = settingsColumns.map(col => col.name)
@@ -1002,13 +315,13 @@ export class DatabaseService {
             this.db.exec('ALTER TABLE settings ADD COLUMN security_answer TEXT')
           }
 
-          this.db.prepare('INSERT INTO schema_migrations (version, description) VALUES (?, ?)').run(6, 'Add password and security fields to settings')
-          console.log('✅ Migration 6 completed successfully')
+          this.db.prepare('INSERT INTO schema_migrations (version, description) VALUES (?, ?)').run(5, 'Add password and security fields to settings')
+          console.log('✅ Migration 5 completed successfully')
         }
 
-        // Migration 7: Create dental treatment tables
-        if (!appliedMigrations.has(7)) {
-          console.log('🔄 Applying migration 7: Create dental treatment tables')
+        // Migration 6: Create dental treatment tables
+        if (!appliedMigrations.has(6)) {
+          console.log('🔄 Applying migration 6: Create dental treatment tables')
 
           const tables = this.db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as { name: string }[]
           const tableNames = tables.map(t => t.name)
@@ -1089,13 +402,13 @@ export class DatabaseService {
           this.db.exec('CREATE INDEX IF NOT EXISTS idx_dental_treatment_prescriptions_treatment ON dental_treatment_prescriptions(dental_treatment_id)')
           this.db.exec('CREATE INDEX IF NOT EXISTS idx_dental_treatment_prescriptions_prescription ON dental_treatment_prescriptions(prescription_id)')
 
-          this.db.prepare('INSERT INTO schema_migrations (version, description) VALUES (?, ?)').run(7, 'Create dental treatment tables')
-          console.log('✅ Migration 7 completed successfully')
+          this.db.prepare('INSERT INTO schema_migrations (version, description) VALUES (?, ?)').run(6, 'Create dental treatment tables')
+          console.log('✅ Migration 6 completed successfully')
         }
 
-        // Migration 8: Fix dental_treatment_images table structure
-        if (!appliedMigrations.has(8)) {
-          console.log('🔄 Applying migration 8: Fix dental_treatment_images table structure')
+        // Migration 7: Fix dental_treatment_images table structure
+        if (!appliedMigrations.has(7)) {
+          console.log('🔄 Applying migration 7: Fix dental_treatment_images table structure')
 
           // Check if dental_treatment_images table has tooth_record_id column
           const imageTableColumns = this.db.prepare("PRAGMA table_info(dental_treatment_images)").all() as any[]
@@ -1149,13 +462,13 @@ export class DatabaseService {
           this.db.exec('CREATE INDEX IF NOT EXISTS idx_dental_treatment_images_treatment ON dental_treatment_images(dental_treatment_id)')
           this.db.exec('CREATE INDEX IF NOT EXISTS idx_dental_treatment_images_patient ON dental_treatment_images(patient_id)')
 
-          this.db.prepare('INSERT INTO schema_migrations (version, description) VALUES (?, ?)').run(8, 'Fix dental_treatment_images table structure')
-          console.log('✅ Migration 8 completed successfully')
+          this.db.prepare('INSERT INTO schema_migrations (version, description) VALUES (?, ?)').run(7, 'Fix dental_treatment_images table structure')
+          console.log('✅ Migration 7 completed successfully')
         }
 
-        // Migration 9: Force recreate dental_treatment_images table
-        if (!appliedMigrations.has(9)) {
-          console.log('🔄 Applying migration 9: Force recreate dental_treatment_images table')
+        // Migration 8: Force recreate dental_treatment_images table
+        if (!appliedMigrations.has(8)) {
+          console.log('🔄 Applying migration 8: Force recreate dental_treatment_images table')
 
           // Always recreate the table to ensure correct structure
           this.db.exec('DROP TABLE IF EXISTS dental_treatment_images_backup')
@@ -1234,13 +547,13 @@ export class DatabaseService {
           this.db.exec('CREATE INDEX IF NOT EXISTS idx_dental_treatment_images_patient ON dental_treatment_images(patient_id)')
           this.db.exec('CREATE INDEX IF NOT EXISTS idx_dental_treatment_images_tooth ON dental_treatment_images(tooth_number)')
 
-          this.db.prepare('INSERT INTO schema_migrations (version, description) VALUES (?, ?)').run(9, 'Force recreate dental_treatment_images table')
-          console.log('✅ Migration 9 completed successfully')
+          this.db.prepare('INSERT INTO schema_migrations (version, description) VALUES (?, ?)').run(8, 'Force recreate dental_treatment_images table')
+          console.log('✅ Migration 8 completed successfully')
         }
 
-        // Migration 10: Fix tooth_number constraint to support FDI numbering system
-        if (!appliedMigrations.has(10)) {
-          console.log('🔄 Applying migration 10: Fix tooth_number constraint for FDI numbering system')
+        // Migration 9: Fix tooth_number constraint to support FDI numbering system
+        if (!appliedMigrations.has(9)) {
+          console.log('🔄 Applying migration 9: Fix tooth_number constraint for FDI numbering system')
 
           // Backup existing data
           this.db.exec('DROP TABLE IF EXISTS dental_treatments_backup')
@@ -1305,61 +618,8 @@ export class DatabaseService {
           this.db.exec('CREATE INDEX IF NOT EXISTS idx_dental_treatments_tooth ON dental_treatments(tooth_number)')
           this.db.exec('CREATE INDEX IF NOT EXISTS idx_dental_treatments_status ON dental_treatments(treatment_status)')
 
-          this.db.prepare('INSERT INTO schema_migrations (version, description) VALUES (?, ?)').run(10, 'Fix tooth_number constraint for FDI numbering system')
-          console.log('✅ Migration 10 completed successfully')
-        }
-
-        // Migration 11: Add WhatsApp reminder fields to settings table
-        if (!appliedMigrations.has(11)) {
-          console.log('🔄 Applying migration 11: Add WhatsApp reminder fields to settings')
-
-          const settingsColumns = this.db.prepare("PRAGMA table_info(settings)").all() as any[]
-          const settingsColumnNames = settingsColumns.map(col => col.name)
-
-          if (!settingsColumnNames.includes('whatsapp_reminder_enabled')) {
-            this.db.exec('ALTER TABLE settings ADD COLUMN whatsapp_reminder_enabled INTEGER DEFAULT 0')
-          }
-          if (!settingsColumnNames.includes('whatsapp_reminder_hours_before')) {
-            this.db.exec('ALTER TABLE settings ADD COLUMN whatsapp_reminder_hours_before INTEGER DEFAULT 3')
-          }
-          if (!settingsColumnNames.includes('whatsapp_reminder_minutes_before')) {
-            this.db.exec('ALTER TABLE settings ADD COLUMN whatsapp_reminder_minutes_before INTEGER DEFAULT 180')
-          }
-          if (!settingsColumnNames.includes('whatsapp_reminder_message')) {
-            this.db.exec('ALTER TABLE settings ADD COLUMN whatsapp_reminder_message TEXT DEFAULT \'مرحبًا {{patient_name}}، تذكير بموعدك في عيادة الأسنان بتاريخ {{appointment_date}} الساعة {{appointment_time}}. نشكرك على التزامك.\'')
-          }
-          if (!settingsColumnNames.includes('whatsapp_reminder_custom_enabled')) {
-            this.db.exec('ALTER TABLE settings ADD COLUMN whatsapp_reminder_custom_enabled INTEGER DEFAULT 0')
-          }
-
-          // Create whatsapp_reminders table if it doesn't exist
-          const tables = this.db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as { name: string }[]
-          const tableNames = tables.map(t => t.name)
-          
-          if (!tableNames.includes('whatsapp_reminders')) {
-            this.db.exec(`
-              CREATE TABLE whatsapp_reminders (
-                id TEXT PRIMARY KEY,
-                appointment_id TEXT NOT NULL,
-                patient_id TEXT NOT NULL,
-                sent_at DATETIME,
-                status TEXT DEFAULT 'pending',
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE CASCADE,
-                FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE
-              )
-            `)
-            
-            // Create indexes for better performance
-            this.db.exec('CREATE INDEX IF NOT EXISTS idx_whatsapp_reminders_appointment ON whatsapp_reminders(appointment_id)')
-            this.db.exec('CREATE INDEX IF NOT EXISTS idx_whatsapp_reminders_patient ON whatsapp_reminders(patient_id)')
-            this.db.exec('CREATE INDEX IF NOT EXISTS idx_whatsapp_reminders_status ON whatsapp_reminders(status)')
-            this.db.exec('CREATE INDEX IF NOT EXISTS idx_whatsapp_reminders_sent_at ON whatsapp_reminders(sent_at)')
-          }
-
-          this.db.prepare('INSERT INTO schema_migrations (version, description) VALUES (?, ?)').run(11, 'Add WhatsApp reminder fields to settings')
-          console.log('✅ Migration 11 completed successfully')
+          this.db.prepare('INSERT INTO schema_migrations (version, description) VALUES (?, ?)').run(9, 'Fix tooth_number constraint for FDI numbering system')
+          console.log('✅ Migration 9 completed successfully')
         }
 
         // Force check for dental_treatments table tooth_number constraint
@@ -1461,39 +721,13 @@ export class DatabaseService {
     }
   }
 
-  // Patient operations with enhanced caching and optimized queries
+  // Patient operations
   async getAllPatients(): Promise<Patient[]> {
-    const cacheKey = 'all_patients'
-
-    // Check cache first
-    const cached = this.cache.get(cacheKey)
-    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
-      console.log('📋 Returning cached patients data')
-      return cached.data
-    }
-
-    return this.safeDbOperation(async () => {
-      // Optimized query with covering index usage
-      const stmt = this.db.prepare(`
-        SELECT
-          p.*,
-          COUNT(a.id) as active_appointments_count,
-          COALESCE(SUM(CASE WHEN pay.status = 'completed' THEN pay.amount ELSE 0 END), 0) as total_paid,
-          COALESCE(MAX(pay.payment_date), p.created_at) as last_payment_date
-        FROM patients p
-        LEFT JOIN appointments a ON p.id = a.patient_id AND a.status != 'cancelled'
-        LEFT JOIN payments pay ON p.id = pay.patient_id AND pay.status = 'completed'
-        GROUP BY p.id
-        ORDER BY p.full_name
-      `)
-      const patients = stmt.all() as Patient[]
-
-      // Cache the result
-      this.cache.set(cacheKey, { data: patients, timestamp: Date.now() })
-
-      console.log(`📋 Retrieved ${patients.length} patients from database with enhanced data`)
-      return patients
-    }, 'getAllPatients')
+    const stmt = this.db.prepare(`
+      SELECT * FROM patients
+      ORDER BY full_name
+    `)
+    return stmt.all() as Patient[]
   }
 
   async createPatient(patient: Omit<Patient, 'id' | 'created_at' | 'updated_at'> & { date_added?: string }): Promise<Patient> {
@@ -1633,105 +867,74 @@ export class DatabaseService {
     return stmt.all(searchTerm, searchTerm, searchTerm, searchTerm) as Appointment[]
   }
 
-  // Appointment operations with optimized queries and caching
+  // Appointment operations
   async getAllAppointments(): Promise<Appointment[]> {
-    const cacheKey = 'all_appointments'
+    const stmt = this.db.prepare(`
+      SELECT
+        a.*,
+        p.full_name as patient_name,
+        p.first_name,
+        p.last_name,
+        p.phone,
+        p.email,
+        p.gender,
+        t.name as treatment_name
+      FROM appointments a
+      LEFT JOIN patients p ON a.patient_id = p.id
+      LEFT JOIN treatments t ON a.treatment_id = t.id
+      ORDER BY a.start_time
+    `)
+    const appointments = stmt.all() as Appointment[]
 
-    // Check cache first
-    const cached = this.cache.get(cacheKey)
-    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
-      console.log('📋 Returning cached appointments data')
-      return cached.data
+    console.log('📋 DB: Raw appointments from database:', appointments.length)
+    if (appointments.length > 0) {
+      console.log('📋 DB: First raw appointment:', appointments[0])
     }
 
-    return this.safeDbOperation(async () => {
-      // Optimized query with covering indexes and better joins
-      const stmt = this.db.prepare(`
-        SELECT
-          a.*,
-          p.full_name as patient_name,
-          p.first_name,
-          p.last_name,
-          p.phone,
-          p.email,
-          p.gender,
-          p.date_added as patient_date_added,
-          t.name as treatment_name,
-          t.category as treatment_category,
-          t.default_cost as treatment_cost,
-          -- Payment information for this appointment
-          COALESCE(SUM(CASE WHEN pay.status = 'completed' THEN pay.amount ELSE 0 END), 0) as total_paid,
-          COUNT(pay.id) as payment_count,
-          MAX(pay.payment_date) as last_payment_date,
-          -- Check for conflicts efficiently
-          EXISTS(
-            SELECT 1 FROM appointments a2
-            WHERE a2.id != a.id
-              AND a2.status != 'cancelled'
-              AND a2.start_time < a.end_time
-              AND a2.end_time > a.start_time
-          ) as has_conflicts
-        FROM appointments a
-        LEFT JOIN patients p ON a.patient_id = p.id
-        LEFT JOIN treatments t ON a.treatment_id = t.id
-        LEFT JOIN payments pay ON a.id = pay.appointment_id
-        GROUP BY a.id, p.id, t.id
-        ORDER BY a.start_time
-      `)
-      const appointments = stmt.all() as Appointment[]
-
-      console.log('📋 DB: Raw appointments from database:', appointments.length)
-
-      // Enhanced processing with better error handling
-      const processedAppointments = appointments.map(appointment => {
-        // Add patient object for compatibility
-        if (appointment.patient_name) {
-          appointment.patient = {
-            id: appointment.patient_id,
-            full_name: appointment.patient_name,
-            first_name: appointment.first_name,
-            last_name: appointment.last_name,
-            phone: appointment.phone,
-            email: appointment.email,
-            gender: appointment.gender,
-            date_added: appointment.patient_date_added
-          } as any
-
-          // Ensure patient_name is also available at the top level
-          appointment.patient_name = appointment.patient_name
-        } else {
-          // Handle case where patient was deleted or doesn't exist
-          appointment.patient_name = 'مريض محذوف'
-          appointment.patient = {
-            id: appointment.patient_id,
-            full_name: 'مريض محذوف',
-            first_name: 'مريض',
-            last_name: 'محذوف',
-            phone: '',
-            email: '',
-            gender: 'unknown'
-          } as any
-        }
-
-        // Add treatment object if available
-        if (appointment.treatment_name) {
-          appointment.treatment = {
-            id: appointment.treatment_id,
-            name: appointment.treatment_name,
-            category: appointment.treatment_category,
-            default_cost: appointment.treatment_cost
-          } as any
-        }
-
-        return appointment
+    // Add patient object for compatibility and ensure patient_name is set
+    return appointments.map(appointment => {
+      console.log('📋 DB: Processing appointment:', {
+        id: appointment.id,
+        patient_id: appointment.patient_id,
+        patient_name: appointment.patient_name,
+        first_name: appointment.first_name,
+        last_name: appointment.last_name
       })
 
-      // Cache the result
-      this.cache.set(cacheKey, { data: processedAppointments, timestamp: Date.now() })
+      if (appointment.patient_name) {
+        appointment.patient = {
+          id: appointment.patient_id,
+          full_name: appointment.patient_name,
+          first_name: appointment.first_name,
+          last_name: appointment.last_name,
+          phone: appointment.phone,
+          email: appointment.email,
+          gender: appointment.gender
+        } as any
 
-      console.log(`📋 Processed ${processedAppointments.length} appointments with enhanced data`)
-      return processedAppointments
-    }, 'getAllAppointments')
+        // Ensure patient_name is also available at the top level
+        appointment.patient_name = appointment.patient_name
+      } else {
+        // Handle case where patient was deleted or doesn't exist
+        console.log('⚠️ DB: Appointment has no patient data:', {
+          id: appointment.id,
+          patient_id: appointment.patient_id
+        })
+
+        // Set fallback patient data
+        appointment.patient_name = 'مريض محذوف'
+        appointment.patient = {
+          id: appointment.patient_id,
+          full_name: 'مريض محذوف',
+          first_name: 'مريض',
+          last_name: 'محذوف',
+          phone: '',
+          email: '',
+          gender: 'unknown'
+        } as any
+      }
+      return appointment
+    })
   }
 
   async checkAppointmentConflict(startTime: string, endTime: string, excludeId?: string): Promise<boolean> {
@@ -3319,23 +2522,10 @@ export class DatabaseService {
         console.warn('⚠️ Data integrity issues found before backup:', integrityCheck.issues)
       }
 
-      // Remove existing backup file if it exists
-      if (require('fs').existsSync(backupPath)) {
-        try {
-          require('fs').unlinkSync(backupPath)
-          console.log('🗑️ Removed existing backup file before creating new one')
-        } catch (removeError) {
-          console.warn('⚠️ Could not remove existing backup file:', removeError)
-        }
-      }
-
       // Create backup using SQLite backup API
-      const backupResult = this.db.backup(backupPath)
-      
-      // Handle both Promise and non-Promise return types
-      if (backupResult && typeof backupResult.then === 'function') {
-        await backupResult
-      }
+      const backupDb = new Database(backupPath)
+      this.db.backup(backupDb)
+      backupDb.close()
 
       console.log('✅ Database backup created successfully:', backupPath)
       return {
@@ -3632,13 +2822,7 @@ export class DatabaseService {
         patient_id: labOrder.patient_id,
         service_name: labOrder.service_name,
         cost: labOrder.cost,
-        status: labOrder.status,
-        fullData: labOrder
-      })
-      
-      console.log('🧪 Database connection status:', {
-        isOpen: this.db ? 'connected' : 'disconnected',
-        dbType: typeof this.db
+        status: labOrder.status
       })
 
       const stmt = this.db.prepare(`
@@ -3650,13 +2834,6 @@ export class DatabaseService {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `)
 
-      console.log('🧪 About to execute SQL with parameters:', {
-        id, lab_id: labOrder.lab_id, patient_id: labOrder.patient_id, 
-        appointment_id: labOrder.appointment_id, tooth_treatment_id: labOrder.tooth_treatment_id,
-        tooth_number: labOrder.tooth_number, service_name: labOrder.service_name,
-        cost: labOrder.cost, order_date: labOrder.order_date
-      })
-      
       const result = stmt.run(
         id, labOrder.lab_id, labOrder.patient_id, labOrder.appointment_id,
         labOrder.tooth_treatment_id, labOrder.tooth_number, labOrder.service_name,
@@ -3668,7 +2845,6 @@ export class DatabaseService {
       )
 
       console.log('✅ Lab order created successfully:', { id, changes: result.changes })
-      console.log('✅ SQL execution result:', result)
 
       // Force WAL checkpoint to ensure data is written
       this.db.pragma('wal_checkpoint(TRUNCATE)')
@@ -3676,30 +2852,7 @@ export class DatabaseService {
       return { ...labOrder, id, created_at: now, updated_at: now }
     } catch (error) {
       console.error('❌ Failed to create lab order:', error)
-      console.error('❌ Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : 'No stack trace',
-        name: error instanceof Error ? error.name : 'Unknown',
-        type: typeof error,
-        labOrderData: labOrder
-      })
-      
-      // Create a serializable error object
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : 'Database error occurred while creating lab order'
-      
-      const serializableError = {
-        message: errorMessage,
-        name: error instanceof Error ? error.name : 'DatabaseError',
-        stack: error instanceof Error ? error.stack : undefined,
-        type: typeof error,
-        code: (error as any)?.code,
-        errno: (error as any)?.errno
-      }
-      
-      console.error('❌ Throwing serializable database error:', serializableError)
-      throw serializableError
+      throw error
     }
   }
 
@@ -3787,48 +2940,6 @@ export class DatabaseService {
     }
   }
 
-  async getLabOrdersByPatient(patientId: string): Promise<LabOrder[]> {
-    const stmt = this.db.prepare(`
-      SELECT
-        lo.*,
-        l.name as lab_name,
-        p.full_name as patient_name
-      FROM lab_orders lo
-      LEFT JOIN labs l ON lo.lab_id = l.id
-      LEFT JOIN patients p ON lo.patient_id = p.id
-      WHERE lo.patient_id = ?
-      ORDER BY lo.order_date DESC
-    `)
-    
-    const labOrders = stmt.all(patientId) as any[]
-    
-    return labOrders.map(order => ({
-      id: order.id,
-      lab_id: order.lab_id,
-      patient_id: order.patient_id,
-      appointment_id: order.appointment_id,
-      tooth_treatment_id: order.tooth_treatment_id,
-      tooth_number: order.tooth_number,
-      service_name: order.service_name,
-      cost: order.cost,
-      order_date: order.order_date,
-      expected_delivery_date: order.expected_delivery_date,
-      actual_delivery_date: order.actual_delivery_date,
-      status: order.status,
-      notes: order.notes,
-      paid_amount: order.paid_amount,
-      remaining_balance: order.remaining_balance,
-      priority: order.priority,
-      lab_instructions: order.lab_instructions,
-      material_type: order.material_type,
-      color_shade: order.color_shade,
-      created_at: order.created_at,
-      updated_at: order.updated_at,
-      lab: order.lab_name ? { id: order.lab_id, name: order.lab_name } : null,
-      patient: order.patient_name ? { id: order.patient_id, full_name: order.patient_name } : null
-    }))
-  }
-
   async searchLabOrders(query: string): Promise<LabOrder[]> {
     const stmt = this.db.prepare(`
       SELECT
@@ -3847,115 +2958,12 @@ export class DatabaseService {
 
   // Settings operations
   async getSettings(): Promise<ClinicSettings> {
-    try {
-      console.log('📋 DB: Executing getSettings query')
-
-      // First check if settings table exists
-      const tableExists = this.db.prepare(`
-        SELECT name FROM sqlite_master
-        WHERE type='table' AND name='settings'
-      `).get()
-
-      if (!tableExists) {
-        console.warn('⚠️ DB: Settings table does not exist, returning default settings')
-        return {
-          id: 'clinic_settings',
-          clinic_name: 'عيادة الأسنان',
-          doctor_name: 'د. محمد أحمد',
-          clinic_logo: '',
-          currency: 'USD',
-          language: 'ar'
-        } as ClinicSettings
-      }
-
-      const stmt = this.db.prepare('SELECT * FROM settings WHERE id = ?')
-      const settings = stmt.get('clinic_settings') as ClinicSettings
-
-      // console.log('📋 DB: Settings retrieved successfully:', {
-      //   has_settings: !!settings,
-      //   clinic_name: settings?.clinic_name,
-      //   has_clinic_logo: !!settings?.clinic_logo,
-      //   clinic_logo_length: settings?.clinic_logo?.length || 0,
-      //   clinic_logo_preview: settings?.clinic_logo?.substring(0, 50) + '...' || 'none',
-      //   whatsapp_reminder_enabled: settings?.whatsapp_reminder_enabled,
-      //   whatsapp_reminder_hours_before: settings?.whatsapp_reminder_hours_before,
-      //   whatsapp_reminder_minutes_before: settings?.whatsapp_reminder_minutes_before,
-      //   whatsapp_reminder_message: settings?.whatsapp_reminder_message,
-      //   whatsapp_reminder_custom_enabled: settings?.whatsapp_reminder_custom_enabled
-      // })
-
-      // If clinic_logo is empty or invalid, set it to null to prevent Electron errors
-      if (settings && (!settings.clinic_logo || settings.clinic_logo.trim() === '' || settings.clinic_logo === 'null' || settings.clinic_logo === 'undefined')) {
-        console.warn('⚠️ DB: clinic_logo is empty or invalid, setting to null.')
-        settings.clinic_logo = null // Ensure it's explicitly null
-      }
-
-      // If no settings found, return default settings
-      if (!settings) {
-        console.log('📋 DB: No settings found, returning default settings')
-        return {
-          id: 'clinic_settings',
-          clinic_name: 'عيادة الأسنان',
-          doctor_name: 'د. محمد أحمد',
-          clinic_logo: null, // Ensure default is null to prevent errors
-          currency: 'USD',
-          language: 'ar'
-        } as ClinicSettings
-      }
-
-      return settings
-    } catch (error) {
-      console.error('❌ DB: Error in getSettings:', error)
-
-      // Return default settings on any error to prevent app crashes
-      console.log('📋 DB: Returning default settings due to error')
-      return {
-        id: 'clinic_settings',
-        clinic_name: 'عيادة الأسنان',
-        doctor_name: 'د. محمد أحمد',
-        clinic_logo: null, // Ensure default is null to prevent errors
-        currency: 'USD',
-        language: 'ar'
-      } as ClinicSettings
-    }
+    const stmt = this.db.prepare('SELECT * FROM settings WHERE id = ?')
+    return stmt.get('clinic_settings') as ClinicSettings
   }
 
   async updateSettings(settings: Partial<ClinicSettings>): Promise<ClinicSettings> {
     const now = new Date().toISOString()
-    
-    console.log('🧪 [DEBUG] Database updateSettings called with:', {
-      whatsapp_reminder_enabled: settings.whatsapp_reminder_enabled,
-      whatsapp_reminder_hours_before: settings.whatsapp_reminder_hours_before,
-      whatsapp_reminder_minutes_before: settings.whatsapp_reminder_minutes_before,
-      whatsapp_reminder_message: settings.whatsapp_reminder_message,
-      whatsapp_reminder_custom_enabled: settings.whatsapp_reminder_custom_enabled
-    });
-
-    // Ensure WhatsApp columns exist
-    try {
-      console.log('🧪 [DEBUG] Ensuring WhatsApp columns exist in database service...');
-      const columns = this.db.prepare(`PRAGMA table_info(settings)`).all();
-      const existingColumns = columns.map((c: any) => c.name);
-      
-      const requiredColumns = [
-        { name: 'whatsapp_reminder_enabled', type: 'INTEGER DEFAULT 0' },
-        { name: 'whatsapp_reminder_hours_before', type: 'INTEGER DEFAULT 3' },
-        { name: 'whatsapp_reminder_minutes_before', type: 'INTEGER DEFAULT 180' },
-        { name: 'whatsapp_reminder_message', type: 'TEXT DEFAULT ""' },
-        { name: 'whatsapp_reminder_custom_enabled', type: 'INTEGER DEFAULT 0' }
-      ];
-      
-      for (const column of requiredColumns) {
-        if (!existingColumns.includes(column.name)) {
-          console.log(`🧪 [DEBUG] Adding missing column: ${column.name}`);
-          this.db.prepare(`ALTER TABLE settings ADD COLUMN ${column.name} ${column.type}`).run();
-        }
-      }
-      
-      console.log('🧪 [DEBUG] WhatsApp columns ensured in database service');
-    } catch (error) {
-      console.error('🧪 [DEBUG] Error ensuring columns in database service:', error);
-    }
 
     const stmt = this.db.prepare(`
       UPDATE settings SET
@@ -3976,42 +2984,20 @@ export class DatabaseService {
         working_days = COALESCE(?, working_days),
         app_password = COALESCE(?, app_password),
         password_enabled = COALESCE(?, password_enabled),
-        whatsapp_reminder_enabled = COALESCE(?, whatsapp_reminder_enabled),
-        whatsapp_reminder_hours_before = COALESCE(?, whatsapp_reminder_hours_before),
-        whatsapp_reminder_minutes_before = COALESCE(?, whatsapp_reminder_minutes_before),
-        whatsapp_reminder_message = COALESCE(?, whatsapp_reminder_message),
-        whatsapp_reminder_custom_enabled = COALESCE(?, whatsapp_reminder_custom_enabled),
         updated_at = ?
       WHERE id = ?
     `)
 
-    const result = stmt.run(
+    stmt.run(
       settings.clinic_name, settings.doctor_name, settings.clinic_address, settings.clinic_phone,
       settings.clinic_email, settings.clinic_logo, settings.currency,
       settings.language, settings.timezone, settings.backup_frequency,
       settings.auto_save_interval, settings.appointment_duration,
       settings.working_hours_start, settings.working_hours_end,
-      settings.working_days, settings.app_password, settings.password_enabled,
-      settings.whatsapp_reminder_enabled, settings.whatsapp_reminder_hours_before,
-      settings.whatsapp_reminder_minutes_before, settings.whatsapp_reminder_message,
-      settings.whatsapp_reminder_custom_enabled, now, 'clinic_settings'
+      settings.working_days, settings.app_password, settings.password_enabled, now, 'clinic_settings'
     )
-    
-    console.log('🧪 [DEBUG] Database update result:', {
-      changes: result.changes,
-      lastInsertRowid: result.lastInsertRowid
-    });
 
-    const updatedSettings = await this.getSettings()
-    console.log('🧪 [DEBUG] Settings after update:', {
-      whatsapp_reminder_enabled: updatedSettings.whatsapp_reminder_enabled,
-      whatsapp_reminder_hours_before: updatedSettings.whatsapp_reminder_hours_before,
-      whatsapp_reminder_minutes_before: updatedSettings.whatsapp_reminder_minutes_before,
-      whatsapp_reminder_message: updatedSettings.whatsapp_reminder_message,
-      whatsapp_reminder_custom_enabled: updatedSettings.whatsapp_reminder_custom_enabled
-    });
-    
-    return updatedSettings
+    return this.getSettings()
   }
 
   // Dashboard statistics
@@ -4579,7 +3565,7 @@ export class DatabaseService {
             order_date TEXT NOT NULL,
             expected_delivery_date TEXT,
             actual_delivery_date TEXT,
-            status TEXT NOT NULL CHECK (status IN ('آجل', 'مكتمل', 'ملغي')),
+            status TEXT NOT NULL CHECK (status IN ('معلق', 'مكتمل', 'ملغي')),
             notes TEXT,
             paid_amount REAL DEFAULT 0,
             remaining_balance REAL,
@@ -4879,64 +3865,6 @@ export class DatabaseService {
   }
 
   close() {
-    // Clear memory cleanup timer
-    if (this.memoryCleanupTimer) {
-      clearInterval(this.memoryCleanupTimer)
-      this.memoryCleanupTimer = null
-    }
-
-    // Clear cache
-    this.cache.clear()
-
-    // Close connection pool
-    if (this.connectionPool) {
-      this.connectionPool.closeAll()
-      this.connectionPool = null
-    }
-
-    // Close main connection
-    if (this.db) {
-      this.db.close()
-      this.db = null
-    }
-
-    // Reset state
-    this.isInitialized = false
-    this.isInitializing = false
-    this.initPromise = null
-
-    console.log('✅ DatabaseService closed and cleaned up')
-  }
-
-  /**
-   * Get memory usage statistics
-   */
-  getMemoryStats(): {
-    cacheSize: number
-    cacheHitRate: number
-    lastActivityTime: number
-    connectionPoolStats?: any
-  } {
-    const cacheHitRate = this.cache.size > 0 ? (this.cache.size / (this.cache.size + 1)) * 100 : 0
-
-    return {
-      cacheSize: this.cache.size,
-      cacheHitRate: Math.round(cacheHitRate * 100) / 100,
-      lastActivityTime: this.lastActivityTime,
-      connectionPoolStats: this.connectionPool?.getStats()
-    }
-  }
-
-  /**
-   * Force cache refresh for specific queries
-   */
-  async refreshCache(key?: string): Promise<void> {
-    if (key) {
-      this.cache.delete(key)
-      console.log(`🔄 Cache refreshed for key: ${key}`)
-    } else {
-      this.cache.clear()
-      console.log('🔄 All cache cleared')
-    }
+    this.db.close()
   }
 }

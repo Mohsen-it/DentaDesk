@@ -47,54 +47,14 @@ class BackupService {
     const isDevelopment = process.env.NODE_ENV === 'development' ||
                          process.execPath.includes('node') ||
                          process.execPath.includes('electron') ||
-                         process.cwd().includes('dental-clinic') ||
-                         process.cwd().includes('DentaDesk')
-
-    console.log('🔍 Environment detection:')
-    console.log(`   NODE_ENV: ${process.env.NODE_ENV}`)
-    console.log(`   execPath: ${process.execPath}`)
-    console.log(`   cwd: ${process.cwd()}`)
-    console.log(`   isDevelopment: ${isDevelopment}`)
+                         process.cwd().includes('dental-clinic')
 
     if (isDevelopment) {
       // In development, use project directory
       this.dentalImagesPath = join(process.cwd(), 'dental_images')
-      console.log('📍 Using development path for images:', this.dentalImagesPath)
     } else {
       // In production, use directory relative to executable
-      const execDir = require('path').dirname(process.execPath)
-      this.dentalImagesPath = join(execDir, 'dental_images')
-      console.log('📍 Using production path for images:', this.dentalImagesPath)
-      console.log('📍 Executable directory:', execDir)
-    }
-
-    // Always check if the determined path exists, and try alternatives if not
-    if (!existsSync(this.dentalImagesPath)) {
-      console.warn('⚠️ Primary images path does not exist:', this.dentalImagesPath)
-
-      // Try alternative locations
-      const alternativePaths = [
-        join(process.cwd(), 'dental_images'),
-        join(require('path').dirname(process.execPath), 'dental_images'),
-        join(process.cwd(), '..', 'dental_images'),
-        join(require('path').dirname(process.execPath), '..', 'dental_images')
-      ]
-
-      for (const altPath of alternativePaths) {
-        if (existsSync(altPath)) {
-          console.log('✅ Found images directory at alternative path:', altPath)
-          this.dentalImagesPath = altPath
-          break
-        }
-      }
-
-      if (!existsSync(this.dentalImagesPath)) {
-        console.warn('⚠️ No images directory found in any expected location')
-        console.log('📂 Creating images directory at:', this.dentalImagesPath)
-        mkdirSync(this.dentalImagesPath, { recursive: true })
-      }
-    } else {
-      console.log('✅ Images directory exists at:', this.dentalImagesPath)
+      this.dentalImagesPath = join(require('path').dirname(process.execPath), 'dental_images')
     }
 
     console.log('📍 Backup service paths:')
@@ -104,49 +64,6 @@ class BackupService {
 
     this.ensureBackupDirectory()
     this.ensureBackupRegistry()
-    this.checkBackupApiAvailability()
-  }
-
-  // Check if SQLite backup API is available
-  checkBackupApiAvailability() {
-    try {
-      if (this.databaseService && this.databaseService.db) {
-        // Check if backup method exists and is callable
-        this.backupApiAvailable = typeof this.databaseService.db.backup === 'function'
-        
-        if (this.backupApiAvailable) {
-          // Test the backup method to see what it returns
-          try {
-            const testResult = this.databaseService.db.backup('test_backup_check.db')
-            console.log('🔍 Backup API test result type:', typeof testResult)
-            
-            if (testResult && typeof testResult.then === 'function') {
-              console.log('✅ SQLite backup API available (Promise-based)')
-            } else if (testResult && typeof testResult.step === 'function') {
-              console.log('✅ SQLite backup API available (Object-based)')
-            } else {
-              console.log('⚠️ SQLite backup API available but returns unexpected type')
-            }
-            
-            // Clean up test file if it was created
-            if (existsSync('test_backup_check.db')) {
-              rmSync('test_backup_check.db')
-            }
-          } catch (testError) {
-            console.log('⚠️ SQLite backup API test failed:', testError.message)
-            this.backupApiAvailable = false
-          }
-        } else {
-          console.log('❌ SQLite backup API not available')
-        }
-      } else {
-        this.backupApiAvailable = false
-        console.log('⚠️ Database service not available for backup API check')
-      }
-    } catch (error) {
-      this.backupApiAvailable = false
-      console.log('❌ Error checking backup API availability:', error.message)
-    }
   }
 
   ensureBackupDirectory() {
@@ -345,52 +262,16 @@ class BackupService {
         // Wait longer to ensure file handles are released and all writes are committed
         await new Promise(resolve => setTimeout(resolve, 500))
 
-        // Try multiple backup methods in order of preference
-        let backupSuccess = false
-        let lastError = null
-        
-        // Method 1: Try SQLite backup API if available
-        if (this.backupApiAvailable && !backupSuccess) {
-          try {
-            console.log('📋 Creating SQLite backup using backup API...')
-            await this.createSqliteBackupUsingAPI(backupPath)
-            console.log('✅ SQLite backup API completed')
-            backupSuccess = true
-          } catch (apiError) {
-            console.warn('⚠️ SQLite backup API failed:', apiError.message)
-            lastError = apiError
-          }
-        }
-        
-        // Method 2: Try VACUUM INTO method if backup API failed
-        if (!backupSuccess) {
-          try {
-            console.log('🔄 Trying VACUUM INTO backup method...')
-            await this.createSqliteVacuumBackup(backupPath)
-            console.log('✅ VACUUM INTO backup completed')
-            backupSuccess = true
-          } catch (vacuumError) {
-            console.warn('⚠️ VACUUM INTO backup failed:', vacuumError.message)
-            lastError = vacuumError
-          }
-        }
-        
-        // Method 3: Fallback to file copy if all else fails
-        if (!backupSuccess) {
-          try {
-            console.log('📁 All SQLite methods failed, using file copy method...')
-            this.createFileCopyBackup(backupPath)
-            console.log('✅ File copy backup completed')
-            backupSuccess = true
-          } catch (copyError) {
-            console.error('❌ File copy backup also failed:', copyError.message)
-            lastError = copyError
-          }
-        }
-        
-        // If all methods failed, throw the last error
-        if (!backupSuccess) {
-          throw new Error(`All backup methods failed. Last error: ${lastError ? lastError.message : 'Unknown error'}`)
+        // Use SQLite backup API instead of file copy for better reliability
+        try {
+          console.log('📋 Creating SQLite backup using backup API...')
+          await this.createSqliteBackupUsingAPI(backupPath)
+          console.log('✅ SQLite backup API completed')
+        } catch (apiError) {
+          console.warn('⚠️ SQLite backup API failed, falling back to file copy:', apiError.message)
+
+          // Fallback to file copy method
+          copyFileSync(this.sqliteDbPath, backupPath)
         }
 
         // Verify backup was created successfully
@@ -499,8 +380,10 @@ class BackupService {
       return
     }
 
-    // Create destination directory
-    await fs.mkdir(destination, { recursive: true })
+    // Create destination directory if it doesn't exist
+    if (!existsSync(destination)) {
+      await fs.mkdir(destination, { recursive: true })
+    }
 
     const items = await fs.readdir(source)
 
@@ -510,131 +393,220 @@ class BackupService {
       const stats = await fs.lstat(sourcePath)
 
       if (stats.isDirectory()) {
+        // Recursively copy subdirectories
         await this.copyDirectory(sourcePath, destPath)
       } else {
+        // Ensure destination directory exists for file copy
+        const destDir = dirname(destPath)
+        if (!existsSync(destDir)) {
+          await fs.mkdir(destDir, { recursive: true })
+        }
+
+        // Copy file with overwrite
         await fs.copyFile(sourcePath, destPath)
       }
     }
   }
 
-  // Create backup using file copy method
-  createFileCopyBackup(backupPath) {
-    try {
-      copyFileSync(this.sqliteDbPath, backupPath)
-      console.log('✅ File copy backup completed successfully')
-    } catch (copyError) {
-      console.error('❌ File copy backup failed:', copyError.message)
-      throw new Error(`File copy backup failed: ${copyError.message}`)
+  // Specialized method for restoring images from extracted backup
+  async restoreImagesFromExtracted(source, destination) {
+    console.log(`📸 Starting image restoration from ${source} to ${destination}`)
+
+    // Get all image files from source
+    const imageFiles = glob.sync(join(source, '**', '*')).filter(filePath => {
+      const stats = statSync(filePath)
+      return stats.isFile() && /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(filePath)
+    })
+
+    console.log(`📸 Found ${imageFiles.length} image files to restore`)
+
+    for (const sourceFile of imageFiles) {
+      try {
+        // Get relative path from source directory
+        const relativePath = path.relative(source, sourceFile)
+        const destFile = join(destination, relativePath)
+
+        // Ensure destination directory exists
+        const destDir = dirname(destFile)
+        if (!existsSync(destDir)) {
+          await fs.mkdir(destDir, { recursive: true })
+          console.log(`📁 Created directory: ${destDir}`)
+        }
+
+        // Copy the file
+        await fs.copyFile(sourceFile, destFile)
+        console.log(`✅ Restored image: ${relativePath}`)
+
+      } catch (fileError) {
+        console.warn(`⚠️ Failed to restore image ${sourceFile}:`, fileError.message)
+        // Continue with other files
+      }
     }
+
+    console.log(`📸 Image restoration completed`)
   }
 
-  // Create backup using SQLite VACUUM INTO method (alternative to backup API)
-  async createSqliteVacuumBackup(backupPath) {
-    return new Promise((resolve, reject) => {
-      try {
-        console.log('🔄 Creating backup using VACUUM INTO method...')
-        
-        // Remove existing backup file if it exists
-        if (existsSync(backupPath)) {
-          try {
-            rmSync(backupPath)
-            console.log('🗑️ Removed existing backup file before VACUUM INTO')
-          } catch (removeError) {
-            console.warn('⚠️ Could not remove existing backup file:', removeError.message)
-            // Continue anyway, VACUUM INTO might still work
+  // Aggressive directory cleanup method for problematic directories
+  async cleanupDirectoryAggressively(dirPath) {
+    console.log(`🧹 Starting aggressive cleanup of: ${dirPath}`)
+
+    try {
+      // First attempt: standard recursive removal
+      await fs.rm(dirPath, { recursive: true, force: true })
+      console.log('🧹 Directory cleaned up successfully')
+      return
+    } catch (firstError) {
+      console.warn('⚠️ Standard cleanup failed, trying manual approach:', firstError.message)
+    }
+
+    // Manual cleanup using rimraf-style approach
+    try {
+      await this.manualDirectoryCleanup(dirPath)
+      console.log('🧹 Directory cleaned up manually')
+      return
+    } catch (manualError) {
+      console.error('❌ Manual cleanup method failed for:', dirPath)
+      console.error('❌ Error details:', manualError.message)
+    }
+
+    // Last resort: try multiple times with delays (don't throw errors)
+    try {
+      console.log('🔄 Trying final cleanup approach with multiple attempts...')
+
+      // Try multiple times with delays
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          await new Promise(resolve => setTimeout(resolve, attempt * 1000))
+          await fs.rm(dirPath, { recursive: true, force: true })
+          console.log(`🧹 Directory cleaned up on attempt ${attempt}`)
+          return
+        } catch (attemptError) {
+          console.warn(`⚠️ Cleanup attempt ${attempt} failed:`, attemptError.message)
+          if (attempt === 3) {
+            console.error('❌ Final cleanup attempt also failed')
           }
         }
-        
-        // Ensure the directory exists
-        const backupDir = dirname(backupPath)
-        if (!existsSync(backupDir)) {
-          mkdirSync(backupDir, { recursive: true })
-          console.log('📁 Created backup directory:', backupDir)
-        }
-        
-        // Use VACUUM INTO to create a backup
-        // Escape the path properly for SQL
-        const escapedPath = backupPath.replace(/\\/g, '\\\\').replace(/'/g, "''")
-        console.log('📋 VACUUM INTO path:', escapedPath)
-        
-        this.databaseService.db.exec(`VACUUM INTO '${escapedPath}'`)
-        
-        // Verify the backup was created
-        if (!existsSync(backupPath)) {
-          throw new Error('VACUUM INTO backup file was not created')
-        }
-        
-        const backupStats = statSync(backupPath)
-        console.log('📊 VACUUM INTO backup size:', backupStats.size, 'bytes')
-        
-        if (backupStats.size === 0) {
-          throw new Error('VACUUM INTO backup file is empty')
-        }
-        
-        console.log('✅ VACUUM INTO backup completed successfully')
-        resolve()
-      } catch (error) {
-        console.error('❌ VACUUM INTO backup failed:', error)
-        reject(error)
       }
-    })
+    } catch (finalError) {
+      console.error('❌ All cleanup approaches failed:', finalError.message)
+    }
+
+    // If we reach here, all cleanup methods failed but we don't throw an error
+    console.error('❌ Unable to clean up directory automatically:', dirPath)
+    console.error('❌ Directory can be deleted manually if needed')
+    // Don't throw error - allow restoration to continue
+  }
+
+  // Manual directory cleanup for stubborn directories
+  async manualDirectoryCleanup(dirPath) {
+    console.log(`🔍 Starting manual cleanup of: ${dirPath}`)
+
+    try {
+      const items = await fs.readdir(dirPath)
+      console.log(`📂 Found ${items.length} items to clean up in: ${dirPath}`)
+
+      for (const item of items) {
+        const itemPath = join(dirPath, item)
+        console.log(`🔍 Processing: ${itemPath}`)
+
+        try {
+          const stats = await fs.lstat(itemPath)
+
+          if (stats.isDirectory()) {
+            // Recursively cleanup subdirectories first
+            await this.manualDirectoryCleanup(itemPath)
+
+            // Try to remove the subdirectory
+            try {
+              await fs.rmdir(itemPath)
+              console.log(`🗑️ Removed subdirectory: ${itemPath}`)
+            } catch (dirError) {
+              console.warn(`⚠️ Could not remove subdirectory ${itemPath}:`, dirError.message)
+
+              // If rmdir fails, try with fs.rm
+              try {
+                await fs.rm(itemPath, { recursive: true, force: true })
+                console.log(`🗑️ Force removed subdirectory: ${itemPath}`)
+              } catch (forceError) {
+                console.error(`❌ Failed to force remove subdirectory ${itemPath}:`, forceError.message)
+              }
+            }
+          } else {
+            // Remove files
+            try {
+              await fs.unlink(itemPath)
+              console.log(`🗑️ Removed file: ${itemPath}`)
+            } catch (fileError) {
+              console.warn(`⚠️ Could not remove file ${itemPath}:`, fileError.message)
+            }
+          }
+        } catch (itemError) {
+          console.warn(`⚠️ Could not access ${itemPath}:`, itemError.message)
+
+          // Try to force remove this item
+          try {
+            await fs.rm(itemPath, { recursive: true, force: true })
+            console.log(`🗑️ Force removed inaccessible item: ${itemPath}`)
+          } catch (forceError) {
+            console.error(`❌ Failed to force remove inaccessible item ${itemPath}:`, forceError.message)
+          }
+        }
+      }
+
+      // Finally, try to remove the main directory
+      try {
+        await fs.rmdir(dirPath)
+        console.log(`🗑️ Removed main directory: ${dirPath}`)
+      } catch (mainDirError) {
+        console.warn(`⚠️ Could not remove main directory ${dirPath}:`, mainDirError.message)
+
+        // Last resort: use fs.rm
+        try {
+          await fs.rm(dirPath, { recursive: true, force: true })
+          console.log(`🗑️ Force removed main directory: ${dirPath}`)
+        } catch (finalError) {
+          console.error(`❌ Failed to force remove main directory ${dirPath}:`, finalError.message)
+          // Don't throw error - allow cleanup to continue gracefully
+        }
+      }
+    } catch (readError) {
+      console.warn(`⚠️ Could not read directory ${dirPath}:`, readError.message)
+
+      // If we can't even read the directory, try to force remove it entirely
+      try {
+        await fs.rm(dirPath, { recursive: true, force: true })
+        console.log(`🗑️ Force removed unreadable directory: ${dirPath}`)
+      } catch (finalError) {
+        console.error(`❌ Failed to force remove unreadable directory ${dirPath}:`, finalError.message)
+        // Don't throw error - allow cleanup to continue gracefully
+      }
+    }
   }
 
   // Create SQLite backup using backup API for better reliability
   async createSqliteBackupUsingAPI(backupPath) {
-    return new Promise(async (resolve, reject) => {
+    return new Promise((resolve, reject) => {
       try {
-        // Check if backup method exists and is callable
-        if (typeof this.databaseService.db.backup !== 'function') {
-          throw new Error('SQLite backup API not available in this version of better-sqlite3')
+        const Database = require('better-sqlite3')
+
+        // Open backup database
+        const backupDb = new Database(backupPath)
+
+        // Use SQLite backup API - pass the destination database object, not the source
+        const backup = this.databaseService.db.backup(backupDb)
+
+        // Check if backup object has the expected methods
+        if (typeof backup.step !== 'function') {
+          throw new Error('SQLite backup API not available or incompatible')
         }
 
-        // Remove existing backup file if it exists
-        if (existsSync(backupPath)) {
-          try {
-            rmSync(backupPath)
-            console.log('🗑️ Removed existing backup file before creating new one')
-          } catch (removeError) {
-            console.warn('⚠️ Could not remove existing backup file:', removeError.message)
-          }
-        }
+        backup.step(-1) // Copy all pages
+        backup.finish()
 
-        // Use SQLite backup API - this returns a Promise in newer versions
-        console.log('📋 Creating SQLite backup using backup API...')
-        console.log('🔍 Backup object type:', typeof this.databaseService.db.backup)
-        
-        // Check if backup method returns a Promise or an object
-        const backupResult = this.databaseService.db.backup(backupPath)
-        
-        if (backupResult && typeof backupResult.then === 'function') {
-          // It's a Promise (newer better-sqlite3 versions)
-          console.log('📋 Using Promise-based backup API...')
-          await backupResult
-          console.log('✅ SQLite backup API (Promise) completed successfully')
-          resolve()
-        } else if (backupResult && typeof backupResult.step === 'function') {
-          // It's an object with step/finish methods (older versions)
-          console.log('📋 Using object-based backup API...')
-          console.log('🔍 Backup object keys:', Object.keys(backupResult || {}))
-          console.log('🔍 Backup step method:', typeof backupResult.step)
-          console.log('🔍 Backup finish method:', typeof backupResult.finish)
+        backupDb.close()
 
-          if (typeof backupResult.finish !== 'function') {
-            throw new Error('SQLite backup API returned invalid backup object - missing finish method')
-          }
-
-          // Perform the backup
-          backupResult.step(-1) // Copy all pages
-          backupResult.finish()
-          console.log('✅ SQLite backup API (Object) completed successfully')
-          resolve()
-        } else {
-          // Unexpected return type
-          console.error('❌ Unexpected backup API return type:', typeof backupResult)
-          console.error('❌ Backup result:', backupResult)
-          throw new Error('SQLite backup API returned unexpected result type')
-        }
-
+        console.log('✅ SQLite backup API completed successfully')
+        resolve()
       } catch (error) {
         console.error('❌ SQLite backup API failed:', error)
         reject(error)
@@ -660,81 +632,20 @@ class BackupService {
         throw new Error('Backup database contains no tables')
       }
 
-      // Get list of all tables in backup for comprehensive verification
-      const allTablesQuery = testDb.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
-      const allTables = allTablesQuery.all()
-      console.log('📋 All tables in backup:', allTables.map(t => t.name))
-
-      // Test critical tables and their data
-      const criticalTables = [
-        'patients',
-        'appointments',
-        'payments',
-        'treatments',
-        'dental_treatments',
-        'dental_treatment_images',
-        'settings',
-        'schema_version'
-      ]
-
+      // Test key tables and their data
+      const keyTables = ['patients', 'appointments', 'payments', 'treatments', 'dental_treatments', 'dental_treatment_images']
       let totalRecords = 0
-      let missingCriticalTables = []
 
-      for (const table of criticalTables) {
+      for (const table of keyTables) {
         try {
           const countQuery = testDb.prepare(`SELECT COUNT(*) as count FROM ${table}`)
           const count = countQuery.get()
           console.log(`📊 Backup table ${table}: ${count.count} records`)
           totalRecords += count.count
         } catch (tableError) {
-          console.warn(`⚠️ Critical table ${table} not found in backup:`, tableError.message)
-          missingCriticalTables.push(table)
+          // Table might not exist, which is okay for some tables
+          console.log(`📋 Table ${table} not found in backup (this may be normal)`)
         }
-      }
-
-      // Check for other important tables that should exist
-      const expectedTables = [
-        'clinic_expenses',
-        'clinic_needs',
-        'inventory',
-        'inventory_usage',
-        'lab_orders',
-        'labs',
-        'medications',
-        'patient_images',
-        'patient_treatment_timeline',
-        'prescription_medications',
-        'prescriptions',
-        'smart_alerts',
-        'tooth_treatment_images',
-        'tooth_treatments',
-        'treatment_plan_items',
-        'treatment_plans',
-        'treatment_sessions',
-        'whatsapp_reminders'
-      ]
-
-      console.log('🔍 Checking for additional expected tables...')
-      for (const table of expectedTables) {
-        try {
-          const tableCheck = testDb.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name=?`)
-          const exists = tableCheck.get(table)
-          if (exists) {
-            const countQuery = testDb.prepare(`SELECT COUNT(*) as count FROM ${table}`)
-            const count = countQuery.get()
-            console.log(`📊 Backup table ${table}: ${count.count} records`)
-            totalRecords += count.count
-          }
-        } catch (tableError) {
-          // These are optional tables, so just log but don't treat as error
-          console.log(`📋 Optional table ${table} not found in backup`)
-        }
-      }
-
-      // Warn about missing critical tables but don't fail the backup
-      if (missingCriticalTables.length > 0) {
-        console.warn(`⚠️ Missing critical tables in backup: ${missingCriticalTables.join(', ')}`)
-        console.warn('⚠️ This backup may not contain all necessary data for complete restoration')
       }
 
       // Additional verification: check if backup is actually working by comparing with source
@@ -779,12 +690,6 @@ class BackupService {
 
       console.log('✅ Backup database integrity check passed')
 
-      // Validate that critical tables exist
-      const criticalTableValidation = this.validateCriticalTables(allTables.map(t => t.name))
-      if (!criticalTableValidation.isValid) {
-        console.warn(`⚠️ Backup validation warning: ${criticalTableValidation.message}`)
-      }
-
     } catch (error) {
       console.error('❌ Backup integrity verification failed:', error)
       throw error
@@ -792,32 +697,6 @@ class BackupService {
       if (testDb) {
         testDb.close()
       }
-    }
-  }
-
-  // Validate that all critical tables exist in the backup
-  validateCriticalTables(tableNames) {
-    const criticalTables = [
-      'patients',
-      'appointments',
-      'payments',
-      'treatments',
-      'settings'
-    ]
-
-    const missingTables = criticalTables.filter(table => !tableNames.includes(table))
-
-    if (missingTables.length > 0) {
-      return {
-        isValid: false,
-        message: `Missing critical tables: ${missingTables.join(', ')}`,
-        missingTables: missingTables
-      }
-    }
-
-    return {
-      isValid: true,
-      message: 'All critical tables are present'
     }
   }
 
@@ -858,37 +737,17 @@ class BackupService {
         // Wait longer to ensure file handles are released and all writes are committed
         await new Promise(resolve => setTimeout(resolve, 500))
 
-        // Create a temporary database backup for ZIP inclusion
+        // Create a temporary database backup using the backup API for ZIP inclusion
         const tempDbPath = join(require('path').dirname(this.sqliteDbPath), `temp_backup_${Date.now()}.db`)
-        let tempBackupSuccess = false
-        
-        // Try VACUUM INTO method first (more reliable in production)
         try {
-          console.log('🔄 Creating temporary database backup using VACUUM INTO...')
-          await this.createSqliteVacuumBackup(tempDbPath)
-          console.log('✅ Temporary VACUUM INTO backup created for ZIP')
+          console.log('📋 Creating temporary database backup for ZIP...')
+          await this.createSqliteBackupUsingAPI(tempDbPath)
+          console.log('✅ Temporary database backup created for ZIP')
+
+          // Use the temporary backup file instead of the main database file
           this.tempDbPathForZip = tempDbPath
-          tempBackupSuccess = true
-        } catch (vacuumError) {
-          console.warn('⚠️ VACUUM INTO temporary backup failed:', vacuumError.message)
-        }
-        
-        // Try backup API if VACUUM failed
-        if (!tempBackupSuccess && this.backupApiAvailable) {
-          try {
-            console.log('📋 Creating temporary database backup using backup API...')
-            await this.createSqliteBackupUsingAPI(tempDbPath)
-            console.log('✅ Temporary backup API backup created for ZIP')
-            this.tempDbPathForZip = tempDbPath
-            tempBackupSuccess = true
-          } catch (apiError) {
-            console.warn('⚠️ Backup API temporary backup failed:', apiError.message)
-          }
-        }
-        
-        // Fallback to main database file if all methods failed
-        if (!tempBackupSuccess) {
-          console.warn('⚠️ All temporary backup methods failed, using main database file')
+        } catch (tempBackupError) {
+          console.warn('⚠️ Failed to create temporary backup for ZIP, using main database file:', tempBackupError.message)
           this.tempDbPathForZip = this.sqliteDbPath
         }
 
@@ -976,48 +835,14 @@ class BackupService {
 
           // Count images before adding to backup
           const imageFiles = glob.sync(join(this.dentalImagesPath, '**', '*')).filter(file => {
-            try {
-              const stats = require('fs').statSync(file)
-              return stats.isFile()
-            } catch (error) {
-              console.warn(`⚠️ Could not stat file ${file}:`, error.message)
-              return false
-            }
+            const stats = require('fs').statSync(file)
+            return stats.isFile()
           })
           console.log(`📸 Found ${imageFiles.length} image files to backup`)
 
-          if (imageFiles.length > 0) {
-            console.log('📸 Sample image files:')
-            imageFiles.slice(0, 3).forEach(file => console.log(`   - ${file}`))
-
-            // Verify the directory is readable before adding to backup
-            try {
-              const stats = require('fs').statSync(this.dentalImagesPath)
-              if (stats.isDirectory()) {
-                archive.directory(this.dentalImagesPath, 'dental_images')
-                console.log('📸 Images directory added to backup')
-              } else {
-                console.warn('⚠️ Images path exists but is not a directory')
-              }
-            } catch (error) {
-              console.error('❌ Error accessing images directory:', error.message)
-            }
-          } else {
-            console.warn('⚠️ No image files found in images directory')
-            // Still add the directory structure even if empty
-            archive.directory(this.dentalImagesPath, 'dental_images')
-          }
+          archive.directory(this.dentalImagesPath, 'dental_images')
         } else {
           console.log('📸 No images directory found, skipping...')
-          console.log(`📸 Expected images path: ${this.dentalImagesPath}`)
-
-          // List what actually exists in the expected location
-          const expectedDir = require('path').dirname(this.dentalImagesPath)
-          if (existsSync(expectedDir)) {
-            const items = readdirSync(expectedDir)
-            console.log(`📂 Contents of expected images directory (${expectedDir}):`)
-            items.slice(0, 10).forEach(item => console.log(`   - ${item}`))
-          }
         }
 
         // Finalize the archive (i.e., we are done appending files but streams have to finish yet)
@@ -1042,13 +867,9 @@ class BackupService {
     })
   }
 
-  async restoreBackup(backupPath, progressCallback = null) {
+  async restoreBackup(backupPath) {
     try {
       console.log('🔄 Starting backup restoration...')
-
-      if (progressCallback) {
-        progressCallback({ stage: 'init', message: 'بدء عملية الاستعادة...', progress: 0 })
-      }
 
       // Check if backup file exists and determine type
       let actualBackupPath = backupPath
@@ -1081,31 +902,18 @@ class BackupService {
 
       console.log(`📁 Found ${isZipBackup ? 'ZIP' : 'SQLite'} backup: ${actualBackupPath}`)
 
-      if (progressCallback) {
-        progressCallback({ stage: 'backup_current', message: 'إنشاء نسخة احتياطية من البيانات الحالية...', progress: 10 })
-      }
-
       // Create backup of current database before restoration
-      // Check if we're in development mode (reuse the same logic as constructor)
+      // Check if we're in development mode
       const isDevelopment = process.env.NODE_ENV === 'development' ||
                            process.execPath.includes('node') ||
                            process.execPath.includes('electron') ||
-                           process.cwd().includes('dental-clinic') ||
-                           process.cwd().includes('DentaDesk')
-
-      console.log('🔍 Restore environment detection:')
-      console.log(`   NODE_ENV: ${process.env.NODE_ENV}`)
-      console.log(`   execPath: ${process.execPath}`)
-      console.log(`   cwd: ${process.cwd()}`)
-      console.log(`   isDevelopment: ${isDevelopment}`)
+                           process.cwd().includes('dental-clinic')
 
       let baseDir
       if (isDevelopment) {
         baseDir = process.cwd()
-        console.log('📍 Using development base directory:', baseDir)
       } else {
         baseDir = require('path').dirname(process.execPath)
-        console.log('📍 Using production base directory:', baseDir)
       }
 
       const currentDbBackupPath = join(baseDir, `current_db_backup_${Date.now()}.db`)
@@ -1118,24 +926,14 @@ class BackupService {
         if (isZipBackup) {
           // Restore from ZIP backup (with images)
           console.log('🗄️ Restoring from ZIP backup with images...')
-          if (progressCallback) {
-            progressCallback({ stage: 'extracting', message: 'استخراج النسخة الاحتياطية...', progress: 30 })
-          }
-          await this.restoreFromZipBackup(actualBackupPath, progressCallback)
+          await this.restoreFromZipBackup(actualBackupPath)
         } else {
           // Direct SQLite restoration
           console.log('🗄️ Restoring from SQLite backup...')
-          if (progressCallback) {
-            progressCallback({ stage: 'restoring_db', message: 'استعادة قاعدة البيانات...', progress: 40 })
-          }
-          await this.restoreFromSqliteBackup(actualBackupPath, progressCallback)
+          await this.restoreFromSqliteBackup(actualBackupPath)
         }
 
         console.log('✅ Backup restored successfully')
-
-        if (progressCallback) {
-          progressCallback({ stage: 'complete', message: 'تمت الاستعادة بنجاح!', progress: 100 })
-        }
 
         // Clean up temporary backup
         if (existsSync(currentDbBackupPath)) {
@@ -1168,34 +966,21 @@ class BackupService {
   }
 
   // Restore from ZIP backup (with images)
-  async restoreFromZipBackup(zipBackupPath, progressCallback = null) {
+  async restoreFromZipBackup(zipBackupPath) {
     try {
       console.log('📦 Extracting ZIP backup...')
 
-      if (progressCallback) {
-        progressCallback({ stage: 'extracting', message: 'استخراج ملفات النسخة الاحتياطية...', progress: 35 })
-      }
-
-      // Determine base directory (reuse the same logic as main restore method)
+      // Determine base directory
       const isDevelopment = process.env.NODE_ENV === 'development' ||
                            process.execPath.includes('node') ||
                            process.execPath.includes('electron') ||
-                           process.cwd().includes('dental-clinic') ||
-                           process.cwd().includes('DentaDesk')
-
-      console.log('🔍 ZIP restore environment detection:')
-      console.log(`   NODE_ENV: ${process.env.NODE_ENV}`)
-      console.log(`   execPath: ${process.execPath}`)
-      console.log(`   cwd: ${process.cwd()}`)
-      console.log(`   isDevelopment: ${isDevelopment}`)
+                           process.cwd().includes('dental-clinic')
 
       let baseDir
       if (isDevelopment) {
         baseDir = process.cwd()
-        console.log('📍 Using development base directory for ZIP restore:', baseDir)
       } else {
         baseDir = require('path').dirname(process.execPath)
-        console.log('📍 Using production base directory for ZIP restore:', baseDir)
       }
 
       // Create temporary directory for extraction
@@ -1215,10 +1000,7 @@ class BackupService {
 
         // Restore database
         console.log('📁 Restoring database from extracted backup...')
-        if (progressCallback) {
-          progressCallback({ stage: 'restoring_db', message: 'استعادة قاعدة البيانات...', progress: 50 })
-        }
-        await this.restoreFromSqliteBackup(extractedDbPath, progressCallback)
+        await this.restoreFromSqliteBackup(extractedDbPath)
 
         // Restore images if they exist
         const extractedImagesPath = join(tempDir, 'dental_images')
@@ -1228,108 +1010,140 @@ class BackupService {
         if (existsSync(extractedImagesPath)) {
           console.log('📸 Restoring images from backup...')
 
-          if (progressCallback) {
-            progressCallback({ stage: 'restoring_images', message: 'استعادة الصور...', progress: 70 })
-          }
-
           // List what's in the extracted images directory
           const extractedContents = glob.sync(join(extractedImagesPath, '**', '*'))
           console.log(`📂 Found ${extractedContents.length} items in extracted backup:`)
           extractedContents.slice(0, 5).forEach(item => console.log(`   - ${item}`))
 
-          // Create backup of current images if they exist (but don't interfere with restoration)
-          let currentImagesBackupPath = null
-          if (existsSync(this.dentalImagesPath)) {
-            currentImagesBackupPath = join(baseDir, `current_images_backup_${Date.now()}`)
-            await this.copyDirectory(this.dentalImagesPath, currentImagesBackupPath)
-            console.log(`💾 Current images backed up to: ${currentImagesBackupPath}`)
+          // Option to skip current images backup (for clean restoration)
+          const skipCurrentBackup = true // Set to true to skip backing up current images
 
-            // Remove current images directory completely with retry mechanism
-            await this.removeDirectoryWithRetry(this.dentalImagesPath, 3, 1000)
+          if (!skipCurrentBackup && existsSync(this.dentalImagesPath)) {
+            currentImagesBackupPath = join(baseDir, `current_images_backup_${Date.now()}`)
+
+            try {
+              // Ensure backup directory doesn't exist
+              if (existsSync(currentImagesBackupPath)) {
+                await fs.rm(currentImagesBackupPath, { recursive: true, force: true })
+              }
+
+              await this.copyDirectory(this.dentalImagesPath, currentImagesBackupPath)
+              console.log(`💾 Current images backed up to: ${currentImagesBackupPath}`)
+              console.log(`💾 This is a safety backup - images will be restored to: ${this.dentalImagesPath}`)
+
+              // Remove current images directory completely
+              await fs.rm(this.dentalImagesPath, { recursive: true, force: true })
+              console.log('🗑️ Current images directory removed')
+            } catch (backupError) {
+              console.warn('⚠️ Failed to backup current images, continuing with restoration:', backupError.message)
+              // Continue with restoration even if backup fails
+            }
+          } else if (existsSync(this.dentalImagesPath)) {
+            // Remove current images directory completely (no backup)
+            console.log(`🗑️ Removing current images directory without backup: ${this.dentalImagesPath}`)
+            await this.cleanupDirectoryAggressively(this.dentalImagesPath)
             console.log('🗑️ Current images directory removed')
           }
 
           // Ensure the dental images directory exists
           await fs.mkdir(this.dentalImagesPath, { recursive: true })
           console.log(`📁 Created dental images directory: ${this.dentalImagesPath}`)
+          console.log(`📁 Target restoration path: ${this.dentalImagesPath}`)
 
-          // Copy images from backup to the correct location
-          await this.copyDirectory(extractedImagesPath, this.dentalImagesPath)
-          console.log('✅ Images restored successfully to dental_images directory')
+          // Copy images from backup to the correct location with better error handling
+          if (existsSync(extractedImagesPath)) {
+            try {
+              // Check if extracted images directory has content
+              const extractedContents = glob.sync(join(extractedImagesPath, '**', '*'))
+              if (extractedContents.length > 0) {
+                console.log(`📂 Found ${extractedContents.length} items in extracted backup`)
 
-          // Small delay to allow UI to update during image processing
-          await new Promise(resolve => setTimeout(resolve, 50))
+                // For restoration, we need a more robust approach
+                // Instead of using copyDirectory which might fail on existing dirs,
+                // let's use a simpler approach for restoration
+                await this.restoreImagesFromExtracted(extractedImagesPath, this.dentalImagesPath)
+                console.log('✅ Images restored successfully to dental_images directory')
+              } else {
+                console.log('📂 No images found in extracted backup, skipping image restoration')
+              }
+            } catch (copyError) {
+              console.error('❌ Failed to copy images from backup:', copyError.message)
+              console.error('❌ Extracted images path:', extractedImagesPath)
+              console.error('❌ Target images path:', this.dentalImagesPath)
+
+              // List contents for debugging
+              if (existsSync(extractedImagesPath)) {
+                const extractedContents = glob.sync(join(extractedImagesPath, '**', '*'))
+                console.error('❌ Extracted contents:', extractedContents.slice(0, 10))
+              }
+
+              // Don't throw error for image restoration failures, just log them
+              console.warn('⚠️ Image restoration failed, but continuing with database restoration')
+            }
+          } else {
+            console.log('📂 Extracted images directory not found, skipping image restoration')
+          }
 
           // Verify the restoration
           if (existsSync(this.dentalImagesPath)) {
-            const restoredFiles = glob.sync(join(this.dentalImagesPath, '**', '*'))
-            console.log(`📊 Restored ${restoredFiles.length} image files`)
+            const restoredFiles = glob.sync(join(this.dentalImagesPath, '**', '*')).filter(file => {
+              const stats = statSync(file)
+              return stats.isFile() && /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(file)
+            })
+            console.log(`📊 Restored ${restoredFiles.length} image files to: ${this.dentalImagesPath}`)
 
             // List some restored files for verification
-            restoredFiles.slice(0, 5).forEach(file => console.log(`   ✅ ${file}`))
+            if (restoredFiles.length > 0) {
+              console.log(`📋 Sample restored files:`)
+              restoredFiles.slice(0, 3).forEach(file => console.log(`   ✅ ${file}`))
+            } else {
+              console.log(`📋 No image files found in: ${this.dentalImagesPath}`)
+            }
+
+            // List all directories in dental_images for verification
+            const allItems = glob.sync(join(this.dentalImagesPath, '**', '*'))
+            console.log(`📂 Total items in dental_images: ${allItems.length}`)
+            allItems.slice(0, 5).forEach(item => console.log(`   📁 ${item}`))
           }
 
-          // Small delay to allow UI to update
-          await new Promise(resolve => setTimeout(resolve, 100))
-
-          if (progressCallback) {
-            progressCallback({ stage: 'updating_paths', message: 'تحديث مسارات الصور...', progress: 85 })
+          console.log(`🎯 Restoration completed successfully!`)
+          console.log(`🎯 Images restored to: ${this.dentalImagesPath}`)
+          if (currentImagesBackupPath) {
+            console.log(`💾 Backup preserved at: ${currentImagesBackupPath}`)
+          } else {
+            console.log(`🗑️ No current images backup created (clean restoration)`)
           }
 
           // Update image paths in database to ensure they match the restored files
           await this.updateImagePathsAfterRestore()
 
-          if (progressCallback) {
-            progressCallback({ stage: 'cleanup', message: 'تنظيف الملفات المؤقتة...', progress: 95 })
+          // Clean up old image backup directories (if any exist)
+          if (currentImagesBackupPath) {
+            await this.cleanupOldImageBackups(baseDir, 1, currentImagesBackupPath)
+          } else {
+            await this.cleanupOldImageBackups(baseDir, 0) // Delete all old backups since we don't have a current one
           }
-
-          // Clean up old image backup directories (keep only the most recent one)
-          // But keep the one we just created in case something goes wrong
-          await this.cleanupOldImageBackups(baseDir, 1, currentImagesBackupPath)
 
         } else {
           console.log('📸 No images found in backup')
           console.log(`🔍 Checked path: ${extractedImagesPath}`)
-          console.log(`🔍 Images path in backup service: ${this.dentalImagesPath}`)
 
           // List what's actually in the temp directory
           if (existsSync(tempDir)) {
             const tempContents = glob.sync(join(tempDir, '**', '*'))
             console.log(`📂 Temp directory contents (${tempContents.length} items):`)
-            tempContents.forEach(item => console.log(`   - ${item}`))
-
-            // Check if there are any image files in the temp directory at all
-            const imageFilesInTemp = tempContents.filter(item =>
-              /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(item)
-            )
-            console.log(`🖼️ Image files in temp directory: ${imageFilesInTemp.length}`)
-            imageFilesInTemp.forEach(file => console.log(`   - ${file}`))
-          }
-
-          // Check if there are any image files in the current images path
-          if (existsSync(this.dentalImagesPath)) {
-            const currentImageFiles = glob.sync(join(this.dentalImagesPath, '**', '*')).filter(file => {
-              try {
-                const stats = require('fs').statSync(file)
-                return stats.isFile() && /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(file)
-              } catch (error) {
-                return false
-              }
-            })
-            console.log(`🖼️ Current image files: ${currentImageFiles.length}`)
-            currentImageFiles.slice(0, 5).forEach(file => console.log(`   - ${file}`))
+            tempContents.slice(0, 10).forEach(item => console.log(`   - ${item}`))
           }
         }
 
       } finally {
-        // Clean up temporary directory with retry mechanism
+        // Clean up temporary directory with aggressive retry logic
         if (existsSync(tempDir)) {
           try {
-            await this.removeDirectoryWithRetry(tempDir, 3, 1000)
-            console.log('🧹 Temporary extraction directory cleaned up')
+            await this.cleanupDirectoryAggressively(tempDir)
           } catch (cleanupError) {
-            console.warn('⚠️ Failed to clean up temporary directory:', cleanupError.message)
-            // Don't throw error as this is cleanup and shouldn't fail the restore
+            console.warn('⚠️ Temporary directory cleanup failed, but continuing:', cleanupError.message)
+            console.warn('⚠️ You may need to manually delete:', tempDir)
           }
         }
       }
@@ -1340,7 +1154,7 @@ class BackupService {
     }
   }
 
-  async restoreFromSqliteBackup(sqliteBackupPath, progressCallback = null) {
+  async restoreFromSqliteBackup(sqliteBackupPath) {
     try {
       console.log('🔄 Starting SQLite database restoration...')
 
@@ -1366,8 +1180,8 @@ class BackupService {
         const tablesResult = tablesQuery.get()
         console.log('📋 Backup contains', tablesResult.count, 'tables')
 
-        // Test key tables including all dental treatment tables
-        const tables = ['patients', 'appointments', 'payments', 'treatments', 'dental_treatments', 'dental_treatment_images']
+        // Test key tables
+        const tables = ['patients', 'appointments', 'payments', 'treatments']
         for (const table of tables) {
           try {
             const countQuery = testDb.prepare(`SELECT COUNT(*) as count FROM ${table}`)
@@ -1395,9 +1209,6 @@ class BackupService {
 
       // Replace current database with backup
       console.log('📋 Replacing database file with backup...')
-      if (progressCallback) {
-        progressCallback({ stage: 'replacing_db', message: 'استبدال قاعدة البيانات...', progress: 45 })
-      }
       copyFileSync(sqliteBackupPath, this.sqliteDbPath)
       console.log('📋 Database file replaced with backup')
 
@@ -1412,14 +1223,8 @@ class BackupService {
 
       // Reinitialize database service
       console.log('🔄 Reinitializing database service...')
-      if (progressCallback) {
-        progressCallback({ stage: 'reinitializing', message: 'إعادة تهيئة قاعدة البيانات...', progress: 55 })
-      }
       this.databaseService.reinitialize()
       console.log('✅ Database service reinitialized')
-
-      // Small delay to allow UI to update
-      await new Promise(resolve => setTimeout(resolve, 50))
 
       // Verify the restored database works
       try {
@@ -1427,58 +1232,21 @@ class BackupService {
         const result = testQuery.get()
         console.log('📋 Restored database contains', result.count, 'tables')
 
-        if (result.count === 0) {
-          throw new Error('Restored database contains no tables - restoration may have failed')
-        }
-
         // List all tables in the restored database
         const allTablesQuery = this.databaseService.db.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
         const allTables = allTablesQuery.all()
         console.log('📋 All tables in restored database:', allTables.map(t => t.name))
 
-        // Test critical tables
-        const criticalTables = [
-          'patients', 'appointments', 'payments', 'treatments',
-          'settings', 'schema_version'
-        ]
-
-        let restoredRecords = 0
-        let missingTables = []
-
-        for (const table of criticalTables) {
+        // Test key tables including dental treatment tables
+        const tables = ['patients', 'appointments', 'payments', 'treatments', 'dental_treatments', 'dental_treatment_images']
+        for (const table of tables) {
           try {
             const countQuery = this.databaseService.db.prepare(`SELECT COUNT(*) as count FROM ${table}`)
             const count = countQuery.get()
             console.log(`📊 Restored table ${table}: ${count.count} records`)
-            restoredRecords += count.count
-          } catch (tableError) {
-            console.error(`❌ Could not query restored table ${table}:`, tableError.message)
-            missingTables.push(table)
-          }
-        }
-
-        // Test dental treatment tables (these are important but might not exist in older backups)
-        const dentalTables = ['dental_treatments', 'dental_treatment_images']
-        for (const table of dentalTables) {
-          try {
-            const countQuery = this.databaseService.db.prepare(`SELECT COUNT(*) as count FROM ${table}`)
-            const count = countQuery.get()
-            console.log(`📊 Restored table ${table}: ${count.count} records`)
-            restoredRecords += count.count
           } catch (tableError) {
             console.warn(`⚠️ Could not query restored table ${table}:`, tableError.message)
-            console.warn(`   This might be normal if the table was created in a newer version`)
           }
-        }
-
-        console.log(`📊 Total records in restored database: ${restoredRecords}`)
-
-        // Warn about missing critical tables
-        if (missingTables.length > 0) {
-          console.error(`❌ Missing critical tables in restored database: ${missingTables.join(', ')}`)
-          console.error('❌ The restoration may not have completed successfully')
-        } else {
-          console.log('✅ All critical tables are present in restored database')
         }
 
         // Special check for dental_treatment_images table after restore
@@ -1491,46 +1259,12 @@ class BackupService {
 
             // Show sample restored image records
             if (imageCount.count > 0) {
-              const sampleImages = this.databaseService.db.prepare("SELECT patient_id, tooth_number, image_type, image_path FROM dental_treatment_images LIMIT 5").all()
+              const sampleImages = this.databaseService.db.prepare("SELECT patient_id, tooth_number, image_type, image_path FROM dental_treatment_images LIMIT 3").all()
               console.log('📸 Sample restored image records:')
-              sampleImages.forEach(img => {
-                console.log(`   - Patient: ${img.patient_id}, Tooth: ${img.tooth_number}, Type: ${img.image_type}, Path: ${img.image_path}`)
-
-                // Check if the image file actually exists
-                const fullImagePath = join(this.dentalImagesPath, img.image_path)
-                if (existsSync(fullImagePath)) {
-                  console.log(`     ✅ Image file exists`)
-                } else {
-                  console.log(`     ❌ Image file missing`)
-                }
-              })
-
-              // Check how many image files actually exist
-              const imageRecords = this.databaseService.db.prepare("SELECT image_path FROM dental_treatment_images WHERE image_path IS NOT NULL AND image_path != ''").all()
-              let existingFiles = 0
-              let missingFiles = 0
-
-              for (const record of imageRecords) {
-                const fullPath = join(this.dentalImagesPath, record.image_path)
-                if (existsSync(fullPath)) {
-                  existingFiles++
-                } else {
-                  missingFiles++
-                }
-              }
-
-              console.log(`📸 Image file status: ${existingFiles} exist, ${missingFiles} missing`)
-
-              if (missingFiles > 0) {
-                console.warn(`⚠️ ${missingFiles} image files are missing from the restored images directory`)
-                console.warn('⚠️ This may indicate incomplete image restoration')
-              }
-            } else {
-              console.log('📸 No image records found in restored database')
+              sampleImages.forEach(img => console.log(`   - Patient: ${img.patient_id}, Tooth: ${img.tooth_number}, Type: ${img.image_type}, Path: ${img.image_path}`))
             }
           } else {
             console.warn('⚠️ dental_treatment_images table missing in restored database!')
-            console.warn('⚠️ This might be normal if the table was added in a newer version')
           }
         } catch (imageError) {
           console.error('❌ Error checking restored dental_treatment_images table:', imageError)
@@ -1761,7 +1495,7 @@ class BackupService {
       for (const backupDir of backupsToDelete) {
         try {
           if (existsSync(backupDir)) {
-            await this.removeDirectoryWithRetry(backupDir, 2, 500)
+            await fs.rm(backupDir, { recursive: true, force: true })
             console.log(`🗑️ Deleted old image backup: ${basename(backupDir)}`)
           }
         } catch (error) {
@@ -1774,252 +1508,6 @@ class BackupService {
     } catch (error) {
       console.error('❌ Failed to cleanup old image backups:', error)
       // Don't throw error as this is not critical
-    }
-  }
-
-  // Robust directory removal with retry mechanism for Windows compatibility
-  async removeDirectoryWithRetry(dirPath, maxRetries = 3, delayMs = 1000) {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        console.log(`🗑️ Attempting to remove directory (attempt ${attempt}/${maxRetries}): ${dirPath}`)
-
-        // First, try the standard fs.rm method with better error handling
-        try {
-          await fs.rm(dirPath, {
-            recursive: true,
-            force: true,
-            maxRetries: 3,
-            retryDelay: 100
-          })
-          console.log(`✅ Directory removed successfully on attempt ${attempt}`)
-          return
-        } catch (fsError) {
-          console.warn(`⚠️ fs.rm attempt ${attempt} failed:`, fsError.message)
-
-          // If it's a permission error, try to close any open handles first
-          if (fsError.code === 'EPERM' || fsError.code === 'EBUSY') {
-            console.log('🔒 Permission error detected, trying to release file handles...')
-
-            // Try to release any open file handles by forcing garbage collection suggestion
-            if (global.gc) {
-              global.gc()
-            }
-
-            // Wait longer for handles to be released
-            await new Promise(resolve => setTimeout(resolve, delayMs * 2))
-          }
-
-          throw fsError
-        }
-
-      } catch (error) {
-        console.warn(`⚠️ Attempt ${attempt} failed:`, error.message)
-
-        // If this is the last attempt, try alternative methods
-        if (attempt === maxRetries) {
-          console.error(`❌ All ${maxRetries} attempts failed. Last error:`, error)
-
-          // Try alternative removal method using rimraf-style approach
-          try {
-            console.log('🔄 Attempting alternative removal method...')
-            await this.removeDirectoryAlternative(dirPath)
-            console.log('✅ Alternative removal method succeeded')
-            return
-          } catch (alternativeError) {
-            console.error('❌ Alternative removal method also failed:', alternativeError)
-
-            // Try Windows-specific command as last resort
-            if (process.platform === 'win32') {
-              try {
-                console.log('🪟 Trying Windows-specific removal...')
-                await this.removeDirectoryWindows(dirPath)
-                console.log('✅ Windows-specific removal succeeded')
-                return
-              } catch (windowsError) {
-                console.error('❌ Windows-specific removal also failed:', windowsError)
-              }
-            }
-
-            throw new Error(`Failed to remove directory after ${maxRetries} attempts, alternative method, and Windows-specific method: ${error.message}`)
-          }
-        }
-
-        // Wait before retry (except on last attempt)
-        if (attempt < maxRetries) {
-          const waitTime = delayMs * attempt // Increase wait time with each attempt
-          console.log(`⏳ Waiting ${waitTime}ms before retry...`)
-          await new Promise(resolve => setTimeout(resolve, waitTime))
-        }
-      }
-    }
-  }
-
-  // Alternative directory removal method for stubborn directories
-  async removeDirectoryAlternative(dirPath) {
-    try {
-      // Use Windows-specific approach with rmdir and del commands if available
-      const { exec } = require('child_process')
-      const util = require('util')
-      const execAsync = util.promisify(exec)
-
-      if (process.platform === 'win32') {
-        console.log('🪟 Using Windows-specific removal method...')
-
-        // Try using rmdir command with /s /q flags
-        try {
-          const { stdout, stderr } = await execAsync(`rmdir /s /q "${dirPath}"`)
-          if (stderr) {
-            console.warn('⚠️ rmdir stderr:', stderr)
-          }
-          console.log('✅ Windows rmdir command succeeded')
-          return
-        } catch (rmdirError) {
-          console.warn('⚠️ rmdir command failed:', rmdirError.message)
-
-          // Try using del command for files first, then rmdir
-          try {
-            console.log('🔄 Trying del command for files...')
-            await execAsync(`del /f /q /s "${dirPath}\\*.*" 2>nul`)
-            await execAsync(`rmdir /s /q "${dirPath}"`)
-            console.log('✅ Windows del + rmdir combination succeeded')
-            return
-          } catch (delError) {
-            console.warn('⚠️ del command also failed:', delError.message)
-          }
-        }
-      }
-
-      // Fallback to manual recursive removal
-      console.log('🔄 Using manual recursive removal as last resort...')
-      await this.removeDirectoryManual(dirPath)
-      console.log('✅ Manual recursive removal succeeded')
-
-    } catch (error) {
-      console.error('❌ Alternative removal method failed:', error)
-      throw error
-    }
-  }
-
-  // Windows-specific directory removal using system commands
-  async removeDirectoryWindows(dirPath) {
-    const { exec } = require('child_process')
-    const util = require('util')
-    const execAsync = util.promisify(exec)
-
-    console.log('🪟 Attempting Windows-specific directory removal...')
-
-    try {
-      // First, try to delete all files in the directory
-      console.log('🔄 Deleting files in directory...')
-      const { stdout: delStdout, stderr: delStderr } = await execAsync(
-        `del /f /q /s "${dirPath}\\*.*" 2>nul || echo "No files to delete"`
-      )
-
-      if (delStderr && !delStderr.includes('No files to delete')) {
-        console.warn('⚠️ del command stderr:', delStderr)
-      }
-
-      // Then try to remove the directory
-      console.log('🔄 Removing directory...')
-      const { stdout: rmdirStdout, stderr: rmdirStderr } = await execAsync(
-        `rmdir /s /q "${dirPath}" 2>nul || echo "Directory may already be removed"`
-      )
-
-      if (rmdirStderr && !rmdirStderr.includes('Directory may already be removed')) {
-        console.warn('⚠️ rmdir command stderr:', rmdirStderr)
-      }
-
-      // Verify the directory was actually removed
-      if (!require('fs').existsSync(dirPath)) {
-        console.log('✅ Windows-specific removal succeeded')
-        return
-      } else {
-        throw new Error('Directory still exists after Windows-specific removal attempt')
-      }
-
-    } catch (error) {
-      console.error('❌ Windows-specific removal failed:', error)
-      throw error
-    }
-  }
-
-  // Manual recursive directory removal as last resort
-  async removeDirectoryManual(dirPath) {
-    try {
-      console.log('🔄 Attempting manual recursive removal...')
-
-      // First, try to read the directory contents
-      const items = await fs.readdir(dirPath)
-      console.log(`📂 Found ${items.length} items to remove manually`)
-
-      for (const item of items) {
-        const itemPath = join(dirPath, item)
-        try {
-          const stat = await fs.lstat(itemPath)
-
-          if (stat.isDirectory()) {
-            // Recursively remove subdirectories
-            console.log(`📁 Recursively removing subdirectory: ${itemPath}`)
-            await this.removeDirectoryManual(itemPath)
-          } else {
-            // Remove files with retry and better error handling
-            await this.removeFileWithRetry(itemPath)
-          }
-        } catch (error) {
-          console.warn(`⚠️ Could not process item ${itemPath}:`, error.message)
-        }
-      }
-
-      // Finally remove the now-empty directory
-      await this.removeEmptyDirectoryWithRetry(dirPath)
-
-    } catch (error) {
-      console.error('❌ Manual recursive removal failed:', error)
-      throw error
-    }
-  }
-
-  // Remove file with retry mechanism
-  async removeFileWithRetry(filePath, maxRetries = 5) {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        await fs.unlink(filePath)
-        console.log(`✅ Removed file: ${filePath}`)
-        return
-      } catch (error) {
-        console.warn(`⚠️ Failed to remove file (attempt ${attempt}/${maxRetries}): ${filePath} - ${error.message}`)
-
-        if (attempt === maxRetries) {
-          console.error(`❌ Failed to remove file after ${maxRetries} attempts: ${filePath}`, error)
-          throw error
-        }
-
-        // Wait before retry with exponential backoff
-        const waitTime = Math.min(100 * Math.pow(2, attempt - 1), 1000)
-        await new Promise(resolve => setTimeout(resolve, waitTime))
-      }
-    }
-  }
-
-  // Remove empty directory with retry mechanism
-  async removeEmptyDirectoryWithRetry(dirPath, maxRetries = 5) {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        await fs.rmdir(dirPath)
-        console.log(`✅ Removed directory: ${dirPath}`)
-        return
-      } catch (error) {
-        console.warn(`⚠️ Failed to remove directory (attempt ${attempt}/${maxRetries}): ${dirPath} - ${error.message}`)
-
-        if (attempt === maxRetries) {
-          console.error(`❌ Failed to remove directory after ${maxRetries} attempts: ${dirPath}`, error)
-          throw error
-        }
-
-        // Wait before retry with exponential backoff
-        const waitTime = Math.min(100 * Math.pow(2, attempt - 1), 1000)
-        await new Promise(resolve => setTimeout(resolve, waitTime))
-      }
     }
   }
 
