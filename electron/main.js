@@ -4748,12 +4748,13 @@ ipcMain.handle('files:getDentalImage', async (_, imagePath) => {
         // Development: use project directory
         baseDir = process.cwd()
       } else {
-        // Production: use app directory
-        baseDir = path.dirname(process.execPath)
+        // Production: use userData directory for consistency
+        baseDir = app.getPath('userData')
       }
 
       const possiblePaths = [
         path.join(baseDir, imagePath), // Primary directory
+        path.join(process.cwd(), imagePath), // Project directory (fallback)
         path.join(app.getPath('userData'), imagePath), // UserData (fallback)
         path.join(__dirname, '..', 'public', 'upload', imagePath), // Development fallback
         path.join(__dirname, '..', imagePath)
@@ -4869,8 +4870,8 @@ ipcMain.handle('files:openImagePreview', async (_, imagePath) => {
           // Development: use project directory
           baseDir = process.cwd()
         } else {
-          // Production: use app directory
-          baseDir = path.dirname(process.execPath)
+          // Production: use userData directory for consistency
+          baseDir = app.getPath('userData')
         }
 
         const searchPaths = [
@@ -4987,16 +4988,23 @@ ipcMain.handle('files:uploadDentalImage', async (_, fileBuffer, fileName, patien
       // Development: use project directory
       baseDir = process.cwd()
     } else {
-      // Production: use app directory
-      baseDir = path.dirname(process.execPath)
+      // Production: use userData directory for better permissions and consistency
+      baseDir = app.getPath('userData')
     }
 
     const uploadDir = path.join(baseDir, 'dental_images', patientId, toothNumber.toString(), imageType || 'other')
     console.log('Upload directory:', uploadDir)
+    console.log('Base directory:', baseDir)
+    console.log('Is development:', isDevelopment)
 
     if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true })
-      console.log('Created upload directory:', uploadDir)
+      try {
+        fs.mkdirSync(uploadDir, { recursive: true })
+        console.log('Created upload directory:', uploadDir)
+      } catch (mkdirError) {
+        console.error('Failed to create upload directory:', mkdirError.message)
+        throw new Error(`Failed to create upload directory: ${mkdirError.message}`)
+      }
     }
 
     // Generate meaningful filename with original name and timestamp
@@ -5073,16 +5081,23 @@ ipcMain.handle('files:saveDentalImage', async (_, base64Data, fileName, patientI
       // Development: use project directory
       baseDir = process.cwd()
     } else {
-      // Production: use app directory
-      baseDir = path.dirname(process.execPath)
+      // Production: use userData directory for better permissions and consistency
+      baseDir = app.getPath('userData')
     }
 
     const uploadDir = path.join(baseDir, 'dental_images', patientId, toothNumber.toString(), imageType || 'other')
     console.log('Upload directory:', uploadDir)
+    console.log('Base directory:', baseDir)
+    console.log('Is development:', isDevelopment)
 
     if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true })
-      console.log('Created upload directory:', uploadDir)
+      try {
+        fs.mkdirSync(uploadDir, { recursive: true })
+        console.log('Created upload directory:', uploadDir)
+      } catch (mkdirError) {
+        console.error('Failed to create upload directory:', mkdirError.message)
+        throw new Error(`Failed to create upload directory: ${mkdirError.message}`)
+      }
     }
 
     // Generate meaningful filename with original name and timestamp
