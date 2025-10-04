@@ -42,20 +42,9 @@ class BackupService {
     this.backupDir = join(dbDir, 'backups')
     this.backupRegistryPath = join(dbDir, 'backup_registry.json')
 
-    // Set dental images path to project directory instead of database directory
-    // Check if we're in development mode to determine the correct path
-    const isDevelopment = process.env.NODE_ENV === 'development' ||
-                         process.execPath.includes('node') ||
-                         process.execPath.includes('electron') ||
-                         process.cwd().includes('dental-clinic')
-
-    if (isDevelopment) {
-      // In development, use project directory
-      this.dentalImagesPath = join(process.cwd(), 'dental_images')
-    } else {
-      // In production, use directory relative to executable
-      this.dentalImagesPath = join(require('path').dirname(process.execPath), 'dental_images')
-    }
+    // Set dental images path to userData directory to match where the app looks for images
+    // This ensures consistency between backup/restore and image loading
+    this.dentalImagesPath = join(app.getPath('userData'), 'dental_images')
 
     console.log('📍 Backup service paths:')
     console.log('   Database:', this.sqliteDbPath)
@@ -64,6 +53,8 @@ class BackupService {
 
     this.ensureBackupDirectory()
     this.ensureBackupRegistry()
+    this.ensureDentalImagesDirectory()
+    this.ensureImagesInBothLocations()
   }
 
   ensureBackupDirectory() {
@@ -75,6 +66,79 @@ class BackupService {
   ensureBackupRegistry() {
     if (!existsSync(this.backupRegistryPath)) {
       writeFileSync(this.backupRegistryPath, JSON.stringify([], null, 2), 'utf-8')
+    }
+  }
+
+  ensureDentalImagesDirectory() {
+    // Ensure userData directory exists
+    if (!existsSync(this.dentalImagesPath)) {
+      mkdirSync(this.dentalImagesPath, { recursive: true })
+      console.log('📁 Created userData dental images directory:', this.dentalImagesPath)
+    }
+
+    // Also ensure project directory exists (for app to find images)
+    const projectImagesPath = join(process.cwd(), 'dental_images')
+    if (!existsSync(projectImagesPath)) {
+      mkdirSync(projectImagesPath, { recursive: true })
+      console.log('📁 Created project dental images directory:', projectImagesPath)
+    }
+
+    // Sync images between both directories
+    this.syncImageDirectories(this.dentalImagesPath, projectImagesPath)
+  }
+
+  // Sync images between two directories
+  syncImageDirectories(sourceDir, destDir) {
+    try {
+      if (!existsSync(sourceDir)) return
+
+      const imageFiles = glob.sync(join(sourceDir, '**', '*')).filter(file => {
+        const stats = require('fs').statSync(file)
+        return stats.isFile()
+      })
+
+      if (imageFiles.length > 0) {
+        console.log(`🔄 Syncing ${imageFiles.length} images from ${sourceDir} to ${destDir}`)
+        
+        for (const sourceFile of imageFiles) {
+          const relativePath = path.relative(sourceDir, sourceFile)
+          const destFile = join(destDir, relativePath)
+          const destDirPath = dirname(destFile)
+          
+          if (!existsSync(destDirPath)) {
+            mkdirSync(destDirPath, { recursive: true })
+          }
+          
+          if (!existsSync(destFile)) {
+            copyFileSync(sourceFile, destFile)
+            console.log(`✅ Synced: ${relativePath}`)
+          }
+        }
+        
+        console.log(`✅ Sync completed: ${imageFiles.length} images synced`)
+      }
+    } catch (syncError) {
+      console.warn('⚠️ Failed to sync images between directories:', syncError.message)
+    }
+  }
+
+  // Ensure images are available in both project and userData directories
+  ensureImagesInBothLocations() {
+    const projectImagesPath = join(process.cwd(), 'dental_images')
+    const userDataImagesPath = join(app.getPath('userData'), 'dental_images')
+
+    console.log('🔄 Ensuring images are available in both locations...')
+    console.log(`📁 Project: ${projectImagesPath}`)
+    console.log(`📁 UserData: ${userDataImagesPath}`)
+
+    // Sync from project to userData
+    if (existsSync(projectImagesPath)) {
+      this.syncImageDirectories(projectImagesPath, userDataImagesPath)
+    }
+
+    // Sync from userData to project
+    if (existsSync(userDataImagesPath)) {
+      this.syncImageDirectories(userDataImagesPath, projectImagesPath)
     }
   }
 
@@ -411,6 +475,8 @@ class BackupService {
   // Specialized method for restoring images from extracted backup
   async restoreImagesFromExtracted(source, destination) {
     console.log(`📸 Starting image restoration from ${source} to ${destination}`)
+    console.log(`📸 Source exists: ${existsSync(source)}`)
+    console.log(`📸 Destination exists: ${existsSync(destination)}`)
 
     // Get all image files from source
     const imageFiles = glob.sync(join(source, '**', '*')).filter(filePath => {
@@ -419,6 +485,18 @@ class BackupService {
     })
 
     console.log(`📸 Found ${imageFiles.length} image files to restore`)
+    
+    if (imageFiles.length === 0) {
+      console.log(`⚠️ No image files found in source directory: ${source}`)
+      // List all files to see what's there
+      const allFiles = glob.sync(join(source, '**', '*'))
+      console.log(`📂 All files in source (${allFiles.length}):`)
+      allFiles.slice(0, 10).forEach(file => console.log(`   - ${file}`))
+      return
+    }
+
+    let successCount = 0
+    let errorCount = 0
 
     for (const sourceFile of imageFiles) {
       try {
@@ -436,14 +514,16 @@ class BackupService {
         // Copy the file
         await fs.copyFile(sourceFile, destFile)
         console.log(`✅ Restored image: ${relativePath}`)
+        successCount++
 
       } catch (fileError) {
         console.warn(`⚠️ Failed to restore image ${sourceFile}:`, fileError.message)
+        errorCount++
         // Continue with other files
       }
     }
 
-    console.log(`📸 Image restoration completed`)
+    console.log(`📸 Image restoration completed: ${successCount} successful, ${errorCount} failed`)
   }
 
   // Aggressive directory cleanup method for problematic directories
@@ -829,9 +909,18 @@ class BackupService {
         }
 
         // Add images directory if it exists
+        // First sync images from project directory to userData directory
+        const projectImagesPath = join(process.cwd(), 'dental_images')
+        if (existsSync(projectImagesPath)) {
+          console.log('🔄 Syncing images from project to userData before backup...')
+          this.syncImageDirectories(projectImagesPath, this.dentalImagesPath)
+        }
+
         if (existsSync(this.dentalImagesPath)) {
           console.log('📸 Adding images to backup...')
           console.log(`📸 Images path: ${this.dentalImagesPath}`)
+          console.log(`📸 UserData path: ${app.getPath('userData')}`)
+          console.log(`📸 Process cwd: ${process.cwd()}`)
 
           // Count images before adding to backup
           const imageFiles = glob.sync(join(this.dentalImagesPath, '**', '*')).filter(file => {
@@ -840,9 +929,19 @@ class BackupService {
           })
           console.log(`📸 Found ${imageFiles.length} image files to backup`)
 
+          // List some sample image files for debugging
+          if (imageFiles.length > 0) {
+            console.log(`📸 Sample image files to backup:`)
+            imageFiles.slice(0, 5).forEach(file => console.log(`   📸 ${file}`))
+          }
+
           archive.directory(this.dentalImagesPath, 'dental_images')
+          console.log(`📸 Added dental_images directory to ZIP archive`)
         } else {
           console.log('📸 No images directory found, skipping...')
+          console.log(`📸 Checked path: ${this.dentalImagesPath}`)
+          console.log(`📸 UserData path: ${app.getPath('userData')}`)
+          console.log(`📸 Process cwd: ${process.cwd()}`)
         }
 
         // Finalize the archive (i.e., we are done appending files but streams have to finish yet)
@@ -969,6 +1068,15 @@ class BackupService {
   async restoreFromZipBackup(zipBackupPath) {
     try {
       console.log('📦 Extracting ZIP backup...')
+      console.log(`📦 ZIP backup path: ${zipBackupPath}`)
+
+      // Check ZIP file size and existence
+      if (existsSync(zipBackupPath)) {
+        const zipStats = statSync(zipBackupPath)
+        console.log(`📦 ZIP file size: ${zipStats.size} bytes`)
+      } else {
+        throw new Error(`ZIP backup file not found: ${zipBackupPath}`)
+      }
 
       // Determine base directory
       const isDevelopment = process.env.NODE_ENV === 'development' ||
@@ -989,8 +1097,29 @@ class BackupService {
 
       try {
         // Extract ZIP file
+        console.log(`📦 Extracting to: ${tempDir}`)
         await extract(zipBackupPath, { dir: tempDir })
         console.log('✅ ZIP backup extracted successfully')
+
+        // Verify extraction worked
+        const extractedItems = glob.sync(join(tempDir, '**', '*'))
+        console.log(`📦 Extracted ${extractedItems.length} items total`)
+
+        // Debug: List all extracted contents
+        const allExtractedContents = glob.sync(join(tempDir, '**', '*'))
+        console.log(`🔍 All extracted contents (${allExtractedContents.length} items):`)
+        allExtractedContents.forEach(item => console.log(`   📁 ${item}`))
+
+        // Check specifically for dental_images directory
+        const dentalImagesInTemp = join(tempDir, 'dental_images')
+        console.log(`🔍 Checking for dental_images in temp: ${dentalImagesInTemp}`)
+        console.log(`🔍 dental_images exists: ${existsSync(dentalImagesInTemp)}`)
+        
+        if (existsSync(dentalImagesInTemp)) {
+          const dentalContents = glob.sync(join(dentalImagesInTemp, '**', '*'))
+          console.log(`🔍 dental_images contents (${dentalContents.length} items):`)
+          dentalContents.slice(0, 10).forEach(item => console.log(`   📸 ${item}`))
+        }
 
         // Check if database file exists in extracted content
         const extractedDbPath = join(tempDir, 'dental_clinic.db')
@@ -1006,17 +1135,47 @@ class BackupService {
         const extractedImagesPath = join(tempDir, 'dental_images')
         console.log(`🔍 Looking for extracted images at: ${extractedImagesPath}`)
         console.log(`🔍 Target dental images path: ${this.dentalImagesPath}`)
+        console.log(`🔍 UserData path: ${app.getPath('userData')}`)
+        console.log(`🔍 Process cwd: ${process.cwd()}`)
+
+        // Declare currentImagesBackupPath at function scope
+        let currentImagesBackupPath = null
 
         if (existsSync(extractedImagesPath)) {
           console.log('📸 Restoring images from backup...')
+          console.log(`📸 Extracted images path exists: ${extractedImagesPath}`)
 
           // List what's in the extracted images directory
           const extractedContents = glob.sync(join(extractedImagesPath, '**', '*'))
           console.log(`📂 Found ${extractedContents.length} items in extracted backup:`)
-          extractedContents.slice(0, 5).forEach(item => console.log(`   - ${item}`))
+          extractedContents.slice(0, 10).forEach(item => console.log(`   - ${item}`))
+
+          // Also check if it's a directory and list its direct contents
+          const stats = require('fs').statSync(extractedImagesPath)
+          console.log(`📂 Extracted images path is a ${stats.isDirectory() ? 'directory' : 'file'}`)
+          
+          if (stats.isDirectory()) {
+            const directContents = require('fs').readdirSync(extractedImagesPath)
+            console.log(`📂 Direct contents of extracted images directory (${directContents.length} items):`)
+            directContents.forEach(item => console.log(`   📁 ${item}`))
+          }
+
+          // Check for image files specifically
+          const imageFiles = glob.sync(join(extractedImagesPath, '**', '*')).filter(file => {
+            const stats = require('fs').statSync(file)
+            return stats.isFile() && /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(file)
+          })
+          console.log(`📸 Found ${imageFiles.length} image files in extracted backup:`)
+          imageFiles.slice(0, 5).forEach(file => console.log(`   📸 ${file}`))
 
           // Option to skip current images backup (for clean restoration)
           const skipCurrentBackup = true // Set to true to skip backing up current images
+          
+          // Check if the backup actually contains images
+          if (extractedContents.length === 0) {
+            console.log('⚠️ No images found in the backup - the original backup may not have contained images')
+            console.log('ℹ️ This is normal if the backup was created when no images were present')
+          }
 
           if (!skipCurrentBackup && existsSync(this.dentalImagesPath)) {
             currentImagesBackupPath = join(baseDir, `current_images_backup_${Date.now()}`)
@@ -1058,11 +1217,50 @@ class BackupService {
               if (extractedContents.length > 0) {
                 console.log(`📂 Found ${extractedContents.length} items in extracted backup`)
 
-                // For restoration, we need a more robust approach
-                // Instead of using copyDirectory which might fail on existing dirs,
-                // let's use a simpler approach for restoration
-                await this.restoreImagesFromExtracted(extractedImagesPath, this.dentalImagesPath)
-                console.log('✅ Images restored successfully to dental_images directory')
+                // Restore to userData directory (for app consistency)
+                try {
+                  await this.restoreImagesFromExtracted(extractedImagesPath, this.dentalImagesPath)
+                  console.log('✅ Images restored successfully to userData dental_images directory')
+                } catch (userDataError) {
+                  console.error('❌ Failed to restore to userData directory:', userDataError.message)
+                }
+
+                // Also restore to project directory (for app to find them)
+                const projectImagesPath = join(process.cwd(), 'dental_images')
+                console.log(`📸 Also restoring to project directory: ${projectImagesPath}`)
+                
+                // Ensure project directory exists
+                if (!existsSync(projectImagesPath)) {
+                  mkdirSync(projectImagesPath, { recursive: true })
+                  console.log(`📁 Created project dental_images directory: ${projectImagesPath}`)
+                }
+
+                // Copy images to project directory as well
+                try {
+                  await this.restoreImagesFromExtracted(extractedImagesPath, projectImagesPath)
+                  console.log('✅ Images restored successfully to project dental_images directory')
+                } catch (projectError) {
+                  console.error('❌ Failed to restore to project directory:', projectError.message)
+                }
+
+                // Also restore to userData directory with the same structure
+                const userDataImagesPath = join(app.getPath('userData'), 'dental_images')
+                console.log(`📸 Also restoring to userData directory: ${userDataImagesPath}`)
+                
+                // Ensure userData directory exists
+                if (!existsSync(userDataImagesPath)) {
+                  mkdirSync(userDataImagesPath, { recursive: true })
+                  console.log(`📁 Created userData dental_images directory: ${userDataImagesPath}`)
+                }
+
+                // Copy images to userData directory as well
+                try {
+                  await this.restoreImagesFromExtracted(extractedImagesPath, userDataImagesPath)
+                  console.log('✅ Images restored successfully to userData dental_images directory')
+                } catch (userDataError) {
+                  console.error('❌ Failed to restore to userData directory:', userDataError.message)
+                }
+
               } else {
                 console.log('📂 No images found in extracted backup, skipping image restoration')
               }
@@ -1084,27 +1282,53 @@ class BackupService {
             console.log('📂 Extracted images directory not found, skipping image restoration')
           }
 
-          // Verify the restoration
+          // Verify the restoration in both locations
+          const projectImagesPath = join(process.cwd(), 'dental_images')
+          
+          // Check userData directory
           if (existsSync(this.dentalImagesPath)) {
             const restoredFiles = glob.sync(join(this.dentalImagesPath, '**', '*')).filter(file => {
               const stats = statSync(file)
               return stats.isFile() && /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(file)
             })
-            console.log(`📊 Restored ${restoredFiles.length} image files to: ${this.dentalImagesPath}`)
+            console.log(`📊 Restored ${restoredFiles.length} image files to userData: ${this.dentalImagesPath}`)
 
             // List some restored files for verification
             if (restoredFiles.length > 0) {
-              console.log(`📋 Sample restored files:`)
+              console.log(`📋 Sample restored files in userData:`)
               restoredFiles.slice(0, 3).forEach(file => console.log(`   ✅ ${file}`))
             } else {
-              console.log(`📋 No image files found in: ${this.dentalImagesPath}`)
+              console.log(`📋 No image files found in userData: ${this.dentalImagesPath}`)
+            }
+          }
+
+          // Check project directory
+          if (existsSync(projectImagesPath)) {
+            const projectFiles = glob.sync(join(projectImagesPath, '**', '*')).filter(file => {
+              const stats = statSync(file)
+              return stats.isFile() && /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(file)
+            })
+            console.log(`📊 Restored ${projectFiles.length} image files to project: ${projectImagesPath}`)
+
+            // List some restored files for verification
+            if (projectFiles.length > 0) {
+              console.log(`📋 Sample restored files in project:`)
+              projectFiles.slice(0, 3).forEach(file => console.log(`   ✅ ${file}`))
+            } else {
+              console.log(`📋 No image files found in project: ${projectImagesPath}`)
             }
 
-            // List all directories in dental_images for verification
-            const allItems = glob.sync(join(this.dentalImagesPath, '**', '*'))
-            console.log(`📂 Total items in dental_images: ${allItems.length}`)
+            // List all directories in project dental_images for verification
+            const allItems = glob.sync(join(projectImagesPath, '**', '*'))
+            console.log(`📂 Total items in project dental_images: ${allItems.length}`)
             allItems.slice(0, 5).forEach(item => console.log(`   📁 ${item}`))
           }
+
+          // Verify that the restored images are in the correct locations for the app to find them
+          console.log(`🔍 Verification: Images restored to both locations:`)
+          console.log(`   📁 userData: ${this.dentalImagesPath}`)
+          console.log(`   📁 project: ${projectImagesPath}`)
+          console.log(`   📁 App will find images in project directory`)
 
           console.log(`🎯 Restoration completed successfully!`)
           console.log(`🎯 Images restored to: ${this.dentalImagesPath}`)
@@ -1113,6 +1337,9 @@ class BackupService {
           } else {
             console.log(`🗑️ No current images backup created (clean restoration)`)
           }
+
+          // Ensure images are available in both locations for the app to find them
+          this.ensureImagesInBothLocations()
 
           // Update image paths in database to ensure they match the restored files
           await this.updateImagePathsAfterRestore()
@@ -1134,6 +1361,26 @@ class BackupService {
             console.log(`📂 Temp directory contents (${tempContents.length} items):`)
             tempContents.slice(0, 10).forEach(item => console.log(`   - ${item}`))
           }
+
+          // Check if there are images in other locations
+          const possibleImageDirs = [
+            join(tempDir, 'images'),
+            join(tempDir, 'dental_images'),
+            join(tempDir, 'photos'),
+            join(tempDir, 'pictures')
+          ]
+
+          for (const possibleDir of possibleImageDirs) {
+            if (existsSync(possibleDir)) {
+              console.log(`🔍 Found possible images directory: ${possibleDir}`)
+              const contents = glob.sync(join(possibleDir, '**', '*'))
+              console.log(`📂 Contents (${contents.length} items):`)
+              contents.slice(0, 5).forEach(item => console.log(`   - ${item}`))
+            }
+          }
+
+          // This is not necessarily an error - the backup might not contain images
+          console.log('ℹ️ No dental_images directory found in backup - this is normal if the original backup had no images')
         }
 
       } finally {
