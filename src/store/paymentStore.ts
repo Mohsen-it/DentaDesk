@@ -93,7 +93,17 @@ export const usePaymentStore = create<PaymentStore>()(
             payments: updatedPayments,
             selectedPayment: selectedPayment?.tooth_treatment_id === treatmentId ? null : selectedPayment
           })
-        }).calculateTotalRevenue()
+
+          // Recalculate all analytics immediately
+          get().calculateTotalRevenue()
+          get().calculatePendingAmount()
+          get().calculateTotalRemainingBalance()
+          get().calculatePartialPaymentsCount()
+          get().calculatePendingPaymentsCount()
+          get().calculateMonthlyRevenue()
+          get().calculatePaymentMethodStats()
+          get().filterPayments()
+        })
           get().calculatePendingAmount()
           get().calculateTotalRemainingBalance()
           get().calculatePartialPaymentsCount()

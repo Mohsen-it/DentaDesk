@@ -334,7 +334,6 @@ if (!gotTheLock) {
   try {
     console.log('🔍 DEBUG: About to require WhatsApp service...')
     const { initializeClient, getWhatsAppStatus, sendMessage, isClientReady } = require('./services/whatsapp')
-    console.log('✅ DEBUG: WhatsApp service required successfully')
     const cron = require('node-cron');
     console.log('✅ DEBUG: Node-cron required successfully')
 
@@ -351,10 +350,8 @@ if (!gotTheLock) {
     while (attempts < maxAttempts) {
       const status = getWhatsAppStatus()
       const isReady = isClientReady()
-      console.log(`🔍 DEBUG: WhatsApp status check ${attempts + 1}/${maxAttempts}: isReady=${isReady}, status=`, status)
 
       if (isReady) {
-        console.log('✅ DEBUG: WhatsApp client is ready, starting reminder scheduler')
         break
       }
 
@@ -367,7 +364,6 @@ if (!gotTheLock) {
     }
 
     if (attempts >= maxAttempts) {
-      console.warn('⚠️ DEBUG: WhatsApp client did not become ready within timeout period')
       console.log('📱 Reminder scheduler will start but WhatsApp may not be ready yet')
     }
 
