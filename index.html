@@ -42,10 +42,13 @@
             localStorage.setItem('dental-clinic-theme', shouldBeDark ? 'dark' : 'light');
           }
 
+          // Apply both dark class and data-theme attribute for consistency
           if (shouldBeDark) {
             document.documentElement.classList.add('dark');
+            document.documentElement.setAttribute('data-theme', 'dark');
           } else {
             document.documentElement.classList.remove('dark');
+            document.documentElement.setAttribute('data-theme', 'light');
           }
 
           console.log('✅ Theme initialized:', shouldBeDark ? 'dark' : 'light');

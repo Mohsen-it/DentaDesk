@@ -1369,6 +1369,25 @@ function EditTreatmentFormContent({ treatment, onSave, onCancel }: EditTreatment
   const [isLabDataLoaded, setIsLabDataLoaded] = useState(false)
   const [isDataLoaded, setIsDataLoaded] = useState(false) // متتبع لحالة تحميل البيانات
 
+  // Helper functions for number formatting with thousands separators
+  const formatNumberWithCommas = (value: string | number): string => {
+    const stringValue = typeof value === 'number' ? value.toString() : value
+    if (!stringValue) return ''
+    // Remove any existing commas
+    const cleanValue = stringValue.replace(/,/g, '')
+    // Check if it's a valid number
+    if (isNaN(Number(cleanValue))) return stringValue
+    // Split into integer and decimal parts
+    const parts = cleanValue.split('.')
+    // Format integer part with commas
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+    return parts.join('.')
+  }
+
+  const removeCommas = (value: string): string => {
+    return value.replace(/,/g, '')
+  }
+
   // دالة بسيطة للحصول على طلب المختبر المرتبط بالعلاج
   const getLabOrderForTreatment = async (treatmentId: string) => {
     await loadLabOrders() // تحميل أحدث البيانات

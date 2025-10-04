@@ -313,13 +313,15 @@ export const useSettingsStore = create<SettingsStore>()(
           requestAnimationFrame(() => {
             const domStartTime = performance.now()
 
-            // Apply dark mode to document
+            // Apply both dark class and data-theme attribute for consistency
             if (newDarkMode) {
               document.documentElement.classList.add('dark')
+              document.documentElement.setAttribute('data-theme', 'dark')
               localStorage.setItem('dental-clinic-theme', 'dark')
               logger.performance(`DOM class added (dark mode): ${(performance.now() - domStartTime).toFixed(2)}ms`)
             } else {
               document.documentElement.classList.remove('dark')
+              document.documentElement.setAttribute('data-theme', 'light')
               localStorage.setItem('dental-clinic-theme', 'light')
               logger.performance(`DOM class removed (light mode): ${(performance.now() - domStartTime).toFixed(2)}ms`)
             }
@@ -378,11 +380,13 @@ export const useSettingsStore = create<SettingsStore>()(
               settings: currentSettings
             })
 
-            // Apply to document
+            // Apply both dark class and data-theme attribute for consistency
             if (shouldBeDark) {
               document.documentElement.classList.add('dark')
+              document.documentElement.setAttribute('data-theme', 'dark')
             } else {
               document.documentElement.classList.remove('dark')
+              document.documentElement.setAttribute('data-theme', 'light')
             }
           }
 

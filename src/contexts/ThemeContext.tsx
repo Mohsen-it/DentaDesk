@@ -31,12 +31,19 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       try {
         const htmlElement = document.documentElement
         const currentTheme = htmlElement.getAttribute('data-theme')
+        const currentDarkClass = htmlElement.classList.contains('dark')
         const targetTheme = isDarkMode ? 'dark' : 'light'
 
         // Only apply theme if it actually changed
-        if (currentTheme !== targetTheme) {
-          // Use CSS custom properties for faster theme switching
+        if (currentTheme !== targetTheme || currentDarkClass !== isDarkMode) {
+          // Apply both data-theme attribute and dark class for consistency
           htmlElement.setAttribute('data-theme', targetTheme)
+          
+          if (isDarkMode) {
+            htmlElement.classList.add('dark')
+          } else {
+            htmlElement.classList.remove('dark')
+          }
 
           // Use CSS containment for better performance
           htmlElement.style.setProperty('contain', 'layout style paint')

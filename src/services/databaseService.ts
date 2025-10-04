@@ -3319,10 +3319,23 @@ export class DatabaseService {
         console.warn('⚠️ Data integrity issues found before backup:', integrityCheck.issues)
       }
 
+      // Remove existing backup file if it exists
+      if (require('fs').existsSync(backupPath)) {
+        try {
+          require('fs').unlinkSync(backupPath)
+          console.log('🗑️ Removed existing backup file before creating new one')
+        } catch (removeError) {
+          console.warn('⚠️ Could not remove existing backup file:', removeError)
+        }
+      }
+
       // Create backup using SQLite backup API
-      const backupDb = new Database(backupPath)
-      this.db.backup(backupDb)
-      backupDb.close()
+      const backupResult = this.db.backup(backupPath)
+      
+      // Handle both Promise and non-Promise return types
+      if (backupResult && typeof backupResult.then === 'function') {
+        await backupResult
+      }
 
       console.log('✅ Database backup created successfully:', backupPath)
       return {

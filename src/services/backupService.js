@@ -64,6 +64,49 @@ class BackupService {
 
     this.ensureBackupDirectory()
     this.ensureBackupRegistry()
+    this.checkBackupApiAvailability()
+  }
+
+  // Check if SQLite backup API is available
+  checkBackupApiAvailability() {
+    try {
+      if (this.databaseService && this.databaseService.db) {
+        // Check if backup method exists and is callable
+        this.backupApiAvailable = typeof this.databaseService.db.backup === 'function'
+        
+        if (this.backupApiAvailable) {
+          // Test the backup method to see what it returns
+          try {
+            const testResult = this.databaseService.db.backup('test_backup_check.db')
+            console.log('🔍 Backup API test result type:', typeof testResult)
+            
+            if (testResult && typeof testResult.then === 'function') {
+              console.log('✅ SQLite backup API available (Promise-based)')
+            } else if (testResult && typeof testResult.step === 'function') {
+              console.log('✅ SQLite backup API available (Object-based)')
+            } else {
+              console.log('⚠️ SQLite backup API available but returns unexpected type')
+            }
+            
+            // Clean up test file if it was created
+            if (existsSync('test_backup_check.db')) {
+              rmSync('test_backup_check.db')
+            }
+          } catch (testError) {
+            console.log('⚠️ SQLite backup API test failed:', testError.message)
+            this.backupApiAvailable = false
+          }
+        } else {
+          console.log('❌ SQLite backup API not available')
+        }
+      } else {
+        this.backupApiAvailable = false
+        console.log('⚠️ Database service not available for backup API check')
+      }
+    } catch (error) {
+      this.backupApiAvailable = false
+      console.log('❌ Error checking backup API availability:', error.message)
+    }
   }
 
   ensureBackupDirectory() {
@@ -262,16 +305,52 @@ class BackupService {
         // Wait longer to ensure file handles are released and all writes are committed
         await new Promise(resolve => setTimeout(resolve, 500))
 
-        // Use SQLite backup API instead of file copy for better reliability
-        try {
-          console.log('📋 Creating SQLite backup using backup API...')
-          await this.createSqliteBackupUsingAPI(backupPath)
-          console.log('✅ SQLite backup API completed')
-        } catch (apiError) {
-          console.warn('⚠️ SQLite backup API failed, falling back to file copy:', apiError.message)
-
-          // Fallback to file copy method
-          copyFileSync(this.sqliteDbPath, backupPath)
+        // Try multiple backup methods in order of preference
+        let backupSuccess = false
+        let lastError = null
+        
+        // Method 1: Try SQLite backup API if available
+        if (this.backupApiAvailable && !backupSuccess) {
+          try {
+            console.log('📋 Creating SQLite backup using backup API...')
+            await this.createSqliteBackupUsingAPI(backupPath)
+            console.log('✅ SQLite backup API completed')
+            backupSuccess = true
+          } catch (apiError) {
+            console.warn('⚠️ SQLite backup API failed:', apiError.message)
+            lastError = apiError
+          }
+        }
+        
+        // Method 2: Try VACUUM INTO method if backup API failed
+        if (!backupSuccess) {
+          try {
+            console.log('🔄 Trying VACUUM INTO backup method...')
+            await this.createSqliteVacuumBackup(backupPath)
+            console.log('✅ VACUUM INTO backup completed')
+            backupSuccess = true
+          } catch (vacuumError) {
+            console.warn('⚠️ VACUUM INTO backup failed:', vacuumError.message)
+            lastError = vacuumError
+          }
+        }
+        
+        // Method 3: Fallback to file copy if all else fails
+        if (!backupSuccess) {
+          try {
+            console.log('📁 All SQLite methods failed, using file copy method...')
+            this.createFileCopyBackup(backupPath)
+            console.log('✅ File copy backup completed')
+            backupSuccess = true
+          } catch (copyError) {
+            console.error('❌ File copy backup also failed:', copyError.message)
+            lastError = copyError
+          }
+        }
+        
+        // If all methods failed, throw the last error
+        if (!backupSuccess) {
+          throw new Error(`All backup methods failed. Last error: ${lastError ? lastError.message : 'Unknown error'}`)
         }
 
         // Verify backup was created successfully
@@ -398,30 +477,124 @@ class BackupService {
     }
   }
 
-  // Create SQLite backup using backup API for better reliability
-  async createSqliteBackupUsingAPI(backupPath) {
+  // Create backup using file copy method
+  createFileCopyBackup(backupPath) {
+    try {
+      copyFileSync(this.sqliteDbPath, backupPath)
+      console.log('✅ File copy backup completed successfully')
+    } catch (copyError) {
+      console.error('❌ File copy backup failed:', copyError.message)
+      throw new Error(`File copy backup failed: ${copyError.message}`)
+    }
+  }
+
+  // Create backup using SQLite VACUUM INTO method (alternative to backup API)
+  async createSqliteVacuumBackup(backupPath) {
     return new Promise((resolve, reject) => {
       try {
-        const Database = require('better-sqlite3')
+        console.log('🔄 Creating backup using VACUUM INTO method...')
+        
+        // Remove existing backup file if it exists
+        if (existsSync(backupPath)) {
+          try {
+            rmSync(backupPath)
+            console.log('🗑️ Removed existing backup file before VACUUM INTO')
+          } catch (removeError) {
+            console.warn('⚠️ Could not remove existing backup file:', removeError.message)
+            // Continue anyway, VACUUM INTO might still work
+          }
+        }
+        
+        // Ensure the directory exists
+        const backupDir = dirname(backupPath)
+        if (!existsSync(backupDir)) {
+          mkdirSync(backupDir, { recursive: true })
+          console.log('📁 Created backup directory:', backupDir)
+        }
+        
+        // Use VACUUM INTO to create a backup
+        // Escape the path properly for SQL
+        const escapedPath = backupPath.replace(/\\/g, '\\\\').replace(/'/g, "''")
+        console.log('📋 VACUUM INTO path:', escapedPath)
+        
+        this.databaseService.db.exec(`VACUUM INTO '${escapedPath}'`)
+        
+        // Verify the backup was created
+        if (!existsSync(backupPath)) {
+          throw new Error('VACUUM INTO backup file was not created')
+        }
+        
+        const backupStats = statSync(backupPath)
+        console.log('📊 VACUUM INTO backup size:', backupStats.size, 'bytes')
+        
+        if (backupStats.size === 0) {
+          throw new Error('VACUUM INTO backup file is empty')
+        }
+        
+        console.log('✅ VACUUM INTO backup completed successfully')
+        resolve()
+      } catch (error) {
+        console.error('❌ VACUUM INTO backup failed:', error)
+        reject(error)
+      }
+    })
+  }
 
-        // Open backup database
-        const backupDb = new Database(backupPath)
-
-        // Use SQLite backup API - pass the destination database object, not the source
-        const backup = this.databaseService.db.backup(backupDb)
-
-        // Check if backup object has the expected methods
-        if (typeof backup.step !== 'function') {
-          throw new Error('SQLite backup API not available or incompatible')
+  // Create SQLite backup using backup API for better reliability
+  async createSqliteBackupUsingAPI(backupPath) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        // Check if backup method exists and is callable
+        if (typeof this.databaseService.db.backup !== 'function') {
+          throw new Error('SQLite backup API not available in this version of better-sqlite3')
         }
 
-        backup.step(-1) // Copy all pages
-        backup.finish()
+        // Remove existing backup file if it exists
+        if (existsSync(backupPath)) {
+          try {
+            rmSync(backupPath)
+            console.log('🗑️ Removed existing backup file before creating new one')
+          } catch (removeError) {
+            console.warn('⚠️ Could not remove existing backup file:', removeError.message)
+          }
+        }
 
-        backupDb.close()
+        // Use SQLite backup API - this returns a Promise in newer versions
+        console.log('📋 Creating SQLite backup using backup API...')
+        console.log('🔍 Backup object type:', typeof this.databaseService.db.backup)
+        
+        // Check if backup method returns a Promise or an object
+        const backupResult = this.databaseService.db.backup(backupPath)
+        
+        if (backupResult && typeof backupResult.then === 'function') {
+          // It's a Promise (newer better-sqlite3 versions)
+          console.log('📋 Using Promise-based backup API...')
+          await backupResult
+          console.log('✅ SQLite backup API (Promise) completed successfully')
+          resolve()
+        } else if (backupResult && typeof backupResult.step === 'function') {
+          // It's an object with step/finish methods (older versions)
+          console.log('📋 Using object-based backup API...')
+          console.log('🔍 Backup object keys:', Object.keys(backupResult || {}))
+          console.log('🔍 Backup step method:', typeof backupResult.step)
+          console.log('🔍 Backup finish method:', typeof backupResult.finish)
 
-        console.log('✅ SQLite backup API completed successfully')
-        resolve()
+          if (typeof backupResult.finish !== 'function') {
+            throw new Error('SQLite backup API returned invalid backup object - missing finish method')
+          }
+
+          // Perform the backup
+          backupResult.step(-1) // Copy all pages
+          backupResult.finish()
+          console.log('✅ SQLite backup API (Object) completed successfully')
+          resolve()
+        } else {
+          // Unexpected return type
+          console.error('❌ Unexpected backup API return type:', typeof backupResult)
+          console.error('❌ Backup result:', backupResult)
+          throw new Error('SQLite backup API returned unexpected result type')
+        }
+
       } catch (error) {
         console.error('❌ SQLite backup API failed:', error)
         reject(error)
@@ -552,17 +725,37 @@ class BackupService {
         // Wait longer to ensure file handles are released and all writes are committed
         await new Promise(resolve => setTimeout(resolve, 500))
 
-        // Create a temporary database backup using the backup API for ZIP inclusion
+        // Create a temporary database backup for ZIP inclusion
         const tempDbPath = join(require('path').dirname(this.sqliteDbPath), `temp_backup_${Date.now()}.db`)
+        let tempBackupSuccess = false
+        
+        // Try VACUUM INTO method first (more reliable in production)
         try {
-          console.log('📋 Creating temporary database backup for ZIP...')
-          await this.createSqliteBackupUsingAPI(tempDbPath)
-          console.log('✅ Temporary database backup created for ZIP')
-
-          // Use the temporary backup file instead of the main database file
+          console.log('🔄 Creating temporary database backup using VACUUM INTO...')
+          await this.createSqliteVacuumBackup(tempDbPath)
+          console.log('✅ Temporary VACUUM INTO backup created for ZIP')
           this.tempDbPathForZip = tempDbPath
-        } catch (tempBackupError) {
-          console.warn('⚠️ Failed to create temporary backup for ZIP, using main database file:', tempBackupError.message)
+          tempBackupSuccess = true
+        } catch (vacuumError) {
+          console.warn('⚠️ VACUUM INTO temporary backup failed:', vacuumError.message)
+        }
+        
+        // Try backup API if VACUUM failed
+        if (!tempBackupSuccess && this.backupApiAvailable) {
+          try {
+            console.log('📋 Creating temporary database backup using backup API...')
+            await this.createSqliteBackupUsingAPI(tempDbPath)
+            console.log('✅ Temporary backup API backup created for ZIP')
+            this.tempDbPathForZip = tempDbPath
+            tempBackupSuccess = true
+          } catch (apiError) {
+            console.warn('⚠️ Backup API temporary backup failed:', apiError.message)
+          }
+        }
+        
+        // Fallback to main database file if all methods failed
+        if (!tempBackupSuccess) {
+          console.warn('⚠️ All temporary backup methods failed, using main database file')
           this.tempDbPathForZip = this.sqliteDbPath
         }
 

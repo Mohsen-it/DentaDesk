@@ -3,7 +3,7 @@ const path = require('path');
 const Database = require('better-sqlite3');
 
 // مسار قاعدة البيانات
-const dbPath = path.join(process.env.APPDATA, 'dental-clinic-management-aggoracode', 'dental_clinic.db');
+const dbPath = path.join(process.env.APPDATA, 'DentaDesk', 'dental_clinic.db');
 
 console.log('🔍 فحص حالة Migrations في قاعدة البيانات...');
 console.log('📁 المسار:', dbPath);

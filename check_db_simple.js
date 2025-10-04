@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 // مسار قاعدة البيانات
-const dbPath = path.join(process.env.APPDATA, 'dental-clinic-management-aggoracode', 'dental_clinic.db');
+const dbPath = path.join(process.env.APPDATA, 'DentaDesk', 'dental_clinic.db');
 
 console.log('🔍 فحص قاعدة البيانات...');
 console.log('📁 المسار:', dbPath);

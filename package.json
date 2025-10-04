@@ -1,5 +1,5 @@
 {
-  "name": "dental-clinic-management-aggoracode",
+  "name": "DentaDesk",
   "version": "2.1.0",
   "description": "Dental Clinic DentaDesk",
   "author": "DentaDesk Team",
@@ -96,7 +96,7 @@
   },
   "build": {
     "appId": "com.ORalSoft",
-    "productName": "ORalSoft",
+    "productName": "DentaDesk",
     "directories": {
       "output": "dist-electron"
     },
@@ -142,18 +142,18 @@
       "installerHeaderIcon": "assets/icon.ico",
       "createDesktopShortcut": "always",
       "createStartMenuShortcut": true,
-      "shortcutName": "ORalSoft",
+      "shortcutName": "DentaDesk",
       "language": "1033",
       "displayLanguageSelector": false,
       "multiLanguageInstaller": false,
       "license": "installer/license-en.txt",
-      "artifactName": "ORalSoft-v${version}-Setup.${ext}",
+      "artifactName": "DentaDesk-v${version}-Setup.${ext}",
       "deleteAppDataOnUninstall": false,
       "runAfterFinish": true,
       "menuCategory": "Healthcare",
       "warningsAsErrors": false,
       "unicode": true,
-      "guid": "ORalSoft-v1.0"
+      "guid": "DentaDesk-v1.0"
     },
     "mac": {
       "target": "dmg",

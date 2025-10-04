@@ -1,6 +1,6 @@
 @echo off
 echo ========================================
-echo Building ORalSoft
+echo Building DentaDesk
 echo Professional Installer
 echo ========================================
 echo.
@@ -54,11 +54,11 @@ echo SUCCESS: Installer created successfully!
 echo ========================================
 echo.
 echo The installer has been created in the 'dist-electron' folder
-echo Installer name: ORalSoft-v1.0-Setup.exe
+echo Installer name: DentaDesk-v1.0-Setup.exe
 echo.
 echo Installation Features:
 echo - English language only
-echo - Automatic folder creation:ORalSoft
+echo - Automatic folder creation:DentaDesk
 echo - Desktop shortcut creation
 echo - Start menu integration
 echo - License agreement display
