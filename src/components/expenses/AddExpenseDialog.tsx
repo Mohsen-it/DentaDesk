@@ -61,6 +61,24 @@ const AddExpenseDialog: React.FC<AddExpenseDialogProps> = ({
 
   const [errors, setErrors] = useState<Record<string, string>>({})
 
+  // Helper functions for number formatting with thousands separators
+  const formatNumberWithCommas = (value: string): string => {
+    if (!value) return ''
+    // Remove any existing commas
+    const cleanValue = value.replace(/,/g, '')
+    // Check if it's a valid number
+    if (isNaN(Number(cleanValue))) return value
+    // Split into integer and decimal parts
+    const parts = cleanValue.split('.')
+    // Format integer part with commas
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+    return parts.join('.')
+  }
+
+  const removeCommas = (value: string): string => {
+    return value.replace(/,/g, '')
+  }
+
   // Expense types with Arabic labels
   const expenseTypes = [
     { value: 'salary', label: 'راتب' },
@@ -143,7 +161,7 @@ const AddExpenseDialog: React.FC<AddExpenseDialogProps> = ({
       newErrors.expense_name = 'اسم المصروف مطلوب'
     }
 
-    if (!formData.amount || parseFloat(formData.amount) <= 0) {
+    if (!formData.amount || parseFloat(removeCommas(formData.amount)) <= 0) {
       newErrors.amount = 'المبلغ مطلوب ويجب أن يكون أكبر من صفر'
     }
 
@@ -177,7 +195,7 @@ const AddExpenseDialog: React.FC<AddExpenseDialogProps> = ({
     try {
       const expenseData = {
         ...formData,
-        amount: parseFloat(formData.amount),
+        amount: parseFloat(removeCommas(formData.amount)),
         payment_date: new Date(formData.payment_date).toISOString(),
         due_date: formData.due_date ? new Date(formData.due_date).toISOString() : undefined,
         recurring_end_date: formData.recurring_end_date ? new Date(formData.recurring_end_date).toISOString() : undefined,
@@ -212,6 +230,12 @@ const AddExpenseDialog: React.FC<AddExpenseDialogProps> = ({
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }))
     }
+  }
+
+  const handleAmountChange = (value: string) => {
+    // Format the amount with commas for display
+    const formattedValue = formatNumberWithCommas(value)
+    handleInputChange('amount', formattedValue)
   }
 
   return (
@@ -250,13 +274,11 @@ const AddExpenseDialog: React.FC<AddExpenseDialogProps> = ({
                 <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   id="amount"
-                  type="number"
-                  step="0.1"
-                  min="0"
+                  type="text"
                   value={formData.amount}
-                  onChange={(e) => handleInputChange('amount', e.target.value)}
+                  onChange={(e) => handleAmountChange(e.target.value)}
                   onBlur={(e) => {
-                    const value = parseFloat(e.target.value) || 0
+                    const value = parseFloat(removeCommas(e.target.value)) || 0
                     handleInputChange('amount', value.toString())
                   }}
                   placeholder="0.00"

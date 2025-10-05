@@ -92,7 +92,7 @@ const navigationItems = [
     title: "النسخ الاحتياطية",
     url: "production-backup",
     icon: Database,
-    style: { fontSize: '14px' },
+    style: { fontSize: '15px' },
   },
   ///////////////////////////////
   // {

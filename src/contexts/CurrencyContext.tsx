@@ -79,7 +79,7 @@ export function CurrencyProvider({ children }: CurrencyProviderProps) {
   // Always use Western numerals regardless of settings
   const currentUseArabicNumerals = false
 
-  // Formatting functions that use current currency by default - always use Western numerals
+  // Formatting functions that use current currency by default - always use Western numerals with thousands separators
   const formatAmount = useCallback((amount: number, currency?: string, useArabicNumeralsOverride?: boolean) => {
     return formatCurrency(amount, currency || currentCurrency)
   }, [currentCurrency])
