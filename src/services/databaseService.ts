@@ -2524,7 +2524,9 @@ export class DatabaseService {
 
       // Create backup using SQLite backup API
       const backupDb = new Database(backupPath)
-      this.db.backup(backupDb)
+      const backup = backupDb.backup(this.db.name)
+      backup.step(-1) // Copy all pages
+      backup.finish()
       backupDb.close()
 
       console.log('✅ Database backup created successfully:', backupPath)

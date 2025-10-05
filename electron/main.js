@@ -772,6 +772,8 @@ if (!gotTheLock) {
       databaseService = new DatabaseService(dbPath)
       console.log('✅ SQLite database service initialized successfully (direct)')
 
+      // Dialog handlers will be registered after all services are initialized
+
       // Try to initialize backup service
       try {
         const { BackupService } = require('../src/services/backupService.js')
@@ -896,7 +898,70 @@ app.on('before-quit', () => {
       console.log('Could not clear session (window already destroyed)')
     }
   }
+
+  // Dialog handlers will be registered outside app.whenReady()
 })
+
+// Dialog handlers - registered after app.whenReady()
+console.log('🔧 Registering dialog:selectDirectory handler...')
+ipcMain.handle('dialog:selectDirectory', async (_, options) => {
+  try {
+    console.log('🔍 dialog:selectDirectory called with options:', options)
+    if (!mainWindow) {
+      throw new Error('Main window not available')
+    }
+    
+    const result = await dialog.showOpenDialog(mainWindow, {
+      ...options,
+      properties: ['openDirectory', 'createDirectory']
+    })
+    console.log('🔍 dialog:selectDirectory result:', result)
+    return result
+  } catch (error) {
+    console.error('Error in dialog:selectDirectory:', error)
+    return { canceled: true, error: error.message }
+  }
+})
+console.log('✅ dialog:selectDirectory handler registered')
+
+console.log('🔧 Registering dialog:selectFile handler...')
+ipcMain.handle('dialog:selectFile', async (_, options) => {
+  try {
+    console.log('🔍 dialog:selectFile called with options:', options)
+    if (!mainWindow) {
+      throw new Error('Main window not available')
+    }
+    
+    const result = await dialog.showOpenDialog(mainWindow, {
+      ...options,
+      properties: ['openFile']
+    })
+    console.log('🔍 dialog:selectFile result:', result)
+    return result
+  } catch (error) {
+    console.error('Error in dialog:selectFile:', error)
+    return { canceled: true, error: error.message }
+  }
+})
+console.log('✅ dialog:selectFile handler registered')
+
+console.log('✅ Dialog handlers registered successfully')
+
+// Test handler to verify IPC is working
+ipcMain.handle('test:ping', async () => {
+  console.log('🔍 test:ping called')
+  return { success: true, message: 'IPC is working' }
+})
+
+// List all registered handlers for debugging
+console.log('📋 Registered IPC handlers:')
+const registeredHandlers = []
+ipcMain.eventNames().forEach(eventName => {
+  if (typeof eventName === 'string' && eventName.includes('dialog')) {
+    registeredHandlers.push(eventName)
+  }
+})
+console.log('Dialog handlers:', registeredHandlers)
 
 // Patient IPC Handlers
 ipcMain.handle('db:patients:getAll', async () => {
@@ -1652,6 +1717,162 @@ ipcMain.handle('backup:delete', async (_, backupName) => {
   }
 })
 
+// Production Backup Service IPC Handlers
+let productionBackupService = null
+
+// Initialize production backup service
+ipcMain.handle('production-backup:init', async () => {
+  try {
+    const { ProductionBackupService } = require('../src/services/productionBackupService.js')
+    productionBackupService = new ProductionBackupService(databaseService)
+    console.log('✅ Production backup service initialized')
+    return { success: true }
+  } catch (error) {
+    console.error('❌ Failed to initialize production backup service:', error)
+    return { success: false, error: error.message }
+  }
+})
+
+// Create backup
+ipcMain.handle('production-backup:create', async (_, options) => {
+  try {
+    if (!productionBackupService) {
+      // Auto-initialize if not already done
+      const initResult = await ipcMain.invoke('production-backup:init')
+      if (!initResult.success) {
+        throw new Error('Failed to initialize production backup service')
+      }
+    }
+
+    const result = await productionBackupService.createBackup(options)
+    console.log('Production backup created:', result.success)
+    return result
+  } catch (error) {
+    console.error('Error creating production backup:', error)
+    return { success: false, error: error.message }
+  }
+})
+
+// Restore backup
+ipcMain.handle('production-backup:restore', async (_, backupId) => {
+  try {
+    if (!productionBackupService) {
+      throw new Error('Production backup service not initialized')
+    }
+
+    // Find backup by ID
+    const backups = await productionBackupService.listBackups()
+    const backup = backups.find(b => b.id === backupId)
+    
+    if (!backup) {
+      throw new Error('Backup not found')
+    }
+
+    const result = await productionBackupService.restoreBackup(backup.path)
+    console.log('Production backup restored:', result.success)
+    return result
+  } catch (error) {
+    console.error('Error restoring production backup:', error)
+    return { success: false, error: error.message }
+  }
+})
+
+// List backups
+ipcMain.handle('production-backup:list', async () => {
+  try {
+    if (!productionBackupService) {
+      // Auto-initialize if not already done
+      const initResult = await ipcMain.invoke('production-backup:init')
+      if (!initResult.success) {
+        return { success: false, error: 'Failed to initialize production backup service' }
+      }
+    }
+
+    const backups = await productionBackupService.listBackups()
+    console.log('Production backups listed:', backups.length)
+    return { success: true, data: backups }
+  } catch (error) {
+    console.error('Error listing production backups:', error)
+    return { success: false, error: error.message, data: [] }
+  }
+})
+
+// Delete backup
+ipcMain.handle('production-backup:delete', async (_, backupId) => {
+  try {
+    if (!productionBackupService) {
+      throw new Error('Production backup service not initialized')
+    }
+
+    const result = await productionBackupService.deleteBackup(backupId)
+    console.log('Production backup deleted:', result.success)
+    return result
+  } catch (error) {
+    console.error('Error deleting production backup:', error)
+    return { success: false, error: error.message }
+  }
+})
+
+// Get backup stats
+ipcMain.handle('production-backup:stats', async () => {
+  try {
+    if (!productionBackupService) {
+      // Auto-initialize if not already done
+      const initResult = await ipcMain.invoke('production-backup:init')
+      if (!initResult.success) {
+        return { success: false, error: 'Failed to initialize production backup service' }
+      }
+    }
+
+    const stats = await productionBackupService.getBackupStats()
+    return { success: true, data: stats }
+  } catch (error) {
+    console.error('Error getting production backup stats:', error)
+    return { success: false, error: error.message }
+  }
+})
+
+// Export backup
+ipcMain.handle('production-backup:export', async (_, backupId) => {
+  try {
+    if (!productionBackupService) {
+      throw new Error('Production backup service not initialized')
+    }
+
+    // Find backup by ID
+    const backups = await productionBackupService.listBackups()
+    const backup = backups.find(b => b.id === backupId)
+    
+    if (!backup) {
+      throw new Error('Backup not found')
+    }
+
+    // Show save dialog
+    const result = await dialog.showSaveDialog(mainWindow, {
+      title: 'تصدير النسخة الاحتياطية',
+      defaultPath: `${backup.name}${backup.type === 'with_images' ? '.zip' : '.db'}`,
+      filters: [
+        { name: 'Database Files', extensions: ['db'] },
+        { name: 'ZIP Files', extensions: ['zip'] },
+        { name: 'All Files', extensions: ['*'] }
+      ]
+    })
+
+    if (!result.canceled && result.filePath) {
+      // Copy backup file to selected location
+      const fs = require('fs')
+      fs.copyFileSync(backup.path, result.filePath)
+      console.log('Production backup exported to:', result.filePath)
+      return { success: true, path: result.filePath }
+    } else {
+      return { success: false, error: 'Export cancelled' }
+    }
+  } catch (error) {
+    console.error('Error exporting production backup:', error)
+    return { success: false, error: error.message }
+  }
+})
+
 ipcMain.handle('backup:test', async () => {
   try {
     console.log('🧪 Starting backup system test...')
@@ -1686,6 +1907,8 @@ ipcMain.handle('dialog:showSaveDialog', async (_, options) => {
   const result = await dialog.showSaveDialog(mainWindow, options)
   return result
 })
+
+// Dialog handlers moved to app.whenReady() to ensure mainWindow is available
 
 // QR utilities: save image to a temp file and open it
 ipcMain.handle('qr:save-image', async (_event, payload) => {

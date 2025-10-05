@@ -819,7 +819,7 @@ if (window.electronAPI?.whatsappReminders?.setSettings) {
       <div className="border-b border-border dark:border-gray-700 sticky top-0 bg-background/95 dark:bg-gray-900/95 backdrop-blur-sm z-10 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
         <nav className="flex space-x-1 space-x-reverse overflow-x-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent py-3">
           {[
-            { id: 'backup', name: 'النسخ الاحتياطية', icon: Database },
+            // { id: 'backup', name: 'النسخ الاحتياطية', icon: Database },
             { id: 'diagnostics', name: 'تشخيص النظام', icon: AlertTriangle },
             { id: 'appearance', name: 'المظهر', icon: Palette },
             { id: 'whatsapp', name: 'تذكيرات واتساب', icon: Phone },

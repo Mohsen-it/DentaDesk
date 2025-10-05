@@ -36,6 +36,7 @@ const DentalTreatments = React.lazy(() => import('./pages/DentalTreatments'))
 const ClinicNeeds = React.lazy(() => import('./pages/ClinicNeeds'))
 const Expenses = React.lazy(() => import('./pages/Expenses'))
 const ExternalEstimate = React.lazy(() => import('./pages/ExternalEstimate'))
+const ProductionBackup = React.lazy(() => import('./pages/ProductionBackup'))
 
 // Preload critical components for faster navigation
 const preloadComponent = (importFn: () => Promise<any>) => {
@@ -310,6 +311,10 @@ function AppContent() {
           setActiveTab('reports')
           break
         case '8':
+          enhanced.preventDefault()
+          setActiveTab('production-backup')
+          break
+        case '9':
           enhanced.preventDefault()
           setActiveTab('settings')
           break
@@ -651,6 +656,8 @@ function AppContent() {
         return <ReportsPage />;
       case 'external-estimate':
         return <ExternalEstimate />;
+      case 'production-backup':
+        return <ProductionBackup />;
       case 'settings':
         return <SettingsPage />;
       default:

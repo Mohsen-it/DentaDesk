@@ -22,17 +22,27 @@ class BackupService {
       } else {
         // Fallback to the same logic as databaseService.js
         try {
-          const appDir = process.execPath ? require('path').dirname(process.execPath) : process.cwd()
-          actualDbPath = join(appDir, 'dental_clinic.db')
-          console.log('📍 Using fallback database path (app dir):', actualDbPath)
+          // For production builds, use userData directory
+          const isProduction = !process.env.NODE_ENV || process.env.NODE_ENV === 'production'
+          if (isProduction && process.execPath && !process.execPath.includes('node')) {
+            // This is a production build
+            actualDbPath = join(app.getPath('userData'), 'dental_clinic.db')
+            console.log('📍 Using production database path (userData):', actualDbPath)
+          } else {
+            // This is development or testing
+            const appDir = process.execPath ? require('path').dirname(process.execPath) : process.cwd()
+            actualDbPath = join(appDir, 'dental_clinic.db')
+            console.log('📍 Using fallback database path (app dir):', actualDbPath)
+          }
         } catch (error) {
-          actualDbPath = join(process.cwd(), 'dental_clinic.db')
-          console.log('📍 Using fallback database path (cwd):', actualDbPath)
+          // Final fallback
+          actualDbPath = join(app.getPath('userData'), 'dental_clinic.db')
+          console.log('📍 Using final fallback database path (userData):', actualDbPath)
         }
       }
     } catch (error) {
-      console.warn('⚠️ Could not determine database path, using fallback')
-      actualDbPath = join(process.cwd(), 'dental_clinic.db')
+      console.warn('⚠️ Could not determine database path, using userData fallback')
+      actualDbPath = join(app.getPath('userData'), 'dental_clinic.db')
     }
 
     this.sqliteDbPath = actualDbPath
@@ -58,8 +68,35 @@ class BackupService {
   }
 
   ensureBackupDirectory() {
-    if (!existsSync(this.backupDir)) {
-      mkdirSync(this.backupDir, { recursive: true })
+    try {
+      if (!existsSync(this.backupDir)) {
+        console.log('📁 Creating backup directory:', this.backupDir)
+        mkdirSync(this.backupDir, { recursive: true })
+        console.log('✅ Backup directory created successfully')
+      } else {
+        console.log('📁 Backup directory already exists:', this.backupDir)
+      }
+      
+      // Test if we can write to the backup directory
+      const testFile = join(this.backupDir, 'test_write.tmp')
+      try {
+        writeFileSync(testFile, 'test')
+        rmSync(testFile)
+        console.log('✅ Backup directory is writable')
+      } catch (writeError) {
+        console.warn('⚠️ Backup directory is not writable:', writeError.message)
+        // Try to use userData directory as fallback
+        const fallbackDir = join(app.getPath('userData'), 'backups')
+        if (fallbackDir !== this.backupDir) {
+          console.log('🔄 Trying fallback backup directory:', fallbackDir)
+          this.backupDir = fallbackDir
+          this.backupRegistryPath = join(fallbackDir, 'backup_registry.json')
+          this.ensureBackupDirectory()
+        }
+      }
+    } catch (error) {
+      console.error('❌ Failed to ensure backup directory:', error.message)
+      throw error
     }
   }
 
@@ -672,8 +709,8 @@ class BackupService {
         // Open backup database
         const backupDb = new Database(backupPath)
 
-        // Use SQLite backup API - pass the destination database object, not the source
-        const backup = this.databaseService.db.backup(backupDb)
+        // Use SQLite backup API - pass the source database path as string
+        const backup = backupDb.backup(this.sqliteDbPath)
 
         // Check if backup object has the expected methods
         if (typeof backup.step !== 'function') {
@@ -741,6 +778,18 @@ class BackupService {
 
           if (userTables.length > 0) {
             console.log('✅ Backup appears to have valid structure despite record count issue')
+            
+            // Try to get actual record counts from each table
+            for (const table of userTables) {
+              try {
+                const countQuery = testDb.prepare(`SELECT COUNT(*) as count FROM ${table.name}`)
+                const count = countQuery.get()
+                console.log(`📊 Actual count for ${table.name}: ${count.count} records`)
+                totalRecords += count.count
+              } catch (countError) {
+                console.warn(`⚠️ Could not count records in ${table.name}:`, countError.message)
+              }
+            }
           }
         } catch (structureError) {
           console.warn('⚠️ Could not verify backup structure:', structureError.message)
@@ -1012,8 +1061,12 @@ class BackupService {
       if (isDevelopment) {
         baseDir = process.cwd()
       } else {
-        baseDir = require('path').dirname(process.execPath)
+        // For production, use userData directory for temporary files
+        baseDir = app.getPath('userData')
       }
+      
+      console.log('📍 Base directory for restoration:', baseDir)
+      console.log('📍 Is development mode:', isDevelopment)
 
       const currentDbBackupPath = join(baseDir, `current_db_backup_${Date.now()}.db`)
       if (existsSync(this.sqliteDbPath)) {
@@ -1050,11 +1103,36 @@ class BackupService {
       } catch (error) {
         // Restore original database if restoration failed
         console.error('❌ Restoration failed, restoring original database...')
-        if (existsSync(currentDbBackupPath)) {
-          copyFileSync(currentDbBackupPath, this.sqliteDbPath)
-          rmSync(currentDbBackupPath)
-          console.log('✅ Original database restored')
+        console.error('❌ Error details:', error.message)
+        console.error('❌ Error stack:', error.stack)
+        
+        try {
+          if (existsSync(currentDbBackupPath)) {
+            copyFileSync(currentDbBackupPath, this.sqliteDbPath)
+            console.log('✅ Original database restored')
+            
+            // Try to reinitialize database service
+            try {
+              this.databaseService.reinitialize()
+              console.log('✅ Database service reinitialized after error')
+            } catch (reinitError) {
+              console.warn('⚠️ Failed to reinitialize database service after error:', reinitError.message)
+            }
+            
+            // Clean up backup file
+            try {
+              rmSync(currentDbBackupPath)
+              console.log('🧹 Cleaned up backup file')
+            } catch (cleanupError) {
+              console.warn('⚠️ Failed to clean up backup file:', cleanupError.message)
+            }
+          } else {
+            console.warn('⚠️ No backup file found to restore from')
+          }
+        } catch (restoreError) {
+          console.error('❌ Failed to restore original database:', restoreError.message)
         }
+        
         throw error
       }
 
@@ -1448,16 +1526,47 @@ class BackupService {
 
       // Close current database connection
       console.log('📁 Closing current database connection...')
-      this.databaseService.close()
-      console.log('📁 Database connection closed')
+      try {
+        this.databaseService.close()
+        console.log('📁 Database connection closed')
+      } catch (closeError) {
+        console.warn('⚠️ Error closing database connection:', closeError.message)
+        // Continue anyway
+      }
 
-      // Wait a moment to ensure file handles are released
-      await new Promise(resolve => setTimeout(resolve, 100))
+      // Wait longer to ensure file handles are released
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // Ensure target directory exists and is writable
+      const targetDir = require('path').dirname(this.sqliteDbPath)
+      if (!existsSync(targetDir)) {
+        console.log('📁 Creating target directory:', targetDir)
+        mkdirSync(targetDir, { recursive: true })
+      }
+
+      // Check if we can write to the target location
+      try {
+        const testFile = join(targetDir, 'test_write.tmp')
+        writeFileSync(testFile, 'test')
+        rmSync(testFile)
+        console.log('✅ Target directory is writable')
+      } catch (writeError) {
+        console.error('❌ Cannot write to target directory:', targetDir)
+        throw new Error(`Cannot write to target directory: ${writeError.message}`)
+      }
 
       // Replace current database with backup
       console.log('📋 Replacing database file with backup...')
-      copyFileSync(sqliteBackupPath, this.sqliteDbPath)
-      console.log('📋 Database file replaced with backup')
+      console.log('📋 Source:', sqliteBackupPath)
+      console.log('📋 Target:', this.sqliteDbPath)
+      
+      try {
+        copyFileSync(sqliteBackupPath, this.sqliteDbPath)
+        console.log('📋 Database file replaced with backup')
+      } catch (copyError) {
+        console.error('❌ Failed to copy backup file:', copyError.message)
+        throw new Error(`Failed to copy backup file: ${copyError.message}`)
+      }
 
       // Verify the replacement was successful
       const newStats = statSync(this.sqliteDbPath)
@@ -1468,10 +1577,15 @@ class BackupService {
         console.warn('Expected:', backupStats.size, 'bytes, Actual:', newStats.size, 'bytes')
       }
 
-      // Reinitialize database service
+      // Reinitialize database service with better error handling
       console.log('🔄 Reinitializing database service...')
-      this.databaseService.reinitialize()
-      console.log('✅ Database service reinitialized')
+      try {
+        this.databaseService.reinitialize()
+        console.log('✅ Database service reinitialized')
+      } catch (reinitError) {
+        console.error('❌ Failed to reinitialize database service:', reinitError.message)
+        throw new Error(`Failed to reinitialize database service: ${reinitError.message}`)
+      }
 
       // Verify the restored database works
       try {

@@ -209,10 +209,32 @@ contextBridge.exposeInMainWorld('electronAPI', {
     test: () => ipcRenderer.invoke('backup:test')
   },
 
+  // Production Backup operations
+  'production-backup': {
+    init: () => ipcRenderer.invoke('production-backup:init'),
+    create: (options) => ipcRenderer.invoke('production-backup:create', options),
+    restore: (backupId) => ipcRenderer.invoke('production-backup:restore', backupId),
+    list: () => ipcRenderer.invoke('production-backup:list'),
+    delete: (backupId) => ipcRenderer.invoke('production-backup:delete', backupId),
+    stats: () => ipcRenderer.invoke('production-backup:stats'),
+    export: (backupId) => ipcRenderer.invoke('production-backup:export', backupId)
+  },
+
+  // Test operations
+  test: {
+    ping: () => ipcRenderer.invoke('test:ping')
+  },
+
   // File operations
   files: {
-    selectFile: (options) => ipcRenderer.invoke('dialog:selectFile', options),
-    selectDirectory: (options) => ipcRenderer.invoke('dialog:selectDirectory', options),
+    selectFile: (options) => {
+      console.log('🔍 preload: selectFile called with options:', options)
+      return ipcRenderer.invoke('dialog:selectFile', options)
+    },
+    selectDirectory: (options) => {
+      console.log('🔍 preload: selectDirectory called with options:', options)
+      return ipcRenderer.invoke('dialog:selectDirectory', options)
+    },
     saveFile: (options) => ipcRenderer.invoke('dialog:saveFile', options),
     uploadDentalImage: (fileBuffer, fileName, patientId, toothNumber, imageType, patientName, toothName) => ipcRenderer.invoke('files:uploadDentalImage', fileBuffer, fileName, patientId, toothNumber, imageType, patientName, toothName),
     saveDentalImage: (base64Data, fileName, patientId, toothNumber, imageType, patientName, toothName) => ipcRenderer.invoke('files:saveDentalImage', base64Data, fileName, patientId, toothNumber, imageType, patientName, toothName),

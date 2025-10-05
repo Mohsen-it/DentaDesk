@@ -11,6 +11,7 @@ import {
   Receipt, // Added Receipt import
   FileBarChart, // Added FileBarChart import
   Wrench, // Added Wrench import for dental treatments
+  Database, // Added Database import for backup
 } from "lucide-react"
 
 import {
@@ -86,6 +87,12 @@ const navigationItems = [
     title: "التقارير",
     url: "reports",
     icon: FileBarChart,
+  },
+  {
+    title: "النسخ الاحتياطية",
+    url: "production-backup",
+    icon: Database,
+    style: { fontSize: '14px' },
   },
   ///////////////////////////////
   // {
@@ -201,11 +208,14 @@ export function AppSidebar({ activeTab, onTabChange, ...props }: AppSidebarProps
                         ? 'text-primary dark:text-blue-400 scale-110'
                         : 'text-muted-foreground dark:text-gray-300 group-hover:text-primary dark:group-hover:text-blue-400'
                     }`} />
-                    <span className={`font-medium text-sm transition-all duration-300 ${
-                      activeTab === item.url
-                        ? 'text-primary dark:text-blue-400 font-semibold'
-                        : 'text-muted-foreground dark:text-gray-300'
-                    }`}>{item.title}</span>
+                    <span 
+                      className={`font-medium transition-all duration-300 ${
+                        activeTab === item.url
+                          ? 'text-primary dark:text-blue-400 font-semibold'
+                          : 'text-muted-foreground dark:text-gray-300'
+                      }`}
+                      style={item.style}
+                    >{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
